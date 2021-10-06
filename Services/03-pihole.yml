@@ -1,31 +1,12 @@
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: pihole-pv
-  namespace: pihole
-spec:
-  storageClassName: pihole-manual
-  persistentVolumeReclaimPolicy: Retain
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    name: pihole-pvc
-    namespace: pihole
-  hostPath:
-    path: "/var/lib/pihole"
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   namespace: pihole
   name: pihole-pvc
 spec:
-  storageClassName: pihole-manual
+  storageClassName: nfs
   accessModes:
     - ReadWriteMany
-  claimRef:
   resources:
     requests:
       storage: 1Gi
@@ -71,7 +52,8 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: docker.io/pihole/pihole:latest
+          # TODO: when the ulimit bug is fixed, upgrade to latest: https://github.com/pi-hole/docker-pi-hole/issues/772
+          image: docker.io/pihole/pihole:v5.1.2
           envFrom:
             - configMapRef:
                 name: pihole-configmap

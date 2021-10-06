@@ -43,6 +43,7 @@ spec:
     nfs.server: $IP_ADDRESS
     nfs.path: /clusterfs
     storageClass.name: nfs
+    storageClass.reclaimPolicy: Retain
 EOF
 
 echo "Finished Installing k3s - Use the Following Token to Add Nodes"

@@ -8,3 +8,10 @@ Scripts in the `OS` folder are meant to be executed in order. Each script
 requires a reboot in-between, thus the need for separate files. Scripts must be
 executed with `sudo`, and assume a fresh install of Raspberry Pi OS (64-bit) on
 a Raspberry Pi 4B.
+
+## Services
+
+Pre-reqs:
+
+1. Local install of `kubectl`
+2. Local install of `helm`

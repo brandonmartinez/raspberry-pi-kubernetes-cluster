@@ -16,6 +16,7 @@ source .env
 set +o allexport
 
 export KUBECONFIG=$(pwd)/kubeconfig.yml
+chmod 600 "$KUBECONFIG"
 
 function apply() {
     echo "Replacing environment variables and applying $1 via kubectl"
@@ -25,10 +26,10 @@ function apply() {
 echo "Adding Rancher Local Path Provisioner"
 # From: https://github.com/rancher/local-path-provisioner/blob/master/README.md#usage
 kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
-kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-
-echo "Configuring NFS as Default Storage"
 kubectl patch storageclass "local-path" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
+echo "Setting NFS as the Default Storage Class"
+kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
 echo "Applying Portainer"
 kubectl apply -n portainer -f https://raw.githubusercontent.com/portainer/k8s/master/deploy/manifests/portainer/portainer-lb.yaml
