@@ -13,8 +13,8 @@ a Raspberry Pi 4B with no modifications besides adding the `ssh` file to the
 To configure the RPi, login via ssh:
 
 ```sh
-ssh-copy-id ~/.ssh/id_rsa.pub pi@192.168.1.1 # use your SSH key and the IP of the pi
-ssh pi@192.168.1.1 #replace with the IP address of your pi
+ssh-copy-id ~/.ssh/id_rsa.pub pi@X.X.X.X # use your SSH key and the IP of the pi
+ssh pi@X.X.X.X #replace with the IP address of your pi
 ```
 
 Install git (to pull the repo):
@@ -32,23 +32,33 @@ mkdir src; cd src
 # cloning the repo
 git clone https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
 cd raspberry-pi-kubernetes-cluster/OS
+```
+
+And now execute the scripts. Note that in between 1-4, your Pi will
+automatically reboot, so your connection will be dropped. Just `ssh pi@X.X.X.X`
+again to start the next step.
+
+```sh
+# Configuring Hostname and Expanding File System
 sudo ./SetupPiClusterOs-001.sh YourPreferredHostNameForThePi YourPreferredPasswordForThePiUserAccount
-
 # Reboots Pi
 
-sudo ./SetupPiClusterOs-002.sh
-
+# Update OS Packages and Install Docker
+cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-002.sh
 # Reboots Pi
 
-sudo ./SetupPiClusterOs-003.sh
-
+# Finish Docker Config and Install Compose; Create NFS Mount Paths; Setup Boot Options
+cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-003.sh
 # Reboots Pi
 
-# For Master Node:
-sudo ./SetupPiClusterOs-004-A.sh
+# ONLY CHOOSE ONE OF THE FOLLOWING BASED ON MASTER VS WORKER NODE
 
-# For Worker Nodes:
-sudo ./SetupPiClusterOs-004-B.sh
+# For Master Node - Install NFS Server and k3s:
+cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-004-A.sh
+
+# For Worker Nodes - Install NFS client, add mount entry, and mount share; install k3s worker node
+# X.X.X.X is the IP Address of your master, followed by the token from k3s:
+cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-004-B.sh X.X.X.X "Token from 004-A"
 ```
 
 ## Services
