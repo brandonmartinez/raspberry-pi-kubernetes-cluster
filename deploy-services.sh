@@ -34,14 +34,8 @@ kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.
 echo "Applying Portainer"
 kubectl apply -n portainer -f https://raw.githubusercontent.com/portainer/k8s/master/deploy/manifests/portainer/portainer-lb.yaml
 
-echo "Applying Namespaces"
-apply Services/01-namespaces.yml
+echo "Deploying Pi-Hole"
+apply Services/01-pihole.yml
 
-echo "Creating DNS Services"
-apply Services/02-dns.yml
-
-echo "Creating Pi-Hole Services"
-apply Services/03-pihole.yml
-
-echo "Configuring Ingress"
-apply Services/04-Ingress.yml
+echo "Deploying Homebridge"
+apply Services/02-homebridge.yml
