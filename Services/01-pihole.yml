@@ -43,8 +43,8 @@ spec:
               memory: "50Mi"
               cpu: "100m"
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: unbound-service
   namespace: pihole
@@ -63,8 +63,8 @@ spec:
       targetPort: 53
       protocol: TCP
 ---
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
   namespace: pihole
   name: pihole-pvc
@@ -149,23 +149,20 @@ spec:
           persistentVolumeClaim:
             claimName: pihole-pvc
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: pihole-ui-svc
   namespace: pihole
 spec:
   selector:
     app: pihole
-  type: ClusterIP
   ports:
     - name: 80-tcp
       port: 80
-      targetPort: 80
-      protocol: TCP
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: pihole-dns-svc
   namespace: pihole
@@ -233,12 +230,13 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - http:
+    - host: ${PIHOLE_HOSTNAME}
+      http:
         paths:
           - pathType: Prefix
-            path: "/admin"
+            path: /
             backend:
               service:
                 name: pihole-ui-svc
                 port:
-                  number: 80
+                  name: 80-tcp

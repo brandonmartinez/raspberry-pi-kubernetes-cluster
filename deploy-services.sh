@@ -18,6 +18,7 @@ set +o allexport
 export KUBECONFIG=$(pwd)/kubeconfig.yml
 chmod 600 "$KUBECONFIG"
 
+# TODO: https://kustomize.io
 function apply() {
     echo "Replacing environment variables and applying $1 via kubectl"
     envsubst < $1 | kubectl apply -f -
@@ -39,3 +40,6 @@ apply Services/01-pihole.yml
 
 echo "Deploying Homebridge"
 apply Services/02-homebridge.yml
+
+echo "Deploying DeepStack"
+apply Services/03-deepstack.yml
