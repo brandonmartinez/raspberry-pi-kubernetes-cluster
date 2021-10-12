@@ -5,6 +5,25 @@ metadata:
   labels:
     name: pihole
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unbound-a-records-configmap
+  namespace: pihole
+data:
+  a-records: |
+    # DeepStack Records
+    local-data: "${DEEPSTACK_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${DEEPSTACK_HOSTNAME}."
+
+    # Homebridge Records
+    local-data: "${HOMEBRIDGE_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${HOMEBRIDGE_HOSTNAME}."
+
+    # Pi-hole Records
+    local-data: "${PIHOLE_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${PIHOLE_HOSTNAME}."
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -42,6 +61,17 @@ spec:
             requests:
               memory: "50Mi"
               cpu: "100m"
+          volumeMounts:
+            - mountPath: /opt/unbound/etc/unbound/a-records.conf
+              name: unbound-a-records
+              subPath: a-records.conf
+      volumes:
+        - name: unbound-a-records
+          configMap:
+            name: unbound-a-records-configmap
+            items:
+              - key: a-records
+                path: a-records.conf
 ---
 apiVersion: v1
 kind: Service
@@ -83,7 +113,7 @@ metadata:
   namespace: pihole
 data:
   TZ: "${TIMEZONE}"
-  ADMIN_EMAIL: "<${PIHOLE_ADMINEMAIL}>"
+  ADMIN_EMAIL: "${PIHOLE_ADMINEMAIL}"
   DNS1: "10.43.0.20"
   DNS2: "10.43.0.20"
 ---

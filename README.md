@@ -67,3 +67,11 @@ Pre-reqs:
 
 1. Local install of `kubectl`
 2. Local install of `helm`
+
+## Additional Tips
+
+### Ubiquiti Hardware and DNS
+
+If your Ubiquiti gear (e.g., UDM Pro) is not allowing for local DNS to resolve
+properly (such as `*.home.arpa` domains), try creating records via `iptables`
+like in this [guide](https://scotthelme.co.uk/catching-and-dealing-with-naughty-devices-on-my-home-network-v2/).
