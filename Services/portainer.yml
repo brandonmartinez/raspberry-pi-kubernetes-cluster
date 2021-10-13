@@ -5,84 +5,21 @@ kind: Namespace
 metadata:
   name: portainer
 ---
-# Source: portainer/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: portainer-sa-clusteradmin
-  namespace: portainer
-  labels:
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "ce-latest-ee-2.7.0"
----
 # Source: portainer/templates/pvc.yaml
-apiVersion: "v1"
-kind: "PersistentVolumeClaim"
+apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: portainer
   namespace: portainer
-  annotations:
-    volume.alpha.kubernetes.io/storage-class: "generic"
+  name: portainer-pvc
   labels:
-    io.portainer.kubernetes.application.stack: portainer
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "ce-latest-ee-2.7.0"
+    app: portainer
 spec:
+  storageClassName: nfs
   accessModes:
-    - "ReadWriteOnce"
+    - ReadWriteMany
   resources:
     requests:
-      storage: "10Gi"
----
-# Source: portainer/templates/rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: portainer
-  labels:
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "ce-latest-ee-2.7.0"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    namespace: portainer
-    name: portainer-sa-clusteradmin
----
-# Source: portainer/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: portainer
-  namespace: portainer
-  labels:
-    io.portainer.kubernetes.application.stack: portainer
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "ce-latest-ee-2.7.0"
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 9090
-      targetPort: 9000
-      protocol: TCP
-      name: http
-    - port: 9443
-      targetPort: 9443
-      protocol: TCP
-      name: https
-    - port: 8088
-      targetPort: 8000
-      protocol: TCP
-      name: edge
-  selector:
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
+      storage: 1Gi
 ---
 # Source: portainer/templates/deployment.yaml
 apiVersion: apps/v1
@@ -91,59 +28,64 @@ metadata:
   name: portainer
   namespace: portainer
   labels:
-    io.portainer.kubernetes.application.stack: portainer
-    app.kubernetes.io/name: portainer
-    app.kubernetes.io/instance: portainer
-    app.kubernetes.io/version: "ce-latest-ee-2.7.0"
+    app: portainer
 spec:
   replicas: 1
-  strategy:
-    type: "Recreate"
   selector:
     matchLabels:
-      app.kubernetes.io/name: portainer
-      app.kubernetes.io/instance: portainer
+      app: portainer
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: portainer
-        app.kubernetes.io/instance: portainer
+        app: portainer
     spec:
-      nodeSelector: {}
-      serviceAccountName: portainer-sa-clusteradmin
       volumes:
         - name: "data"
           persistentVolumeClaim:
-            claimName: portainer
+            claimName: portainer-pvc
       containers:
         - name: portainer
           image: "portainer/portainer-ce:latest"
           imagePullPolicy: Always
-          args:
           volumeMounts:
             - name: data
               mountPath: /data
           ports:
-            - name: http
-              containerPort: 9090
-              protocol: TCP
-            - name: https
+            - name: svc-9000-http
+              containerPort: 9000
+            - name: svc-9443-https
               containerPort: 9443
-              protocol: TCP
-            - name: tcp-edge
-              containerPort: 8088
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 9443
-              scheme: HTTPS
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 9443
-              scheme: HTTPS
-          resources: {}
+            - name: svc-8000-edge
+              containerPort: 8000
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9443
+          #     scheme: HTTPS
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9443
+          #     scheme: HTTPS
+          resources:
+            limits:
+              memory: "256M"
+              cpu: "1"
+---
+# Source: portainer/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer-ui-svc
+  namespace: portainer
+  labels:
+    app: portainer
+spec:
+  selector:
+    app: portainer
+  ports:
+    - port: 9000
+      name: 9000-tcp
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -163,4 +105,4 @@ spec:
               service:
                 name: portainer-ui-svc
                 port:
-                  name: 8081-tcp
+                  name: 9000-tcp

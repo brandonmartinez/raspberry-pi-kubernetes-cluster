@@ -23,6 +23,10 @@ data:
     # Pi-hole Records
     local-data: "${PIHOLE_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
     local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${PIHOLE_HOSTNAME}."
+
+    # Portainer Records
+    local-data: "${PORTAINER_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${PORTAINER_HOSTNAME}."
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -264,7 +268,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: /
+            path: /admin
             backend:
               service:
                 name: pihole-ui-svc

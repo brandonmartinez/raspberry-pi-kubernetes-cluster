@@ -35,7 +35,7 @@ function log () {
 # TODO: https://kustomize.io
 function apply () {
     log "Replacing environment variables and applying $1 via kubectl"
-    envsubst < Services/$1.yml | kubectl apply -f -
+    envsubst < Services/$1.yml | kubectl apply -f - | grep -v "unchanged"
 }
 
 ##################################################
@@ -56,7 +56,7 @@ section "Deploying Service Stacks"
 ##################################################
 log "Creating network services to be consumed by cluster and network-wide resources."
 
-SERVICES_TO_DEPLOY=("portainer" "pihole" "homebridge" "deepstack")
+SERVICES_TO_DEPLOY=("pihole" "portainer" "homebridge" "deepstack")
 
 for t in ${SERVICES_TO_DEPLOY[@]}; do
     section "Deploying Service Stack: $t"
