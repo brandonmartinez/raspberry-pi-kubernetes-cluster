@@ -35,7 +35,7 @@ function log () {
 # TODO: https://kustomize.io
 function apply () {
     log "Replacing environment variables and applying $1 via kubectl"
-    envsubst < Services/$1.yml | kubectl apply -f - | grep -v "unchanged"
+    envsubst < Services/$1.yml | kubectl apply -f -
 }
 
 ##################################################
@@ -50,6 +50,10 @@ section "Setting NFS as the Default Storage Class"
 ##################################################
 kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
+##################################################
+section "Assigning homebridge label to $CLUSTER_HOSTNAME"
+##################################################
+kubectl label nodes $CLUSTER_HOSTNAME homebridge=true --overwrite
 
 ##################################################
 section "Deploying Service Stacks"

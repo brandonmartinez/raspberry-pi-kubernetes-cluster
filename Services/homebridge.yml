@@ -49,8 +49,8 @@ spec:
       labels:
         app: homebridge
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        homebridge: "true"
       containers:
         - name: homebridge
           image: docker.io/oznu/homebridge:latest

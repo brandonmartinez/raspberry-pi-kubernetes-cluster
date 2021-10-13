@@ -22,13 +22,13 @@ cat <<EOF > "${name}.service"
     <type>_hap._tcp</type>
     <port>$port</port>
     <!-- friendly name -->
-    <txt-record>md=$name</txt-record>
+    <txt-record>md=homebridge</txt-record>
     <!-- HAP version -->
-    <txt-record>pv=1.0</txt-record>
+    <txt-record>pv=1.1</txt-record>
     <!-- MAC -->
     <txt-record>id=${mac_address}</txt-record>
     <!-- Current configuration number -->
-    <txt-record>c#=2</txt-record>
+    <txt-record>c#=250</txt-record>
     <!-- accessory category -->
     <txt-record>ci=${accessory_category}</txt-record>
     <!-- accessory state
