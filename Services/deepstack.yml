@@ -52,7 +52,7 @@ metadata:
     app: deepstack
 spec:
   # TODO: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: deepstack

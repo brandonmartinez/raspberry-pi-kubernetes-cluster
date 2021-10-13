@@ -13,7 +13,7 @@ a Raspberry Pi 4B with no modifications besides adding the `ssh` file to the
 To configure the RPi, login via ssh:
 
 ```sh
-ssh-copy-id ~/.ssh/id_rsa.pub pi@X.X.X.X # use your SSH key and the IP of the pi
+ssh-copy-id -i ~/.ssh/id_rsa.pub pi@X.X.X.X # use your SSH key and the IP of the pi
 ssh pi@X.X.X.X #replace with the IP address of your pi
 ```
 

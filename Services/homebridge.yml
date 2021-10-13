@@ -1,0 +1,192 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homebridge
+  labels:
+    name: homebridge
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: homebridge
+  name: homebridge-pvc
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homebridge-configmap
+  namespace: homebridge
+data:
+  TZ: "${TIMEZONE}"
+  PGID: "${PGID}"
+  PUID: "${PUID}"
+  HOMEBRIDGE_CONFIG_UI_PORT: "8081"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: homebridge
+  namespace: homebridge
+  labels:
+    app: homebridge
+spec:
+  serviceName: "homebridge"
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: homebridge
+  template:
+    metadata:
+      labels:
+        app: homebridge
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: homebridge
+          image: docker.io/oznu/homebridge:latest
+          envFrom:
+            - configMapRef:
+                name: homebridge-configmap
+          resources:
+            limits:
+              memory: "1024M"
+              cpu: "2"
+            requests:
+              memory: "512M"
+              cpu: "1"
+          ports:
+            - name: svc-ui
+              containerPort: 8081
+            - name: svc-${HOMEBRIDGE_PORT}-tcp
+              containerPort: ${HOMEBRIDGE_PORT}
+            - name: svc-${HOMEBRIDGE_PORT}-udp
+              containerPort: ${HOMEBRIDGE_PORT}
+              protocol: UDP
+            - name: svc-5353-tcp
+              containerPort: 5353
+            - name: svc-5353-udp
+              containerPort: 5353
+              protocol: UDP
+          volumeMounts:
+            - mountPath: /homebridge
+              name: homebridge-root
+      volumes:
+        - name: homebridge-root
+          persistentVolumeClaim:
+            claimName: homebridge-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-ui-svc
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  ports:
+    - name: 8081-tcp
+      port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-${HOMEBRIDGE_PORT}-tcp
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: ${HOMEBRIDGE_PORT}-tcp
+      port: ${HOMEBRIDGE_PORT}
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-${HOMEBRIDGE_PORT}-udp
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: ${HOMEBRIDGE_PORT}-udp
+      port: ${HOMEBRIDGE_PORT}
+      protocol: UDP
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-5353-udp
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: 5353-udp
+      port: 5353
+      protocol: UDP
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-5353-tcp
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: 5353-tcp
+      port: 5353
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homebridge-ingress
+  namespace: homebridge
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: ${HOMEBRIDGE_HOSTNAME}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: homebridge-ui-svc
+                port:
+                  name: 8081-tcp

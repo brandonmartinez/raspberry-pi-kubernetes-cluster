@@ -17,6 +17,9 @@ echo "/clusterfs      $FULL_NET_ADDRESS(rw,sync,no_root_squash,no_subtree_check)
 
 exportfs -a
 
+echo "Installing Additional Tools"
+apt install jq avahi-utils -y
+
 echo "Installing k3s"
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
 
