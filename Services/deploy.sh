@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
 ##################################################
-# Before running this script, copy the k3s.yaml  #
-# file from the remote cluster. You can do that  #
-# from the remote pi with this command:          #
-# cat /etc/rancher/k3s/k3s.yaml                  #
-# Also, copy the .env.sample to .env and update  #
-# the values any of your choosing                #
+# Before running this script, copy the
+# .env.sample to .env and update the values any of
+# your choosing
 ##################################################
 
 set -e
@@ -14,9 +11,6 @@ set -e
 set -o allexport
 source .env
 set +o allexport
-
-export KUBECONFIG=$(pwd)/kubeconfig.yml
-chmod 600 "$KUBECONFIG"
 
 YELLOW='\033[1;33m'
 GRAY='\033[1;30m'
@@ -35,8 +29,14 @@ function log () {
 # TODO: https://kustomize.io
 function apply () {
     log "Replacing environment variables and applying $1 via kubectl"
-    envsubst < Services/$1.yml | kubectl apply -f -
+    envsubst < $1.yml | kubectl apply -f -
 }
+
+scp pi@$CLUSTER_HOSTNETWORKINGIPADDRESS:/etc/rancher/k3s/k3s.yaml kubeconfig.yml > /dev/null
+sed -i '' "s/127.0.0.1/$CLUSTER_HOSTNETWORKINGIPADDRESS/g" kubeconfig.yml
+
+export KUBECONFIG=$(pwd)/kubeconfig.yml
+chmod 600 "$KUBECONFIG"
 
 ##################################################
 section "Adding Rancher Local Path Provisioner"
@@ -54,6 +54,8 @@ kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.
 section "Assigning homebridge label to $CLUSTER_HOSTNAME"
 ##################################################
 kubectl label nodes $CLUSTER_HOSTNAME homebridge=true --overwrite
+
+# TODO: https://github.com/carlosedp/cluster-monitoring
 
 ##################################################
 section "Deploying Service Stacks"
