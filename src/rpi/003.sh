@@ -5,22 +5,29 @@
 # SetupPiClusterOs-002.sh                        #
 ##################################################
 
-echo "Adding pi User to Docker Group"
+set -e
+
+set -o allexport
+source ../../.env
+source ../_shared/echo.sh
+set +o allexport
+
+section "Adding pi User to Docker Group"
 usermod -aG docker pi
 
-echo "Installing Docker Compose"
+section "Installing Docker Compose"
 apt-get install -y libffi-dev libssl-dev
 apt-get install -y python3 python3-pip
 apt-get remove python-configparser
 pip3 -v install docker-compose
 
-echo "Creating Shared Storage Area"
+section "Creating Shared Storage Area"
 mkdir /clusterfs
 chown nobody.nogroup -R /clusterfs
 chmod 777 -R /clusterfs
 
-echo "Adding Boot Options"
+section "Adding Boot Options"
 sed -i "s/rootwait/rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/g" /boot/cmdline.txt
 
-echo "Rebooting"
+section "Rebooting"
 reboot

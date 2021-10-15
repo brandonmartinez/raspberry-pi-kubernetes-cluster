@@ -5,7 +5,14 @@
 # SetupPiClusterOs-003.sh                        #
 ##################################################
 
-echo "Installing NFS Server and Exposing Share"
+set -e
+
+set -o allexport
+source ../../.env
+source ../_shared/echo.sh
+set +o allexport
+
+section "Installing NFS Server and Exposing Share"
 apt install nfs-kernel-server -y
 
 GATEWAY_ADDRESS=$(route -n | grep -E '255.*eth0' | grep -o -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
@@ -17,20 +24,20 @@ echo "/clusterfs      $FULL_NET_ADDRESS(rw,sync,no_root_squash,no_subtree_check)
 
 exportfs -a
 
-echo "Installing Additional Tools"
+section "Installing Additional Tools"
 apt install jq avahi-utils -y
 
-echo "Installing k3s"
+section "Installing k3s"
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
 
-echo "Enabling Traefik Dashboard"
+section "Enabling Traefik Dashboard"
 echo "    dashboard:" | tee -a /var/lib/rancher/k3s/server/manifests/traefik.yaml > /dev/null
 echo "      enabled: true" | tee -a /var/lib/rancher/k3s/server/manifests/traefik.yaml > /dev/null
 
-echo "Installing Helm"
+section "Installing Helm"
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-echo "Installing NFS Support for k3s"
+section "Installing NFS Support for k3s"
 
 tee -a /var/lib/rancher/k3s/server/manifests/nfs.yaml << EOF > /dev/null
 apiVersion: helm.cattle.io/v1
@@ -49,5 +56,5 @@ spec:
     storageClass.reclaimPolicy: Retain
 EOF
 
-echo "Finished Installing k3s - Use the Following Token to Add Nodes"
+section "Finished Installing k3s - Use the Following Token to Add Nodes"
 cat /var/lib/rancher/k3s/server/token

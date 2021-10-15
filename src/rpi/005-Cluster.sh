@@ -5,3 +5,9 @@
 # SetupPiClusterOs-004-A.sh                      #
 ##################################################
 
+set -e
+
+set -o allexport
+source ../../.env
+source ../_shared/echo.sh
+set +o allexport

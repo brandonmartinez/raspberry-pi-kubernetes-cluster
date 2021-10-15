@@ -5,9 +5,16 @@
 # SetupPiClusterOs-001.sh                        #
 ##################################################
 
-echo "Updating Packages"
+set -e
+
+set -o allexport
+source ../../.env
+source ../_shared/echo.sh
+set +o allexport
+
+section "Updating Packages"
 apt-get update && apt-get -y upgrade
 
-echo "Installing Docker"
+section "Installing Docker"
 curl -sSL https://get.docker.com | sh
 reboot
