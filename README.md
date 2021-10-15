@@ -113,6 +113,12 @@ Kubernetes (k3s) cluster.
 cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005-Cluster.sh
 ```
 
+## Network Setup
+
+Now that you have a Kubernetes cluster running with network wide services, be
+sure to update your router or DHCP server to point to your new Pi-hole DNS
+server. Use your primary cluster node's IP address as the DNS server.
+
 ## Additional Tips
 
 ### Ubiquiti Hardware and DNS

@@ -32,4 +32,11 @@ log "Moving into folder cluster-monitoring"
 
 cd cluster-monitoring
 
+log "Substituting pre-setup vars.jsonnet file with local environment variables"
 envsubst < ../../src/_misc/cluster-monitoring.jsonnet > vars.jsonnet
+
+log "Building manifests for cluster monitoring"
+make docker
+
+log "Deploying manifests"
+make deploy
