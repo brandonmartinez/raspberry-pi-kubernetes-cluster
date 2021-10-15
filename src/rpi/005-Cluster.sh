@@ -32,4 +32,4 @@ log "Moving into folder cluster-monitoring"
 
 cd cluster-monitoring
 
-
+envsubst < ../../src/_misc/cluster-monitoring.jsonnet > vars.jsonnet

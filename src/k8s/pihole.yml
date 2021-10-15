@@ -129,7 +129,7 @@ metadata:
   namespace: pihole
 data:
   TZ: "${TIMEZONE}"
-  ADMIN_EMAIL: "${PIHOLE_ADMINEMAIL}"
+  ADMIN_EMAIL: "${REPLY_EMAIL}"
   DNS1: "10.43.0.20"
   DNS2: "10.43.0.20"
 ---
