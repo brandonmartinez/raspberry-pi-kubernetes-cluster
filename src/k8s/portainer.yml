@@ -122,7 +122,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: ${PORTAINER_HOSTNAME}
+    - host: portainer.${NETWORK_HOSTNAME_SUFFIX}
       http:
         paths:
           - pathType: Prefix

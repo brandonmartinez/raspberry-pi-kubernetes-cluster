@@ -10,4 +10,26 @@ set -e
 set -o allexport
 source ../../.env
 source ../_shared/echo.sh
+source ../k8s/deploy.sh
 set +o allexport
+
+section "Moving to k8s directory"
+cd ../k8s
+
+deploy
+
+section "Moving to .tmp directory"
+
+cd ../../.tmp
+
+section "Deploying carlosedp/cluster-monitoring"
+
+log "Cloning from GitHub"
+
+git clone https://github.com/carlosedp/cluster-monitoring.git
+
+log "Moving into folder cluster-monitoring"
+
+cd cluster-monitoring
+
+

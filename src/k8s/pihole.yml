@@ -13,20 +13,32 @@ metadata:
 data:
   a-records: |
     # DeepStack Records
-    local-data: "${DEEPSTACK_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${DEEPSTACK_HOSTNAME}."
+    local-data: "deepstack.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} deepstack.${NETWORK_HOSTNAME_SUFFIX}."
 
     # Homebridge Records
-    local-data: "${HOMEBRIDGE_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${HOMEBRIDGE_HOSTNAME}."
+    local-data: "homebridge.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} homebridge.${NETWORK_HOSTNAME_SUFFIX}."
 
     # Pi-hole Records
-    local-data: "${PIHOLE_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${PIHOLE_HOSTNAME}."
+    local-data: "pihole.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} pihole.${NETWORK_HOSTNAME_SUFFIX}."
 
     # Portainer Records
-    local-data: "${PORTAINER_HOSTNAME}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} ${PORTAINER_HOSTNAME}."
+    local-data: "portainer.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} portainer.${NETWORK_HOSTNAME_SUFFIX}."
+
+    # Grafana Records
+    local-data: "grafana.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} grafana.${NETWORK_HOSTNAME_SUFFIX}."
+
+    # Prometheus Records
+    local-data: "prometheus.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} prometheus.${NETWORK_HOSTNAME_SUFFIX}."
+
+    # Alert Manager Records
+    local-data: "alertmanager.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} alertmanager.${NETWORK_HOSTNAME_SUFFIX}."
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -264,7 +276,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: ${PIHOLE_HOSTNAME}
+    - host: pihole.${NETWORK_HOSTNAME_SUFFIX}
       http:
         paths:
           - pathType: Prefix

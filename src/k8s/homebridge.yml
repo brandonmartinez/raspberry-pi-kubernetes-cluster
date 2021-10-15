@@ -180,7 +180,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: ${HOMEBRIDGE_HOSTNAME}
+    - host: homebridge.${NETWORK_HOSTNAME_SUFFIX}
       http:
         paths:
           - pathType: Prefix
