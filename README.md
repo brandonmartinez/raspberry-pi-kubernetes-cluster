@@ -17,6 +17,9 @@ A set of scripts to configure a Raspberry Pi 4 as a Kubernetes cluster.
 
 ## Configure Raspberry Pi Cluster and Nodes to Execute Scripts
 
+The following steps will need to be executed on every RPi that will be a part of
+your cluster.
+
 To configure the RPi, login via ssh:
 
 ```sh
@@ -42,45 +45,72 @@ cd raspberry-pi-kubernetes-cluster/
 # Copy the .env.sample to a local editable file
 cp .env.sample .env
 
-# Edit the new .env file, replacing values with your preferences;
-# these will be used in future scripts to avoid passing parameters
+# Edit the new .env file, replacing values with your preferences
 # When you're done editing, ctrl+o to save, ctrl+x to quite nano
 nano .env
+
+# return home
+cd ~
 ```
 
 ## Run Installation Scripts
 
-Scripts in the `src/rpi` folder are meant to be executed in order. Each script
-requires a reboot in-between, thus the need for separate files. Scripts must be
-executed with `sudo`, and assume a fresh install of Raspberry Pi OS (64-bit) on
-a Raspberry Pi 4B with no modifications besides adding the `ssh` file to the
-`boot` volume to enable remote access.
+Scripts in the `src/rpi` folder are meant to be executed in order. Most scripts
+require a reboot in-between, thus the need for separate files. Scripts must be
+executed with `sudo`.
 
-And now execute the scripts. Note that in between 1-4, your Pi will
-automatically reboot, so your connection will be dropped. Just `ssh pi@X.X.X.X`
-again to start the next step.
+Time to start executing our scripts.
 
 ```sh
 # Configuring Hostname and Expanding File System
-sudo ./001.sh YourPreferredHostNameForThePi YourPreferredPasswordForThePiUserAccount
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./001.sh YourPreferredHostNameForThePi YourPreferredPasswordForThePiUserAccount
 # Reboots Pi
+```
 
+Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
+
+```sh
 # Update OS Packages and Install Docker
 cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./002.sh
 # Reboots Pi
+```
 
+Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
+
+```sh
 # Finish Docker Config and Install Compose; Create NFS Mount Paths; Setup Boot Options
 cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./003.sh
 # Reboots Pi
+```
 
-# ONLY CHOOSE ONE OF THE FOLLOWING BASED ON MASTER VS WORKER NODE
+Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address. The
+next steps will be different based on the primary cluster node vs worker nodes.
+Only execute the relevant scripts!
 
+### Primary Cluster Node
+
+```sh
 # For Master Node/Cluster - Install NFS Server and k3s:
 cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Cluster.sh
+# Copy the output from the last script, it will be needed for worker nodes
+```
 
+### Worker Nodes
+
+```sh
 # For Worker Nodes - Install NFS client, add mount entry, and mount share; install k3s worker node
 # X.X.X.X is the IP Address of your master, followed by the token from k3s:
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Node.sh X.X.X.X "Token from 004-A"
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Node.sh X.X.X.X "Token from 004-Cluster"
+```
+
+### Deploy Network Services (from Primary Cluster Node)
+
+After all nodes have been setup and configured, run the following on the primary
+cluster node. This will deploy a handful of services to the newly setup
+Kubernetes (k3s) cluster.
+
+```sh
+cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005-Cluster.sh
 ```
 
 ## Additional Tips
