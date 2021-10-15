@@ -44,21 +44,21 @@ sudo ./SetupPiClusterOs-001.sh YourPreferredHostNameForThePi YourPreferredPasswo
 # Reboots Pi
 
 # Update OS Packages and Install Docker
-cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-002.sh
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./SetupPiClusterOs-002.sh
 # Reboots Pi
 
 # Finish Docker Config and Install Compose; Create NFS Mount Paths; Setup Boot Options
-cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-003.sh
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./SetupPiClusterOs-003.sh
 # Reboots Pi
 
 # ONLY CHOOSE ONE OF THE FOLLOWING BASED ON MASTER VS WORKER NODE
 
 # For Master Node - Install NFS Server and k3s:
-cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-004-A.sh
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./SetupPiClusterOs-004-A.sh
 
 # For Worker Nodes - Install NFS client, add mount entry, and mount share; install k3s worker node
 # X.X.X.X is the IP Address of your master, followed by the token from k3s:
-cd src/raspberry-pi-kubernetes-cluster/OS/; sudo ./SetupPiClusterOs-004-B.sh X.X.X.X "Token from 004-A"
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./SetupPiClusterOs-004-B.sh X.X.X.X "Token from 004-A"
 ```
 
 ## Services
