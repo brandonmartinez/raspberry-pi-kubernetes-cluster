@@ -12,7 +12,7 @@
     },
     {
       name: 'armExporter',
-      enabled: false,
+      enabled: true,
       file: import 'modules/arm_exporter.jsonnet',
     },
     {
@@ -60,8 +60,8 @@
   // Persistent volume configuration
   enablePersistence: {
     // Setting these to false, defaults to emptyDirs.
-    prometheus: false,
-    grafana: false,
+    prometheus: true,
+    grafana: true,
     // If using a pre-created PV, fill in the names below. If blank, they will use the default StorageClass
     prometheusPV: '',
     grafanaPV: '',
@@ -69,7 +69,7 @@
     storageClass: '',
     // Define the PV sizes below
     prometheusSizePV: '2Gi',
-    grafanaSizePV: '20Gi',
+    grafanaSizePV: '10Gi',
   },
 
   // Configuration for Prometheus deployment
@@ -83,7 +83,7 @@
     from_address: '${REPLY_EMAIL}',
     // Plugins to be installed at runtime.
     //Ex. plugins: ['grafana-piechart-panel', 'grafana-clock-panel'],
-    plugins: [],
+    plugins: ['grafana-piechart-panel', 'grafana-clock-panel'],
     //Ex. env: [ { name: 'http_proxy', value: 'host:8080' } ]
     env: []
   },
