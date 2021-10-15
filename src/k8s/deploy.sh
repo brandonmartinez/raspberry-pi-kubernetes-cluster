@@ -7,6 +7,9 @@ source ../../.env
 source ../_shared/echo.sh
 set +o allexport
 
+# Pi-hole password needs to be base64 encoded
+PIHOLE_PASSWORD=$(echo $PIHOLE_PASSWORD | base64 -)
+
 # TODO: https://kustomize.io
 function apply () {
     log "Replacing environment variables and applying $1 via kubectl"
