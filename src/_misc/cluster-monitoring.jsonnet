@@ -66,7 +66,7 @@
     prometheusPV: '',
     grafanaPV: '',
     // If required to use a specific storageClass, keep the PV names above blank and fill the storageClass name below.
-    storageClass: '',
+    storageClass: 'nfs',
     // Define the PV sizes below
     prometheusSizePV: '2Gi',
     grafanaSizePV: '10Gi',
