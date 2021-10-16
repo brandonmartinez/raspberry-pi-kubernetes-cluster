@@ -27,7 +27,10 @@ chown nobody.nogroup -R /clusterfs
 chmod 777 -R /clusterfs
 
 section "Adding Boot Options"
-sed -i "s/rootwait/rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/g" /boot/cmdline.txt
+sed -i "s/rootwait/rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1 ipv6.disable=1/g" /boot/cmdline.txt
+# disabling ipv6 for better homebridge support per https://github.com/homebridge/homebridge/issues/2089
+sed -i "s/use-ipv6=yes/use-ipv6=no/g" /etc/avahi/avahi-daemon.conf
+sed -i "s/#allow-interfaces=eth0/allow-interfaces=eth0/g" /etc/avahi/avahi-daemon.conf
 
 section "Rebooting"
 reboot

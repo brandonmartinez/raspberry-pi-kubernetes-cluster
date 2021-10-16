@@ -95,8 +95,8 @@ spec:
           #     scheme: HTTPS
           resources:
             limits:
-              memory: "256M"
-              cpu: "1"
+              memory: "1024M"
+              cpu: "2"
 ---
 # Source: portainer/templates/service.yaml
 apiVersion: v1
