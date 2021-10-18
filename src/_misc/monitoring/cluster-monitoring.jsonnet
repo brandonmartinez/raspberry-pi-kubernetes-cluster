@@ -31,6 +31,11 @@
       file: import 'modules/nginx.jsonnet',
     },
     {
+      name: 'wmiExporter',
+      enabled: true,
+      file: import 'modules/wmi_exporter.jsonnet',
+    },
+    {
       name: 'traefikExporter',
       enabled: true,
       file: import 'modules/traefik.jsonnet',
