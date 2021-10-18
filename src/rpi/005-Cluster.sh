@@ -35,7 +35,7 @@ cd cluster-monitoring
 log "Substituting pre-setup vars.jsonnet file with local environment variables"
 envsubst < ../../src/_misc/monitoring/cluster-monitoring.jsonnet > vars.jsonnet
 envsubst < ../../src/_misc/monitoring/wmi_exporter.jsonnet > modules/wmi_exporter.jsonnet
-envsubst < ../../src/_misc/monitoring/wmi-dashboard.json > grafana-dashboard/wmi-dashboard.json
+envsubst < ../../src/_misc/monitoring/wmi-dashboard.json > grafana-dashboards/wmi-dashboard.json
 
 log "Building manifests for cluster monitoring"
 make docker
