@@ -32,7 +32,7 @@
   "annotations": {
     "list": []
   },
-  "description": "General stats dashboard with node selector, uses metrics from wmi_exporter",
+  "description": "General stats dashboard with node selector, uses metrics from windows_exporter",
   "editable": true,
   "gnetId": 2129,
   "graphTooltip": 1,
@@ -82,7 +82,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "sum by (mode) (rate(wmi_cpu_time_total{instance=~\"$server\"}[5m]))",
+              "expr": "sum by (mode) (rate(windows_cpu_time_total{instance=~\"$server\"}[5m]))",
               "functions": [],
               "group": {
                 "filter": ""
@@ -175,7 +175,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "wmi_system_threads{instance=~\"$server\"}",
+              "expr": "windows_system_threads{instance=~\"$server\"}",
               "functions": [],
               "group": {
                 "filter": ""
@@ -268,7 +268,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "rate(wmi_system_exception_dispatches_total{instance=~\"$server\"}[$interval])",
+              "expr": "rate(windows_system_exception_dispatches_total{instance=~\"$server\"}[$interval])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -373,7 +373,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "irate(wmi_net_packets_outbound_discarded{instance=~\"$server\", nic!~\"isatap.+\"}[$interval]) + irate(wmi_net_packets_outbound_errors{instance=~\"$server\"}[$interval])",
+              "expr": "irate(windows_net_packets_outbound_discarded{instance=~\"$server\", nic!~\"isatap.+\"}[$interval]) + irate(windows_net_packets_outbound_errors{instance=~\"$server\"}[$interval])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -399,7 +399,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "irate(wmi_net_packets_received_discarded{instance=~\"$server\", nic!~\"isatap.+\"}[$interval]) + irate(wmi_net_packets_received_errors{instance=~\"$server\"}[$interval])",
+              "expr": "irate(windows_net_packets_received_discarded{instance=~\"$server\", nic!~\"isatap.+\"}[$interval]) + irate(windows_net_packets_received_errors{instance=~\"$server\"}[$interval])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -492,7 +492,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "rate(wmi_net_bytes_sent_total{instance=~\"$server\"}[$interval]) >0",
+              "expr": "rate(windows_net_bytes_sent_total{instance=~\"$server\"}[$interval]) >0",
               "functions": [],
               "group": {
                 "filter": ""
@@ -518,7 +518,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "- rate(wmi_net_bytes_received_total{instance=~\"$server\"}[$interval]) <0",
+              "expr": "- rate(windows_net_bytes_received_total{instance=~\"$server\"}[$interval]) <0",
               "functions": [],
               "group": {
                 "filter": ""
@@ -623,7 +623,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "irate(wmi_logical_disk_write_bytes_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[$interval])",
+              "expr": "irate(windows_logical_disk_write_bytes_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[$interval])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -649,7 +649,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "- irate(wmi_logical_disk_read_bytes_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[$interval])",
+              "expr": "- irate(windows_logical_disk_read_bytes_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[$interval])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -742,7 +742,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "rate(wmi_logical_disk_split_ios_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[30s])",
+              "expr": "rate(windows_logical_disk_split_ios_total{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}[30s])",
               "functions": [],
               "group": {
                 "filter": ""
@@ -835,7 +835,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "wmi_logical_disk_free_bytes{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}",
+              "expr": "windows_logical_disk_free_bytes{instance=~\"$server\", volume !~\"HarddiskVolume.+\"}",
               "functions": [],
               "group": {
                 "filter": ""
@@ -940,7 +940,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "wmi_os_virtual_memory_bytes{instance=~\"$server\"}",
+              "expr": "windows_os_virtual_memory_bytes{instance=~\"$server\"}",
               "functions": [],
               "group": {
                 "filter": ""
@@ -966,7 +966,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "wmi_cs_physical_memory_bytes{instance=~\"$server\"}",
+              "expr": "windows_cs_physical_memory_bytes{instance=~\"$server\"}",
               "functions": [],
               "group": {
                 "filter": ""
@@ -992,7 +992,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "wmi_os_physical_memory_free_bytes{instance=~\"$server\"}",
+              "expr": "windows_os_physical_memory_free_bytes{instance=~\"$server\"}",
               "functions": [],
               "group": {
                 "filter": ""
@@ -1099,7 +1099,7 @@
               "application": {
                 "filter": ""
               },
-              "expr": "sum(wmi_service_state{instance=~\"$server\"}) by (state)",
+              "expr": "sum(windows_service_state{instance=~\"$server\"}) by (state)",
               "functions": [],
               "group": {
                 "filter": ""
@@ -1168,7 +1168,7 @@
   "style": "dark",
   "tags": [
     "windows",
-    "wmi_exporter",
+    "windows_exporter",
     "prometheus"
   ],
   "templating": {
@@ -1205,7 +1205,7 @@
         "multi": false,
         "name": "server",
         "options": [],
-        "query": "label_values(wmi_system_system_up_time, instance)",
+        "query": "label_values(windows_system_system_up_time, instance)",
         "refresh": 1,
         "regex": "",
         "sort": 0,
