@@ -36,6 +36,11 @@
       file: import 'modules/wmi_exporter.jsonnet',
     },
     {
+      name: 'piholeExporter',
+      enabled: true,
+      file: import 'modules/pihole_exporter.jsonnet',
+    },
+    {
       name: 'traefikExporter',
       enabled: true,
       file: import 'modules/traefik.jsonnet',

@@ -39,7 +39,7 @@ function deploy() {
     ##################################################
     log "Creating network services to be consumed by cluster and network-wide resources."
     
-    SERVICES_TO_DEPLOY=("pihole" "portainer" "homebridge" "deepstack")
+    SERVICES_TO_DEPLOY=("pihole" "pihole-exporter" "portainer" "homebridge" "deepstack")
     
     for t in ${SERVICES_TO_DEPLOY[@]}; do
         section "Deploying Service Stack: $t"

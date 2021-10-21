@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-exporter-configmap
+  namespace: pihole
+data:
+  # TODO: just use a dedicated cluster IP here instead of routing through the frontend
+  PIHOLE_HOSTNAME: "pihole.${NETWORK_HOSTNAME_SUFFIX}"
+  INTERVAL: "30s"
+  PORT: "9617"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pihole-exporter-secret
+  namespace: pihole
+data:
+  PIHOLE_PASSWORD: ${PIHOLE_PASSWORD}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pihole-exporter
+  namespace: pihole
+  labels:
+    app: pihole-exporter
+spec:
+  serviceName: pihole-exporter
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: pihole-exporter
+  template:
+    metadata:
+      labels:
+        app: pihole-exporter
+    spec:
+      containers:
+        - name: pihole-exporter
+          image: ekofr/pihole-exporter:v0.0.11
+          envFrom:
+            - configMapRef:
+                name: pihole-exporter-configmap
+            - secretRef:
+                name: pihole-exporter-secret
+          ports:
+            - name: svc-9617-tcp
+              containerPort: 9617
+      volumes:
+        - name: pihole-etc
+          persistentVolumeClaim:
+            claimName: pihole-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-exporter-tcp
+  namespace: pihole
+spec:
+  selector:
+    app: pihole-exporter
+  ports:
+    - name: 9617-tcp
+      port: 9617
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
