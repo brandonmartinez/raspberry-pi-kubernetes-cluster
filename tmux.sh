@@ -29,13 +29,15 @@ then
     tmux rename-window -t $SESSION Shell
     tmux send-keys -t $SESSION:Shell "cd '$(PWD)'" C-m "export KUBECONFIG=\"$(pwd)/kubeconfig.yml\"" C-m "clear" C-m "kubectl get namespaces" C-m
     
-    # Create a Window for Cluster
+    log "Create a Window for Cluster $CLUSTER_HOSTNAME"
     tmux new-window -t $SESSION -n $CLUSTER_HOSTNAME -c "$(PWD)"
     tmux send-keys -t $SESSION:$CLUSTER_HOSTNAME "ssh pi@$CLUSTER_HOSTNETWORKINGIPADDRESS" C-m "clear" C-m
 
     i=0    
     for CLUSTER_NODE in ${CLUSTER_NODES[@]}; do
         CLUSTER_NODE_HOSTNAME=${CLUSTER_NODES_HOSTNAMES[$i]}
+
+        log "Create a Window for Node $CLUSTER_NODE_HOSTNAME"
         tmux new-window -t $SESSION -n $CLUSTER_NODE_HOSTNAME -c "$(PWD)"
         tmux send-keys -t $SESSION:$CLUSTER_NODE_HOSTNAME "ssh pi@$CLUSTER_NODE" C-m "clear" C-m
         ((i++))
