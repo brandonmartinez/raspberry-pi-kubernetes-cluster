@@ -33,13 +33,19 @@ then
     tmux new-window -t $SESSION -n $CLUSTER_HOSTNAME -c "$(PWD)"
     tmux send-keys -t $SESSION:$CLUSTER_HOSTNAME "ssh pi@$CLUSTER_HOSTNETWORKINGIPADDRESS" C-m
 
-    # TODO: add additional nodes and create windows for them
-
+    i=0    
+    for CLUSTER_NODE in ${CLUSTER_NODES[@]}; do
+        CLUSTER_NODE_HOSTNAME=${CLUSTER_NODES_HOSTNAMES[$i]}
+        tmux new-window -t $SESSION -n $CLUSTER_NODE_HOSTNAME -c "$(PWD)"
+        tmux send-keys -t $SESSION:$CLUSTER_NODE_HOSTNAME "ssh pi@$CLUSTER_NODE" C-m
+        ((i++))
+    done
+    
     # Select First Window
     tmux select-window -t $SESSION:Shell
 fi
 
 # Attach Session, on the Main window
 section "Attaching to tmux session $SESSION"
-sleep 5
+sleep 1
 tmux attach-session -t $SESSION
