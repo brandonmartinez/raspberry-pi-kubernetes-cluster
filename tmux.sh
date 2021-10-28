@@ -31,13 +31,13 @@ then
     
     # Create a Window for Cluster
     tmux new-window -t $SESSION -n $CLUSTER_HOSTNAME -c "$(PWD)"
-    tmux send-keys -t $SESSION:$CLUSTER_HOSTNAME "ssh pi@$CLUSTER_HOSTNETWORKINGIPADDRESS" C-m
+    tmux send-keys -t $SESSION:$CLUSTER_HOSTNAME "ssh pi@$CLUSTER_HOSTNETWORKINGIPADDRESS" C-m "clear" C-m
 
     i=0    
     for CLUSTER_NODE in ${CLUSTER_NODES[@]}; do
         CLUSTER_NODE_HOSTNAME=${CLUSTER_NODES_HOSTNAMES[$i]}
         tmux new-window -t $SESSION -n $CLUSTER_NODE_HOSTNAME -c "$(PWD)"
-        tmux send-keys -t $SESSION:$CLUSTER_NODE_HOSTNAME "ssh pi@$CLUSTER_NODE" C-m
+        tmux send-keys -t $SESSION:$CLUSTER_NODE_HOSTNAME "ssh pi@$CLUSTER_NODE" C-m "clear" C-m
         ((i++))
     done
     
