@@ -1,3 +1,4 @@
 kubeconfig.yml
 .env
 /.tmp
+tmux.sh
