@@ -123,6 +123,19 @@ spec:
       storage: 1Gi
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: pihole
+  name: pihole-dns-pvc
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pihole-configmap
@@ -130,8 +143,8 @@ metadata:
 data:
   TZ: "${TIMEZONE}"
   ADMIN_EMAIL: "${REPLY_EMAIL}"
-  DNS1: "10.43.0.20"
-  DNS2: "10.43.0.20"
+  PIHOLE_DNS_: "10.43.0.20;10.43.0.20"
+  CUSTOM_CACHE_SIZE: "0"
 ---
 apiVersion: v1
 kind: Secret
@@ -164,7 +177,9 @@ spec:
       containers:
         - name: pihole
           # TODO: when the ulimit bug is fixed, upgrade to latest: https://github.com/pi-hole/docker-pi-hole/issues/772
-          image: docker.io/pihole/pihole:v5.1.2
+          # image: docker.io/pihole/pihole:v5.1.2
+          image: pihole/pihole:latest
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: pihole-configmap
@@ -190,10 +205,15 @@ spec:
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-etc
+            - mountPath: /etc/dnsmasq.d
+              name: dnsmasq-etc
       volumes:
         - name: pihole-etc
           persistentVolumeClaim:
             claimName: pihole-pvc
+        - name: dnsmasq-etc
+          persistentVolumeClaim:
+            claimName: pihole-dns-pvc
 ---
 apiVersion: v1
 kind: Service
