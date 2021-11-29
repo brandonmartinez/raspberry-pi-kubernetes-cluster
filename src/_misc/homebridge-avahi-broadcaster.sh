@@ -3,7 +3,7 @@
 # Based on https://www.devwithimagination.com/2020/02/02/running-homebridge-on-docker-without-host-network-mode/
 # And: https://github.com/dhutchison/container-images/blob/master/homebridge/generate_service.sh
 
-set -euo pipefail
+set -uo pipefail
 IFS=$'\n\t'
 
 function create_service_file {
@@ -102,7 +102,7 @@ do
     CATEGORY=$(echo "$ACCESSORY_CONFIG" | jq -r .category)
     NAME=$(echo "$ACCESSORY_CONFIG" | jq -r .displayName)
     MAC=$(echo "$i" | cut -d. -f2 | sed 's/\(..\)/\1:/g;s/:$//')
-    PORT=$(kubectl logs -n homebridge "$CONTAINER" | grep "${NAME} is running on port" | tail -n 1 | awk -F ' ' '{print $NF}' | cut -d. -f1)
+    PORT=$(kubectl logs -n homebridge homebridge-0 | grep "(${NAME}) is running on port" | tail -n 1 | awk -F ' ' '{print $NF}' | cut -d. -f1)
     
     create_service_file "$NAME" $CATEGORY "$MAC" "$PORT" "$SETUPID"
     

@@ -123,19 +123,6 @@ spec:
       storage: 1Gi
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: pihole
-  name: pihole-dns-pvc
-spec:
-  storageClassName: nfs
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pihole-configmap
@@ -205,15 +192,10 @@ spec:
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-etc
-            - mountPath: /etc/dnsmasq.d
-              name: dnsmasq-etc
       volumes:
         - name: pihole-etc
           persistentVolumeClaim:
             claimName: pihole-pvc
-        - name: dnsmasq-etc
-          persistentVolumeClaim:
-            claimName: pihole-dns-pvc
 ---
 apiVersion: v1
 kind: Service

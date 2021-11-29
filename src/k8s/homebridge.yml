@@ -67,11 +67,14 @@ spec:
           ports:
             - name: svc-ui
               containerPort: 8081
-            - name: svc-${HOMEBRIDGE_PORT}
-              containerPort: ${HOMEBRIDGE_PORT}
-            # - name: svc-5353-udp
-            #   containerPort: 5353
-            #   protocol: UDP
+            - name: svc-51826
+              containerPort: 51826
+            - name: svc-51827
+              containerPort: 51827
+            - name: svc-51828
+              containerPort: 51828
+            - name: svc-51829
+              containerPort: 51829
           volumeMounts:
             - mountPath: /homebridge
               name: homebridge-root
@@ -95,7 +98,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: homebridge-svc-${HOMEBRIDGE_PORT}
+  name: homebridge-svc-51826
   namespace: homebridge
 spec:
   selector:
@@ -103,31 +106,66 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
   ports:
-    - name: ${HOMEBRIDGE_PORT}-tcp
-      port: ${HOMEBRIDGE_PORT}
+    - name: 51826-tcp
+      port: 51826
 status:
   loadBalancer:
     ingress:
       - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: homebridge-svc-5353
-#   namespace: homebridge
-# spec:
-#   selector:
-#     app: homebridge
-#   type: LoadBalancer
-#   externalTrafficPolicy: Local
-#   ports:
-#     - name: 5353-udp
-#       port: 5353
-#       protocol: UDP
-# status:
-#   loadBalancer:
-#     ingress:
-#       - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-51827
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: 51827-tcp
+      port: 51827
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-51828
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: 51828-tcp
+      port: 51828
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-svc-51829
+  namespace: homebridge
+spec:
+  selector:
+    app: homebridge
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: 51829-tcp
+      port: 51829
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
