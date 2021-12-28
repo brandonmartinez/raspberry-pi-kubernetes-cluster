@@ -63,6 +63,7 @@ spec:
       containers:
         - name: unbound
           image: docker.io/mvance/unbound-rpi:latest
+          imagePullPolicy: Always
           ports:
             - name: svc-53-udp
               containerPort: 53
@@ -72,7 +73,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "1024M"
+              memory: "1Gi"
               cpu: "1"
             requests:
               memory: "50Mi"
@@ -81,6 +82,16 @@ spec:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
               name: unbound-a-records
               subPath: a-records.conf
+          livenessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 25
+            periodSeconds: 5
       volumes:
         - name: unbound-a-records
           configMap:
@@ -184,14 +195,28 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "1024M"
-              cpu: "1"
+              memory: "1Gi"
+              cpu: "2"
             requests:
-              memory: "50Mi"
-              cpu: "100m"
+              memory: "100Mi"
+              cpu: "1"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-etc
+          livenessProbe:
+            exec:
+              command:
+                - /usr/local/bin/pihole
+                - status
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /admin/index.php?login
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 300
+            timeoutSeconds: 60
       volumes:
         - name: pihole-etc
           persistentVolumeClaim:
