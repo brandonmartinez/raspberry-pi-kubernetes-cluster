@@ -6,10 +6,19 @@ namespace: pihole
 commonLabels:
   app: pihole
 
+configMapGenerator:
+  - name: pihole-configmap
+    envs:
+      - .env
+
+secretGenerator:
+- name: pihole-secret
+  envs:
+  - .env.secret
+
 resources:
   - namespace.yml
   - pvc.yml
-  - configmap.yml
   - statefulset.yml
   - service.yml
   - ingress.yml

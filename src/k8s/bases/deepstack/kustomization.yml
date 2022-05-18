@@ -6,10 +6,14 @@ namespace: deepstack
 commonLabels:
   app: deepstack
 
+configMapGenerator:
+  - name: deepstack-configmap
+    envs:
+      - .env
+
 resources:
   - namespace.yml
   - pvc.yml
-  - configmap.yml
   - deployment.yml
   - service.yml
   - ingress.yml

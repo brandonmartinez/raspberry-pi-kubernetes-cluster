@@ -1,4 +1,4 @@
 kubeconfig.yml
 compiled.yml
-.env
+/.env
 /.tmp

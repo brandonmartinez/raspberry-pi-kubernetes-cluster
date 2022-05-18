@@ -21,7 +21,8 @@ function deploy() {
     ##################################################
     log "Creating network services to be consumed by cluster and network-wide resources."
     
-    envsubst <(kubectl kustomize .) | kubectl apply -f -
+    kubectl kustomize | envsubst > compiled.yml
+    kubectl apply -f compiled.yml
 
     # ##################################################
     # section "Installing Prometheus Operator Helm Charts (kube-promtheus-stack)"
