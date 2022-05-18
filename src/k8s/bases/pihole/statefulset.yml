@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pihole
+spec:
+  serviceName: "pihole"
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+        - name: pihole
+          image: pihole/pihole:2021.12.1
+          envFrom:
+            - configMapRef:
+                name: pihole-configmap
+            - secretRef:
+                name: pihole-secret
+          ports:
+            - name: svc-53-udp
+              containerPort: 53
+              protocol: UDP
+            - name: svc-53-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: svc-ui
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "2"
+            requests:
+              memory: "100Mi"
+              cpu: "1"
+          volumeMounts:
+            - mountPath: /etc/pihole
+              name: pihole-etc
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - /usr/local/bin/pihole status
+          #   initialDelaySeconds: 300
+          #   periodSeconds: 30
+          # readinessProbe:
+          #   httpGet:
+          #     path: /admin/index.php?login
+          #     port: 80
+          #   initialDelaySeconds: 600
+          #   periodSeconds: 300
+          #   timeoutSeconds: 120
+      volumes:
+        - name: pihole-etc
+          persistentVolumeClaim:
+            claimName: pihole-pvc

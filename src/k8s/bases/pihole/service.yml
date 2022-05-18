@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-ui-svc
+spec:
+  ports:
+    - name: 80-tcp
+      port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns-svc
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.100.30
+  ports:
+    - name: 53-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: 53-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns-udp
+spec:
+  ports:
+    - name: 53-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns-tcp
+spec:
+  ports:
+    - name: 53-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}

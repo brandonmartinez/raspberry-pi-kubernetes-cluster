@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deepstack-ingress
+  namespace: deepstack
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: deepstack.${NETWORK_HOSTNAME_SUFFIX}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: deepstack-svc
+                port:
+                  name: 5000-tcp

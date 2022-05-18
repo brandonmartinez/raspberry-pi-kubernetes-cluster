@@ -10,12 +10,6 @@ set +o allexport
 # Pi-hole password needs to be base64 encoded
 PIHOLE_PASSWORD=$(echo $PIHOLE_PASSWORD | base64 -)
 
-# TODO: https://kustomize.io
-function apply () {
-    log "Replacing environment variables and applying $1 via kubectl"
-    envsubst < $1.yml | kubectl apply -f -
-}
-
 function deploy() {
     ##################################################
     section "Setting NFS as the Default Storage Class"
@@ -23,21 +17,19 @@ function deploy() {
     kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     
     ##################################################
-    section "Assigning homebridge label to $CLUSTER_HOSTNAME"
-    ##################################################
-    kubectl label nodes $CLUSTER_HOSTNAME homebridge=true --overwrite
-    
-    ##################################################
     section "Deploying Service Stacks"
     ##################################################
     log "Creating network services to be consumed by cluster and network-wide resources."
     
-    SERVICES_TO_DEPLOY=("pihole" "pihole-exporter" "portainer" "homebridge" "deepstack")
-    
-    for t in ${SERVICES_TO_DEPLOY[@]}; do
-        section "Deploying Service Stack: $t"
-        apply $t
-    done
+    envsubst <(kubectl kustomize .) | kubectl apply -f -
+
+    # ##################################################
+    # section "Installing Prometheus Operator Helm Charts (kube-promtheus-stack)"
+    # ##################################################
+
+    # helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    # helm repo 
+    # helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack
     
     ##################################################
     section "Done."

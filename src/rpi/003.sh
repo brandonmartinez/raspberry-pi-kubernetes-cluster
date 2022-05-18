@@ -21,6 +21,9 @@ apt-get install -y python3 python3-pip
 apt-get remove python-configparser
 pip3 -v install docker-compose
 
+section "Installing DNS Utils"
+apt-get install -y dnsutils
+
 section "Creating Shared Storage Area"
 mkdir /clusterfs
 chown nobody.nogroup -R /clusterfs

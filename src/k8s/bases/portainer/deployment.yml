@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portainer
+  namespace: portainer
+  labels:
+    app: portainer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portainer
+  template:
+    metadata:
+      labels:
+        app: portainer
+    spec:
+      serviceAccountName: portainer-sa-clusteradmin
+      volumes:
+        - name: "data"
+          persistentVolumeClaim:
+            claimName: portainer-pvc
+      containers:
+        - name: portainer
+          image: "portainer/portainer-ce:latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - name: svc-9000-http
+              containerPort: 9000
+            - name: svc-9443-https
+              containerPort: 9443
+            - name: svc-8000-edge
+              containerPort: 8000
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9443
+          #     scheme: HTTPS
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9443
+          #     scheme: HTTPS
+          resources:
+            limits:
+              memory: "2040M"
+              cpu: "2"
+            requests:
+              memory: "512M"
+              cpu: "1"

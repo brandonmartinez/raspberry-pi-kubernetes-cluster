@@ -4,5 +4,8 @@
         "MD025": {
             "front_matter_title": ""
         }
+    },
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": "file:///Users/brandonmartinez/src/martinez-media/raspberry-pi-kubernetes-cluster/src/docker/homebridge.yml"
     }
 }

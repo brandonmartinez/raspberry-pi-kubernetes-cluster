@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepstack-svc
+  namespace: deepstack
+spec:
+  ports:
+    - name: 5000-tcp
+      port: 5000
