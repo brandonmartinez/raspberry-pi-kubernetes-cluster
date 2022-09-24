@@ -30,6 +30,10 @@ apt install jq avahi-utils -y
 section "Installing k3s"
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
 
+section "Sleeping for 30 Seconds to Wait for k3s"
+
+sleep 30
+
 section "Enabling Traefik Dashboard"
 echo "    dashboard:" | tee -a /var/lib/rancher/k3s/server/manifests/traefik.yaml > /dev/null
 echo "      enabled: true" | tee -a /var/lib/rancher/k3s/server/manifests/traefik.yaml > /dev/null
