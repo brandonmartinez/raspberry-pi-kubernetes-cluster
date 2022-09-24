@@ -28,6 +28,10 @@ then
     log "Creating window for local access"
     tmux rename-window -t $SESSION Shell
     tmux send-keys -t $SESSION:Shell "cd '$(PWD)'" C-m "export KUBECONFIG=\"$(pwd)/kubeconfig.yml\"" C-m "clear" C-m "kubectl get namespaces" C-m
+
+    log "Creating window for k9s"
+    tmux rename-window -t $SESSION k9s
+    tmux send-keys -t $SESSION:k9s "k9s" C-m
     
     log "Create a Window for Cluster $CLUSTER_HOSTNAME"
     tmux new-window -t $SESSION -n $CLUSTER_HOSTNAME -c "$(PWD)"
