@@ -20,3 +20,9 @@ section "Moving to k8s directory"
 cd ../k8s
 
 deploy
+
+section "Starting HomeBridge in Docker"
+
+mkdir $(pwd)/homebridge
+
+docker run -d --restart unless-stopped --net=host --name=homebridge -v $(pwd)/homebridge:/homebridge oznu/homebridge:latest
