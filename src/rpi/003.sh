@@ -18,7 +18,7 @@ usermod -aG docker pi
 section "Installing Docker Compose"
 apt-get install -y libffi-dev libssl-dev
 apt-get install -y python3 python3-pip
-apt-get remove python-configparser
+# apt-get remove python-configparser
 pip3 -v install docker-compose
 
 section "Installing DNS Utils"
