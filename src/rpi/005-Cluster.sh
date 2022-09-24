@@ -14,7 +14,7 @@ source ../k8s/deploy.sh
 set +o allexport
 
 section "Adding Taint to Avoid Scheduling on Master"
-kubektl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule
+kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule
 
 section "Moving to k8s directory"
 cd ../k8s
