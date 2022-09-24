@@ -41,8 +41,7 @@ ssh pi@X.X.X.X #replace with the IP address of your pi
 Update the OS and its packages:
 
 ```sh
-sudo apt update
-sudo apt full-upgrade
+sudo apt update && sudo apt full-upgrade -y
 ```
 
 Install git (to pull the repo):
