@@ -27,6 +27,13 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub pi@X.X.X.X # use your SSH key and the IP of the
 ssh pi@X.X.X.X #replace with the IP address of your pi
 ```
 
+Update the OS and its packages:
+
+```sh
+sudo apt update
+sudo apt full-upgrade
+```
+
 Install git (to pull the repo):
 
 ```sh
