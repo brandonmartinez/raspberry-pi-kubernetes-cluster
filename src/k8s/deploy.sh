@@ -15,6 +15,7 @@ function deploy() {
     section "Setting NFS as the Default Storage Class"
     ##################################################
     kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+    kubectl patch storageclass "local-path" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
     
     ##################################################
     section "Deploying Service Stacks"
