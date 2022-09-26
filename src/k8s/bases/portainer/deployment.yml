@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: portainer
-  namespace: portainer
   labels:
     app: portainer
 spec:

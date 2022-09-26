@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: pihole
 
 commonLabels:
-  app: pihole
+  app: unbound
 
 resources:
   - configmap.yml
