@@ -5,3 +5,4 @@ bases:
 - bases/unbound
 - bases/pihole
 - bases/deepstack
+- bases/portainer
