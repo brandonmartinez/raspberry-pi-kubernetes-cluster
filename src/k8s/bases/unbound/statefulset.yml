@@ -6,7 +6,7 @@ metadata:
     app: unbound
 spec:
   serviceName: "unbound"
-  replicas: 1
+  replicas: 2
   updateStrategy:
     type: RollingUpdate
   selector:
