@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrony
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: chrony
+          image: cturra/ntp
+          envFrom:
+            - configMapRef:
+                name: chrony-configmap
+          ports:
+            - name: svc-123-udp
+              containerPort: 123
+              protocol: UDP
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+            requests:
+              memory: "500Mi"
+              cpu: ".25"

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrony-ntp-svc
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.100.40
+  ports:
+    - name: 123-udp
+      port: 123
+      targetPort: 123
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrony-ntp-udp
+spec:
+  ports:
+    - name: 123-udp
+      port: 123
+      targetPort: 123
+      protocol: UDP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}

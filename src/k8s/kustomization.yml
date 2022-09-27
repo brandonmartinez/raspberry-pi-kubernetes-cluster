@@ -6,3 +6,4 @@ bases:
 - bases/pihole
 - bases/deepstack
 - bases/portainer
+- bases/chrony
