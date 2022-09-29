@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-19132-udp
+spec:
+  ports:
+    - name: 19132-udp
+      port: 19132
+      targetPort: 19120
+      protocol: UDP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-19132-tcp
+spec:
+  ports:
+    - name: 19132-tcp
+      port: 19132
+      targetPort: 19120
+      protocol: TCP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}

@@ -7,3 +7,4 @@ bases:
 - bases/deepstack
 - bases/portainer
 - bases/chrony
+- bases/minecraft
