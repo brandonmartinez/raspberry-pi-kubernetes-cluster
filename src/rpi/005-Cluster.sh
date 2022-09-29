@@ -23,6 +23,6 @@ deploy
 
 section "Starting HomeBridge in Docker"
 
-mkdir $(pwd)/homebridge
+mkdir /clusterfs/homebridge
 
-docker run -d --restart unless-stopped --net=host --name=homebridge -v $(pwd)/homebridge:/homebridge oznu/homebridge:latest
+docker run -d --restart unless-stopped --net=host --name=homebridge -v /clusterfs/homebridge:/homebridge oznu/homebridge:latest
