@@ -25,10 +25,15 @@ echo "/clusterfs      $FULL_NET_ADDRESS(rw,sync,no_root_squash,no_subtree_check)
 exportfs -a
 
 section "Installing Additional Tools"
-apt install jq avahi-utils -y
+apt install jq -y
+
+section "Removing avahi and Adding Ipv6 Block for HomeBridge"
+apt remove avahi-daemon -y
+sed -i "s/cgroup_memory=1/cgroup_memory=1 ipv6.disable=1/g" /boot/cmdline.txt
+
 
 section "Installing k3s"
-curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0'
 
 section "Sleeping for 30 Seconds to Wait for k3s"
 
@@ -62,3 +67,7 @@ EOF
 
 section "Finished Installing k3s - Use the Following Token to Add Nodes"
 cat /var/lib/rancher/k3s/server/token
+
+section "Rebooting to apply IPv6 Changes"
+
+reboot

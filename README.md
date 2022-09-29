@@ -112,6 +112,8 @@ cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Cluster.sh
 # Copy the output from the last script, it will be needed for worker nodes
 ```
 
+Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
+
 ### Worker Nodes
 
 ```sh
