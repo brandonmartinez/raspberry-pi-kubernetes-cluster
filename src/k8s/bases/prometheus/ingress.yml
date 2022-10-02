@@ -1,0 +1,29 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: monitoring-http
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`monitoring.${NETWORK_HOSTNAME_SUFFIX}`) && PathPrefix(`/prometheus`)
+      services:
+        - name: monitoring-kube-prometheus-prometheus
+          port: 9090
+      middlewares:
+        - name: stripprefix
+    - kind: Rule
+      match: Host(`monitoring.${NETWORK_HOSTNAME_SUFFIX}`) && PathPrefix(`/alertmanager`)
+      services:
+        - name: monitoring-kube-prometheus-alertmanager
+          port: 9093
+      middlewares:
+        - name: stripprefix
+    - kind: Rule
+      match: Host(`monitoring.${NETWORK_HOSTNAME_SUFFIX}`) && PathPrefix(`/grafana`)
+      services:
+        - name: monitoring-grafana
+          port: 80
+      middlewares:
+        - name: stripprefix

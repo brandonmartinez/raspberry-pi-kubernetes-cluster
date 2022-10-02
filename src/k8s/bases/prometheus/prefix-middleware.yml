@@ -1,0 +1,11 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: stripprefix
+spec:
+  stripPrefix:
+    prefixes:
+      - "/prometheus"
+      - "/alertmanager"
+      - "/grafana"
+    forceSlash: false

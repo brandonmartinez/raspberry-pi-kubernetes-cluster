@@ -20,14 +20,6 @@ data:
     local-data: "portainer.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
     local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} portainer.${NETWORK_HOSTNAME_SUFFIX}."
 
-    # Grafana Records
-    local-data: "grafana.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} grafana.${NETWORK_HOSTNAME_SUFFIX}."
-
-    # Prometheus Records
-    local-data: "prometheus.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} prometheus.${NETWORK_HOSTNAME_SUFFIX}."
-
-    # Alert Manager Records
-    local-data: "alertmanager.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
-    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} alertmanager.${NETWORK_HOSTNAME_SUFFIX}."
+    # Monitoring Records
+    local-data: "monitoring.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} monitoring.${NETWORK_HOSTNAME_SUFFIX}."

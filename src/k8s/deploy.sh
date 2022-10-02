@@ -16,7 +16,26 @@ function deploy() {
     ##################################################
     kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     kubectl patch storageclass "local-path" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
-    
+
+    ##################################################
+    section "Installing Prometheus Operator"
+    ##################################################
+    set +e
+    KUBE_PROMETHEUS_STACK_STATUS=$(helm status 'monitoring' --namespace monitoring 2>&1 > /dev/null)
+    set -e
+
+    if [[ $KUBE_PROMETHEUS_STACK_STATUS == *"Error"* ]]; then
+        log "Adding Prometheus Operator Charts"
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+
+        log "Installing Prometheus Operator"
+        helm install -f <(cat bases/prometheus/helm-values.yml | envsubst) 'monitoring' prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+    else
+        log "Prometheus Operator already installed, updating release."
+        helm upgrade -f <(cat bases/prometheus/helm-values.yml | envsubst) 'monitoring' prometheus-community/kube-prometheus-stack --namespace monitoring
+    fi
+   
     ##################################################
     section "Deploying Service Stacks"
     ##################################################
@@ -24,14 +43,6 @@ function deploy() {
     
     kubectl kustomize | envsubst > compiled.yml
     kubectl apply -f compiled.yml
-
-    # ##################################################
-    # section "Installing Prometheus Operator Helm Charts (kube-promtheus-stack)"
-    # ##################################################
-
-    # helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-    # helm repo 
-    # helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack
     
     ##################################################
     section "Done."
