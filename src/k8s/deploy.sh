@@ -41,6 +41,9 @@ function deploy() {
     ##################################################
     log "Creating network services to be consumed by cluster and network-wide resources."
     
+    # This is hack for the prometheus stack, as "$" is used in rules and dashboard definitions
+    # When adding new templates, be sure to replace "$" with "${DOLLAR}" to avoid invalid YAML
+    export DOLLAR='$'
     kubectl kustomize | envsubst > compiled.yml
     kubectl apply -f compiled.yml
     

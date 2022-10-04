@@ -80,7 +80,7 @@ grafana:
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
-      release: monitoring-kube-prometheus-stack
+      release: monitoring
     relabelings:
       # Replace job value
       - sourceLabels:
@@ -88,8 +88,12 @@ grafana:
         action: replace
         targetLabel: job
         replacement: grafana
+  sidecar:
+    dashboards:
+      enabled: true
+      labelValue: "1"
 # Disabling monitoring of K8s services.
-# Monitoring of K3S components will be configured out of monitoring-kube-prometheus-stack
+# Monitoring of K3S components will be configured out of monitoring
 kubelet:
   enabled: false
 kubeApiServer:
@@ -103,7 +107,7 @@ kubeProxy:
 kubeEtcd:
   enabled: false
 # Disable K8S Prometheus Rules
-# Rules for K3S components will be configured out of monitoring-kube-prometheus-stack
+# Rules for K3S components will be configured out of monitoring
 defaultRules:
   create: true
   rules:

@@ -1,0 +1,32 @@
+---
+# Headless service for K3S metrics. No selector
+apiVersion: v1
+kind: Service
+metadata:
+  name: k3s-metrics-service
+  labels:
+    app.kubernetes.io/name: kubelet
+spec:
+  clusterIP: None
+  ports:
+    - name: https-metrics
+      port: 10250
+      protocol: TCP
+      targetPort: 10250
+  type: ClusterIP
+---
+# Endpoint for the headless service without selector
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: k3s-metrics-service
+subsets:
+  - addresses:
+      - ip: 10.0.0.11
+      - ip: 10.0.0.12
+      - ip: 10.0.0.13
+      - ip: 10.0.0.14
+    ports:
+      - name: https-metrics
+        port: 10250
+        protocol: TCP
