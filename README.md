@@ -9,10 +9,13 @@ A set of scripts to configure a Raspberry Pi 4 as a Kubernetes cluster.
   ideally 4 or 8 GB models
 - [Raspberry Pi OS - 64 Bit](https://downloads.raspberrypi.org/raspios_lite_arm64/images/)
   freshly cloned to a Micro SD Card
+- Static IP Reservations for All RPi's in the Cluster (suggested to be MAC
+  Address based in your router)
 - [A userconf file on the boot partition to set default password](https://www.raspberrypi.com/news/raspberry-pi-bullseye-update-april-2022/) -
   see the "Headless Setup" section, or see below for non-Linux OS's
 - [ssh file on the boot partition](https://www.raspberrypi.com/documentation/computers/configuration.html#ssh-or-ssh-txt)
-  to enable remote access on first boot (e.g., `touch /Volumes/boot` on macOS)
+  to enable remote access on first boot (e.g., `touch /Volumes/boot/ssh` on
+  macOS)
 - An [ssh key](https://www.ssh.com/academy/ssh/keygen) to simplify login to
   RPi's (this repo is assuming RSA keys with no password)
 - Pro-Tip: statically assigned IP addresses via your router for each RPi
