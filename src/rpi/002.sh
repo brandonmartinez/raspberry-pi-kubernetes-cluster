@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-##################################################
-# Before running this script, be sure to set run #
-# SetupPiClusterOs-001.sh                        #
-##################################################
-
 set -e
 
 set -o allexport
@@ -18,7 +13,7 @@ systemctl daemon-reload
 service dhcpcd restart
 
 section "Updating Packages"
-apt-get update && apt-get -y upgrade
+apt update && apt full-upgrade -y
 
 section "Installing Docker"
 curl -sSL https://get.docker.com | sh

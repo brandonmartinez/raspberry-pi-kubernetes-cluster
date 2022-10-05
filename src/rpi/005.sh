@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-##################################################
-# Before running this script, be sure to set run #
-# SetupPiClusterOs-004-A.sh                      #
-##################################################
-
 set -e
 
 set -o allexport
@@ -25,4 +20,8 @@ section "Starting HomeBridge in Docker"
 
 mkdir /clusterfs/homebridge
 
-docker run -d --restart unless-stopped --net=host --name=homebridge -v /clusterfs/homebridge:/homebridge oznu/homebridge:latest
+docker run -d \
+    --restart unless-stopped \
+    --net=host --name=homebridge \
+    -e PGID=1000 -e PUID=1000 -e HOMEBRIDGE_CONFIG_UI=1 -e HOMEBRIDGE_CONFIG_UI_PORT=8081 -e TZ=America/Detroit \
+    -v /clusterfs/homebridge:/homebridge oznu/homebridge:latest

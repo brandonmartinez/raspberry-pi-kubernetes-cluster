@@ -41,12 +41,6 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub pi@X.X.X.X # use your SSH key and the IP of the
 ssh pi@X.X.X.X #replace with the IP address of your pi
 ```
 
-Update the OS and its packages:
-
-```sh
-sudo apt update && sudo apt full-upgrade -y
-```
-
 Install git (to pull the repo):
 
 ```sh
@@ -103,36 +97,34 @@ cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./003.sh
 # Reboots Pi
 ```
 
-Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address. The
-next steps will be different based on the primary cluster node vs worker nodes.
-Only execute the relevant scripts!
+Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 
-### Primary Cluster Node
+### Cluster Master
 
 ```sh
 # For Master Node/Cluster - Install NFS Server and k3s:
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Cluster.sh
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004.sh
 # Copy the output from the last script, it will be needed for worker nodes
 ```
 
 Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 
-### Worker Nodes
+### Cluster Workers
 
 ```sh
 # For Worker Nodes - Install NFS client, add mount entry, and mount share; install k3s worker node
 # X.X.X.X is the IP Address of your master, followed by the token from k3s:
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004-Node.sh X.X.X.X "Token from 004-Cluster"
+cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004.sh X.X.X.X "REPLACE WITH TOKEN FROM CLUSTER MASTER"
 ```
 
 ### Deploy Network Services (from Primary Cluster Node)
 
-After all nodes have been setup and configured, run the following on the primary
-cluster node. This will deploy a handful of services to the newly setup
-Kubernetes (k3s) cluster.
+After all nodes have been setup and configured, run the following on the cluster
+master. This will deploy a handful of services to the newly setup Kubernetes
+(k3s) cluster.
 
 ```sh
-cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005-Cluster.sh
+cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005.sh
 ```
 
 ## Network Setup
@@ -140,12 +132,3 @@ cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005-Cluster.sh
 Now that you have a Kubernetes cluster running with network wide services, be
 sure to update your router or DHCP server to point to your new Pi-hole DNS
 server. Use your primary cluster node's IP address as the DNS server.
-
-## Additional Tips
-
-### Ubiquiti Hardware and DNS
-
-If your Ubiquiti gear (e.g., UDM Pro) is not allowing for local DNS to resolve
-properly (such as `*.home.arpa` domains), try creating records via `iptables`
-like in this
-[guide](https://scotthelme.co.uk/catching-and-dealing-with-naughty-devices-on-my-home-network-v2/).

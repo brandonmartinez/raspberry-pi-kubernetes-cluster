@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-##################################################
-# Before running this script, be sure to set run #
-# SetupPiClusterOs-002.sh                        #
-##################################################
-
 set -e
 
 set -o allexport
@@ -29,11 +24,25 @@ mkdir /clusterfs
 chown nobody.nogroup -R /clusterfs
 chmod 777 -R /clusterfs
 
+section "Installing iSCSI"
+apt-get install -y open-iscsi
+
+section "Removing avahi-daemon to avoid conflicts with HomeBridge"
+apt remove avahi-daemon -y
+
 section "Adding Boot Options"
-sed -i "s/rootwait/rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/g" /boot/cmdline.txt
-# disabling ipv6 for better homebridge support per https://github.com/homebridge/homebridge/issues/2089
-sed -i "s/use-ipv6=yes/use-ipv6=no/g" /etc/avahi/avahi-daemon.conf
-sed -i "s/#allow-interfaces=eth0/allow-interfaces=eth0/g" /etc/avahi/avahi-daemon.conf
+
+IS_CLUSTER_MASTER=$(ifconfig | grep ${CLUSTER_HOSTNETWORKINGIPADDRESS})
+
+BOOT_OPTIONS_TO_ADD="rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1"
+
+if [ "$IS_CLUSTER_MASTER" != "" ]
+then
+    log "Current node is the cluster master, disabling IPv6 for Homebridge"
+    BOOT_OPTIONS_TO_ADD="${BOOT_OPTIONS_TO_ADD} ipv6.disable=1"
+fi
+
+sed -i "s/rootwait/${BOOT_OPTIONS_TO_ADD}/g" /boot/cmdline.txt
 
 section "Rebooting"
 reboot
