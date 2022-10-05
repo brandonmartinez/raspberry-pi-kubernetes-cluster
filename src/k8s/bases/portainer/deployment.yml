@@ -45,8 +45,8 @@ spec:
           #     scheme: HTTPS
           resources:
             limits:
-              memory: "2040M"
+              memory: "1Gi"
               cpu: "2"
             requests:
-              memory: "512M"
-              cpu: "1"
+              memory: "500Mi"
+              cpu: "250m"

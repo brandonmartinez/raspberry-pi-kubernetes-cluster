@@ -33,23 +33,10 @@ spec:
               cpu: "2"
             requests:
               memory: "100Mi"
-              cpu: "1"
+              cpu: "250m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-etc
-          # livenessProbe:
-          #   exec:
-          #     command:
-          #       - /usr/local/bin/pihole status
-          #   initialDelaySeconds: 300
-          #   periodSeconds: 30
-          # readinessProbe:
-          #   httpGet:
-          #     path: /admin/index.php?login
-          #     port: 80
-          #   initialDelaySeconds: 600
-          #   periodSeconds: 300
-          #   timeoutSeconds: 120
       volumes:
         - name: pihole-etc
           persistentVolumeClaim:

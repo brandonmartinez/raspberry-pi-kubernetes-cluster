@@ -18,7 +18,7 @@ A set of scripts to configure a Raspberry Pi 4 as a Kubernetes cluster.
   macOS)
 - An [ssh key](https://www.ssh.com/academy/ssh/keygen) to simplify login to
   RPi's (this repo is assuming RSA keys with no password)
-- Pro-Tip: statically assigned IP addresses via your router for each RPi
+- Recommended: a domain name you control (otherwise, .home.arpa will work)
 
 If you don't have access to a version of `openssl` with the `-6` option (such as
 on macOS), you can use the following command to generate the default `pi`
