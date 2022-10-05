@@ -7,34 +7,62 @@ source ../../.env
 source ../_shared/echo.sh
 set +o allexport
 
-# Pi-hole password needs to be base64 encoded
+# Some secret values need to be base64 encoded
 PIHOLE_PASSWORD=$(echo $PIHOLE_PASSWORD | base64 -)
+
+function deploy_helm() {
+    REPO_ALIAS=$1
+    REPO_URI=$2
+    RELEASE=$3
+    CHART=$4
+    HELM_VALUES=$5
+    NAMESPACE=$6
+
+    set +e
+    HELM_RELEASE_STATUS=$(helm status "${RELEASE}" --namespace "${NAMESPACE}" 2>&1 > /dev/null)
+    set -e
+
+    if [[ $HELM_RELEASE_STATUS == *"Error"* ]]; then
+        log "Adding Helm Chart Repo ${REPO_ALIAS}"
+        helm repo add "${REPO_ALIAS}" "${REPO_URI}"
+        helm repo update
+
+        log "Installing Helm Chart ${CHART} as ${RELEASE}"
+        helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+    else
+        log "Helm Chart ${CHART} already exists; upgrading ${RELEASE} release"
+        helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+    fi
+}
 
 function deploy() {
     ##################################################
-    section "Setting NFS as the Default Storage Class"
+    section "Installing Longhorn Storage Provider"
     ##################################################
-    kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+    deploy_helm "longhorn" "https://charts.longhorn.io" \
+        "longhorn" "longhorn/longhorn" \
+        "bases/longhorn/helm-values.yml" \
+        "longhorn-system"
+
+    section "Waiting for Longhorn to be Ready"
+
+    sleep 120
+
+    ##################################################
+    section "Setting Longhorn as the Default Storage Class"
+    ##################################################
     kubectl patch storageclass "local-path" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+    kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+    kubectl patch storageclass "longhorn" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
-    ##################################################
-    section "Installing Prometheus Operator"
-    ##################################################
-    set +e
-    KUBE_PROMETHEUS_STACK_STATUS=$(helm status 'monitoring' --namespace monitoring 2>&1 > /dev/null)
-    set -e
+    # ##################################################
+    # section "Installing Prometheus Monitoring Stack"
+    # ##################################################
 
-    if [[ $KUBE_PROMETHEUS_STACK_STATUS == *"Error"* ]]; then
-        log "Adding Prometheus Operator Charts"
-        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-        helm repo update
-
-        log "Installing Prometheus Operator"
-        helm install -f <(cat bases/prometheus/helm-values.yml | envsubst) 'monitoring' prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
-    else
-        log "Prometheus Operator already installed, updating release."
-        helm upgrade -f <(cat bases/prometheus/helm-values.yml | envsubst) 'monitoring' prometheus-community/kube-prometheus-stack --namespace monitoring
-    fi
+    deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
+        "monitoring" "prometheus-community/kube-prometheus-stack" \
+        "bases/prometheus/helm-values.yml" \
+        "monitoring"
    
     ##################################################
     section "Deploying Service Stacks"

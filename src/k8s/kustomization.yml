@@ -3,6 +3,7 @@ kind: Kustomization
 
 bases:
 - bases/kube-system
+- bases/longhorn
 - bases/unbound
 - bases/pihole
 - bases/prometheus

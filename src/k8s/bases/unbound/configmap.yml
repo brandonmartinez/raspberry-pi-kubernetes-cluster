@@ -24,6 +24,10 @@ data:
     local-data: "monitoring.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
     local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} monitoring.${NETWORK_HOSTNAME_SUFFIX}."
 
+    # Longhorn Records
+    local-data: "storage.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
+    local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} storage.${NETWORK_HOSTNAME_SUFFIX}."
+
     # Minecraft Records
     local-data: "minecraft.${NETWORK_HOSTNAME_SUFFIX}. A ${CLUSTER_HOSTNETWORKINGIPADDRESS}"
     local-data-ptr: "${CLUSTER_HOSTNETWORKINGIPADDRESS} minecraft.${NETWORK_HOSTNAME_SUFFIX}."

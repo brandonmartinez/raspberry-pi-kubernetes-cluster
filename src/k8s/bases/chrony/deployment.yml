@@ -18,8 +18,8 @@ spec:
               protocol: UDP
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "2"
+              memory: "750Mi"
+              cpu: "1"
             requests:
               memory: "500Mi"
               cpu: "250m"

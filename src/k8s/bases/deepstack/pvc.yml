@@ -3,7 +3,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: deepstack-datastore-pvc
 spec:
-  storageClassName: nfs
   accessModes:
     - ReadWriteMany
   resources:
@@ -15,7 +14,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: deepstack-modelstore-pvc
 spec:
-  storageClassName: nfs
   accessModes:
     - ReadWriteMany
   resources:

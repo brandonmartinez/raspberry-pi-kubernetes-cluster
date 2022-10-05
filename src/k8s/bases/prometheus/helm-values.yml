@@ -22,7 +22,6 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: nfs
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -51,7 +50,6 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: nfs
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:

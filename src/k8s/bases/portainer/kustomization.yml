@@ -1,4 +1,3 @@
-# From: https://raw.githubusercontent.com/portainer/k8s/master/deploy/manifests/portainer/portainer-lb.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

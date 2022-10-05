@@ -1,0 +1,4 @@
+defaultSettings:
+  defaultDataPath: /storage
+  backupTarget: ${LONGHORN_BACKUPTARGET}
+  backupstorePollInterval: 300
