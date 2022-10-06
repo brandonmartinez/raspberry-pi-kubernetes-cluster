@@ -25,7 +25,7 @@ alertmanager:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 50Gi
+              storage: 25Gi
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:
@@ -53,7 +53,7 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 50Gi
+              storage: 25Gi
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:

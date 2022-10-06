@@ -3,7 +3,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: portainer-pvc
 spec:
-  storageClassName: nfs
   accessModes:
     - ReadWriteMany
   resources:

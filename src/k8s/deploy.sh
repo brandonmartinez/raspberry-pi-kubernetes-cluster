@@ -30,6 +30,8 @@ function deploy_helm() {
         log "Installing Helm Chart ${CHART} as ${RELEASE}"
         helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
     else
+        helm repo update
+
         log "Helm Chart ${CHART} already exists; upgrading ${RELEASE} release"
         helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
     fi
@@ -55,9 +57,9 @@ function deploy() {
     kubectl patch storageclass "nfs" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
     kubectl patch storageclass "longhorn" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
-    # ##################################################
-    # section "Installing Prometheus Monitoring Stack"
-    # ##################################################
+    ##################################################
+    section "Installing Prometheus Monitoring Stack"
+    ##################################################
 
     deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
         "monitoring" "prometheus-community/kube-prometheus-stack" \
