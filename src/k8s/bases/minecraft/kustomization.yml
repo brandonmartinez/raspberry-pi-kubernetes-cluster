@@ -13,6 +13,5 @@ configMapGenerator:
 
 resources:
   - namespace.yml
-  - pvc.yml
   - statefulset.yml
   - service.yml

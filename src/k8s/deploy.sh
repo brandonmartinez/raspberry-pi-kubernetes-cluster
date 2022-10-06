@@ -36,6 +36,7 @@ function deploy_helm() {
 }
 
 function deploy() {
+: <<'END'
     ##################################################
     section "Installing Longhorn Storage Provider"
     ##################################################
@@ -63,7 +64,7 @@ function deploy() {
         "monitoring" "prometheus-community/kube-prometheus-stack" \
         "bases/prometheus/helm-values.yml" \
         "monitoring"
-   
+END
     ##################################################
     section "Deploying Service Stacks"
     ##################################################

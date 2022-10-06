@@ -19,8 +19,8 @@ spec:
               memory: "1Gi"
               cpu: "1"
             requests:
-              memory: "500Mi"
-              cpu: "250m"
+              memory: "750Mi"
+              cpu: "500m"
           volumeMounts:
             - mountPath: /datastore
               name: deepstack-datastore
