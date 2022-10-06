@@ -36,8 +36,13 @@ spec:
               cpu: "250m"
           volumeMounts:
             - mountPath: /etc/pihole
-              name: pihole-etc
-      volumes:
-        - name: pihole-etc
-          persistentVolumeClaim:
-            claimName: pihole-pvc
+              name: pihole-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: pihole-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

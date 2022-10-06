@@ -16,4 +16,5 @@ resources:
   - pvc.yml
   - deployment.yml
   - service.yml
+  - horizontalpodautoscaler.yml
   - ingress.yml
