@@ -5,4 +5,5 @@ namespace: longhorn-system
 
 resources:
   - ingress.yml
-  - recurring-job.yml
+  - recurring-job-snapshot.yml
+  - recurring-job-backup.yml

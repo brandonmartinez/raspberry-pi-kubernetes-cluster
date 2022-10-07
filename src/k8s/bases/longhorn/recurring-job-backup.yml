@@ -1,10 +1,10 @@
 apiVersion: longhorn.io/v1beta1
 kind: RecurringJob
 metadata:
-  name: snapshot-default
+  name: backup-default
 spec:
-  cron: "0 4 * * *"
-  task: "snapshot"
+  cron: "0 5 * * *"
+  task: "backup"
   groups:
     - default
   retain: 10
