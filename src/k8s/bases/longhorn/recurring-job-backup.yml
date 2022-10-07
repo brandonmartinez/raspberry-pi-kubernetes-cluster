@@ -3,7 +3,7 @@ kind: RecurringJob
 metadata:
   name: backup-default
 spec:
-  cron: "0 5 * * *"
+  cron: "0 8 * * *"
   task: "backup"
   groups:
     - default

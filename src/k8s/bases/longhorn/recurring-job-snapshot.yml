@@ -3,9 +3,9 @@ kind: RecurringJob
 metadata:
   name: snapshot-default
 spec:
-  cron: "0 2 * * *"
+  cron: "0 */12 * * *"
   task: "snapshot"
   groups:
     - default
   retain: 10
-  concurrency: 2
+  concurrency: 10
