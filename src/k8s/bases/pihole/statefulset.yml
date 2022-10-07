@@ -30,10 +30,10 @@ spec:
           resources:
             limits:
               memory: "250Mi"
-              cpu: "250m"
+              cpu: "100m"
             requests:
-              memory: "100Mi"
-              cpu: "10m"
+              memory: "150Mi"
+              cpu: "20m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc
