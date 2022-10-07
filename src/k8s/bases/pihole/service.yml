@@ -2,7 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pihole-ui-svc
+  annotations:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.name: "pihole-svc"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "false"
 spec:
+  sessionAffinity: ClientIP
   ports:
     - name: 80-tcp
       port: 80

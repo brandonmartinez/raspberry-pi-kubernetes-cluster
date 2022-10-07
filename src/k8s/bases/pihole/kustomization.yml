@@ -12,12 +12,13 @@ configMapGenerator:
       - .env
 
 secretGenerator:
-- name: pihole-secret
-  envs:
-  - .env.secret
+  - name: pihole-secret
+    envs:
+      - .env.secret
 
 resources:
   - namespace.yml
   - statefulset.yml
   - service.yml
+  - headless-service.yml
   - ingress.yml

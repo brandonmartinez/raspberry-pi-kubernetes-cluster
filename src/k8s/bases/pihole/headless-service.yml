@@ -1,0 +1,13 @@
+# Headless service for K3S metrics. No selector
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80

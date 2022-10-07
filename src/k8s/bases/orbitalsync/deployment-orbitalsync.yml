@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orbitalsync
+  labels:
+    app: orbitalsync
+spec:
+  selector:
+      matchLabels:
+        app: orbitalsync
+  template:
+    metadata:
+      labels:
+        app: orbitalsync
+    spec:
+      containers:
+        - name: orbitalsync
+          image: mattwebbio/orbital-sync:latest
+          envFrom:
+            - configMapRef:
+                name: orbitalsync-configmap
+          env:
+            - name: PRIMARY_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: WEBPASSWORD
+            - name: SECONDARY_HOST_1_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: WEBPASSWORD
+            - name: SECONDARY_HOST_2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: WEBPASSWORD
+            - name: SECONDARY_HOST_3_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: WEBPASSWORD
+          resources:
+            limits:
+              memory: "100Mi"
+              cpu: "20m"
+            requests:
+              memory: "100Mi"
+              cpu: "20m"
+
