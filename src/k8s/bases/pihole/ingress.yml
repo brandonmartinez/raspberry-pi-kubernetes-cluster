@@ -16,3 +16,22 @@ spec:
                 name: pihole-ui-svc
                 port:
                   name: 80-tcp
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pihole-0-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: pihole-0.${NETWORK_HOSTNAME_SUFFIX}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /admin
+            backend:
+              service:
+                name: pihole-0-ui-svc
+                port:
+                  name: 80-tcp
