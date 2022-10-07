@@ -16,11 +16,11 @@ spec:
               containerPort: 5000
           resources:
             limits:
-              memory: "1Gi"
+              memory: "750Mi"
               cpu: "1"
             requests:
-              memory: "750Mi"
-              cpu: "500m"
+              memory: "400Mi"
+              cpu: "300m"
           volumeMounts:
             - mountPath: /datastore
               name: deepstack-datastore
