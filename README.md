@@ -215,7 +215,7 @@ master. This will deploy a handful of services to the newly setup Kubernetes
 (k3s) cluster.
 
 ```sh
-cd ~; cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005.sh
+cd ~/src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005.sh
 ```
 
 ## Network Setup
