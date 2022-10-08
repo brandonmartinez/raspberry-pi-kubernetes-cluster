@@ -4,7 +4,7 @@ metadata:
   name: pihole
 spec:
   serviceName: pihole
-  replicas: 4
+  replicas: 3
   updateStrategy:
     type: RollingUpdate
   template:

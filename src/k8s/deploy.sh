@@ -17,6 +17,8 @@ function deploy_helm() {
     CHART=$4
     HELM_VALUES=$5
     NAMESPACE=$6
+    SLEEP_INSTALL=${7:-60}
+    SLEEP_UPGRADE=${8:-10}
 
     set +e
     HELM_RELEASE_STATUS=$(helm status "${RELEASE}" --namespace "${NAMESPACE}" 2>&1 > /dev/null)
@@ -29,11 +31,17 @@ function deploy_helm() {
 
         log "Installing Helm Chart ${CHART} as ${RELEASE}"
         helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+
+        log "Waiting ${SLEEP_INSTALL} seconds for ${RELEASE} to be Ready"
+        sleep ${SLEEP_INSTALL}
     else
         helm repo update
 
         log "Helm Chart ${CHART} already exists; upgrading ${RELEASE} release"
         helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+
+        log "Waiting ${SLEEP_UPGRADE} seconds for ${RELEASE} to be Ready"
+        sleep ${SLEEP_UPGRADE}
     fi
 }
 
@@ -44,11 +52,8 @@ function deploy() {
     deploy_helm "longhorn" "https://charts.longhorn.io" \
         "longhorn" "longhorn/longhorn" \
         "bases/longhorn/helm-values.yml" \
-        "longhorn-system"
-
-    section "Waiting for Longhorn to be Ready"
-
-    sleep 120
+        "longhorn-system" \
+        120
 
     ##################################################
     section "Setting Longhorn as the Default Storage Class"

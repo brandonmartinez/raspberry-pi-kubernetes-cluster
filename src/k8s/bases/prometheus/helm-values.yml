@@ -72,9 +72,14 @@ grafana:
       serve_from_sub_path: true
   # Admin user password
   adminPassword: ${GRAFANA_PASSWORD}
+  # Set timezone to be browser
+  defaultDashboardsTimezone: browser
   # List of grafana plugins to be installed
   plugins:
     - grafana-piechart-panel
+  persistence:
+    enabled: true
+    size: 25Gi
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:

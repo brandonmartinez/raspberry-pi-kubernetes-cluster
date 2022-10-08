@@ -8,5 +8,5 @@ spec:
     kind: Deployment
     name: unbound
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 3
   targetCPUUtilizationPercentage: 80
