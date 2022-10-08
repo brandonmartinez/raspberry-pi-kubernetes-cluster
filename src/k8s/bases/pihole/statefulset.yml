@@ -29,11 +29,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "250Mi"
-              cpu: "100m"
+              memory: "200Mi"
+              cpu: "50m"
             requests:
-              memory: "150Mi"
-              cpu: "20m"
+              memory: "200Mi"
+              cpu: "50m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc

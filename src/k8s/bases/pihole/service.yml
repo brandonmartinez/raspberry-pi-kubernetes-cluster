@@ -26,6 +26,28 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: pihole-1-ui-svc
+spec:
+  ports:
+    - name: 80-tcp
+      port: 80
+  selector:
+    "statefulset.kubernetes.io/pod-name": pihole-1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-2-ui-svc
+spec:
+  ports:
+    - name: 80-tcp
+      port: 80
+  selector:
+    "statefulset.kubernetes.io/pod-name": pihole-2
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: pihole-dns-svc
 spec:
   type: ClusterIP

@@ -25,7 +25,7 @@ alertmanager:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 25Gi
+              storage: 10Gi
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:
@@ -53,7 +53,7 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 25Gi
+              storage: 10Gi
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:
@@ -77,9 +77,6 @@ grafana:
   # List of grafana plugins to be installed
   plugins:
     - grafana-piechart-panel
-  persistence:
-    enabled: true
-    size: 25Gi
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
