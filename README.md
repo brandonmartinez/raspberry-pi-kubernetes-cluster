@@ -111,14 +111,14 @@ more.
   RPi's (this repo is assuming RSA keys with no password)
 - Recommended: a domain name you control (otherwise, .home.arpa will work)
 
-If you don't have access to a version of `openssl` with the `-6` option (such as
-on macOS), you can use the following command to generate the default `pi`
-username with `raspberry` as the password (though, it's recommended to generate
-a proper username password pair):
-
-```sh
-echo 'pi:$6$i9XSzPaTyjaCnnKe$fwuKZKF9CYR/vJKVLVusR.NoHQxrj2XSVPK/g7N46RzSaB/9oNmxMXIC3uLIEGV.qg8MYmuJIFAL4ymF4YLeP.' > /Volumes/boot/userconf
-```
+> :warning: **Note:** If you don't have access to a version of `openssl` with the `-6` option (such
+> as on macOS), you can use the following command to generate the default `pi`
+> username with `raspberry` as the password (though, it's recommended to
+> generate a proper username password pair):
+>
+> ```sh
+> echo 'pi:$6$i9XSzPaTyjaCnnKe$fwuKZKF9CYR/vJKVLVusR.NoHQxrj2XSVPK/g7N46RzSaB/9oNmxMXIC3uLIEGV.qg8MYmuJIFAL4ymF4YLeP.' > /Volumes/boot/userconf
+> ```
 
 ## Configure Raspberry Pi Cluster and Nodes to Execute Scripts
 
