@@ -1,26 +1,13 @@
-# TODO: this should be a deployment instead of StatefulSet
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: unbound
-  labels:
-    app: unbound
 spec:
-  serviceName: "unbound"
-  replicas: 4
-  updateStrategy:
-    type: RollingUpdate
-  selector:
-    matchLabels:
-      app: unbound
   template:
-    metadata:
-      labels:
-        app: unbound
     spec:
       containers:
         - name: unbound
-          image: mvance/unbound-rpi:1.14.0
+          image: mvance/unbound-rpi:latest
           ports:
             - name: svc-53-udp
               containerPort: 53
@@ -30,14 +17,14 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "100Mi"
-              cpu: "100m"
+              memory: "50Mi"
+              cpu: "50m"
             requests:
-              memory: "25Mi"
-              cpu: "25m"
+              memory: "50Mi"
+              cpu: "50m"
           volumeMounts:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
-              name: unbound-a-records
+              name: unbound-config-files
               subPath: a-records.conf
           livenessProbe:
             tcpSocket:
@@ -50,9 +37,9 @@ spec:
             initialDelaySeconds: 25
             periodSeconds: 5
       volumes:
-        - name: unbound-a-records
+        - name: unbound-config-files
           configMap:
-            name: unbound-a-records-configmap
+            name: unbound-configmap
             items:
-              - key: a-records
+              - key: a-records.conf
                 path: a-records.conf

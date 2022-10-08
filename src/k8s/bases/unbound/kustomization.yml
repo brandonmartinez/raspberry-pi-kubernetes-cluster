@@ -6,7 +6,13 @@ namespace: pihole
 commonLabels:
   app: unbound
 
+configMapGenerator:
+  - name: unbound-configmap
+    files:
+      - a-records.conf
+
 resources:
-  - configmap.yml
-  - statefulset.yml
+  - namespace.yml
+  - deployment.yml
   - service.yml
+  - horizontalpodautoscaler.yml

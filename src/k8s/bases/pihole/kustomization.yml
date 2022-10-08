@@ -17,7 +17,6 @@ secretGenerator:
       - .env.secret
 
 resources:
-  - namespace.yml
   - statefulset.yml
   - service.yml
   - headless-service.yml
