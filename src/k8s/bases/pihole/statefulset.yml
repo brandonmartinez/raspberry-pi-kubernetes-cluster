@@ -4,7 +4,6 @@ metadata:
   name: pihole
 spec:
   serviceName: pihole
-  replicas: 3
   updateStrategy:
     type: RollingUpdate
   template:
@@ -30,10 +29,10 @@ spec:
           resources:
             limits:
               memory: "200Mi"
-              cpu: "50m"
+              cpu: "150m"
             requests:
               memory: "200Mi"
-              cpu: "50m"
+              cpu: "150m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc

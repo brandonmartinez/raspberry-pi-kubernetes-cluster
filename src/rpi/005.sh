@@ -8,9 +8,10 @@ source ../_shared/echo.sh
 source ../k8s/deploy.sh
 set +o allexport
 
-section "Adding Taint to Avoid Scheduling on Master Node"
-kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule
+section "Addings Taint to Avoid Scheduling on Master Node"
 kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/control-plane:NoSchedule
+kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule
+kubectl taint nodes $CLUSTER_HOSTNAME cattle.io/os=linux:NoSchedule
 
 section "Adding ipv4Only Label to Cluster Master Node"
 kubectl label nodes $CLUSTER_HOSTNAME ipv4Only=true
