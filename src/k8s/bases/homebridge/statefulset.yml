@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: homebridge
+spec:
+  serviceName: homebridge
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+        - name: homebridge
+          image: oznu/homebridge:latest
+          envFrom:
+            - configMapRef:
+                name: homebridge-configmap
+          ports:
+            - name: svc-5353-udp
+              containerPort: 5353
+              protocol: UDP
+            - name: svc-5353-tcp
+              containerPort: 5353
+              protocol: TCP
+            - name: svc-${HOMEBRIDGE_PORT}-udp
+              containerPort: ${HOMEBRIDGE_PORT}
+              protocol: UDP
+            - name: svc-${HOMEBRIDGE_PORT}-tcp
+              containerPort: ${HOMEBRIDGE_PORT}
+              protocol: TCP
+            - name: svc-ui
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "150m"
+            requests:
+              memory: "200Mi"
+              cpu: "150m"
+          volumeMounts:
+            - mountPath: /homebridge
+              name: homebridge-pvc
+      volumes:
+        - name: homebridge-pvc
+          persistentVolumeClaim:
+            claimName: homebridge-pvc

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-ui-svc
+spec:
+  ports:
+    - name: 80-tcp
+      port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebridge-mdns-svc
+spec:
+  ports:
+    - name: 5353-tcp
+      port: 5353
+      targetPort: 5353
+      protocol: TCP
+    - name: 5353-udp
+      port: 5353
+      targetPort: 5353
+      protocol: UDP
+    - name: ${HOMEBRIDGE_PORT}-tcp
+      port: ${HOMEBRIDGE_PORT}
+      targetPort: ${HOMEBRIDGE_PORT}
+      protocol: TCP
+    - name: ${HOMEBRIDGE_PORT}-udp
+      port: ${HOMEBRIDGE_PORT}
+      targetPort: ${HOMEBRIDGE_PORT}
+      protocol: UDP
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+      - ip: ${CLUSTER_HOSTNETWORKINGIPADDRESS}
