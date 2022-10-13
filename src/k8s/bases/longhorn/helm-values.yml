@@ -3,3 +3,6 @@ defaultSettings:
   backupTarget: ${LONGHORN_BACKUPTARGET}
   backupstorePollInterval: 300
   reclaimPolicy: Retain
+  guaranteedEngineManagerCPU: 100m
+  guaranteedReplicaManagerCPU: 100m
+  defaultReplicaCount: 2
