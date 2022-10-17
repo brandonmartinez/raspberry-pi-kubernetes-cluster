@@ -39,6 +39,7 @@ prometheus:
   prometheusSpec:
     # Subpath /prometheus configuration
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/prometheus/
+    retentionSize: 8GB
     routePrefix: /
     # Resources request and limits
     resources:
