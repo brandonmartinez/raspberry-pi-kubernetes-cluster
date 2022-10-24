@@ -2,3 +2,4 @@ kubeconfig.yml
 compiled.yml
 /.env
 /.tmp
+/src/k8s/kustomization.yml
