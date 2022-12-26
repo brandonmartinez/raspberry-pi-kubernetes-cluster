@@ -1,12 +1,12 @@
 defaultSettings:
-  defaultDataPath: /storage
+  defaultDataPath: ${LONGHORN_DATAPATH}
   defaultDataLocality: best-effort
   backupTarget: ${LONGHORN_BACKUPTARGET}
   backupstorePollInterval: 300
   reclaimPolicy: Retain
   guaranteedEngineManagerCPU: 200m
   guaranteedReplicaManagerCPU: 200m
-  defaultReplicaCount: 2
+  defaultReplicaCount: ${LONGHORN_REPLICACOUNT}
   autoDeletePodWhenVolumeDetachedUnexpectedly: true
 persistence:
   defaultDataLocality: best-effort
