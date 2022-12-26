@@ -41,6 +41,7 @@ prometheus:
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/prometheus/
     retentionSize: 8GB
     routePrefix: /
+    scrapeInterval: 5m
     # Resources request and limits
     resources:
       requests:

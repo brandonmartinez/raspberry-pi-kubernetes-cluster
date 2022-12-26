@@ -8,7 +8,7 @@ source ../_shared/echo.sh
 set +o allexport
 
 # Some secret values need to be base64 encoded
-PIHOLE_PASSWORD=$(echo $PIHOLE_PASSWORD | base64 -)
+WEBPASSWORD=$(echo $WEBPASSWORD | base64)
 
 function deploy_helm() {
     REPO_ALIAS=$1
