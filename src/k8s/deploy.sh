@@ -88,6 +88,10 @@ function deploy() {
         echo "- bases/longhorn" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_PROMETHEUS" = true ] ; then
+        echo "- bases/prometheus" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_PIHOLE" = true ] ; then
         echo "- bases/unbound" >> kustomization.yml
         echo "- bases/pihole" >> kustomization.yml
