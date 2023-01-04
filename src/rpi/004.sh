@@ -14,7 +14,7 @@ section "Installing NFS Client and Configuring Cluster Share"
 apt install nfs-common -y
 
 # If there's no token, assume on the cluster master
-if [ "$TOKEN" != "" ]
+if [ "$TOKEN" = "" ]
 then
   section "Installing k3s"
   curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=v1.24 sh -s - --write-kubeconfig-mode 644 --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0'
