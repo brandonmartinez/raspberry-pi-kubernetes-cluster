@@ -19,6 +19,8 @@ kubectl label nodes $CLUSTER_HOSTNAME ipv4Only=true
 section "Moving to k8s directory"
 cd ../k8s
 
+mkdir -p "$LONGHORN_DATAPATH"
+
 deploy
 
 section "Starting HomeBridge in Docker"
