@@ -16,5 +16,8 @@ section "Updating Packages"
 apt update && apt full-upgrade -y
 
 section "Installing Docker"
-curl -sSL https://get.docker.com | sh
+apt install apt-transport-https ca-certificates curl gnupg lsb-release -y
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+apt -y install docker-ce docker-ce-cli containerd.io
+
 reboot
