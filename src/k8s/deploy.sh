@@ -7,9 +7,6 @@ source ../../.env
 source ../_shared/echo.sh
 set +o allexport
 
-# Some secret values need to be base64 encoded
-WEBPASSWORD=$(echo $WEBPASSWORD | base64)
-
 function deploy_helm() {
     REPO_ALIAS=$1
     REPO_URI=$2
