@@ -25,10 +25,16 @@ deploy
 
 section "Starting HomeBridge in Docker"
 
-mkdir /clusterfs/homebridge
+HOMEBRIDGE_DATA_DIRECTORY="/home/pi/homebridge"
+
+if [ "$MOUNT_USB" = true ] ; then
+    HOMEBRIDGE_DATA_DIRECTORY="$MOUNT_USB_MOUNT_PATH/homebridge"
+fi
+
+mkdir -p "$HOMEBRIDGE_DATA_DIRECTORY"
 
 docker run -d \
     --restart unless-stopped \
     --net=host --name=homebridge \
     -e PGID=1000 -e PUID=1000 -e HOMEBRIDGE_CONFIG_UI=1 -e HOMEBRIDGE_CONFIG_UI_PORT=8081 -e TZ=America/Detroit \
-    -v /clusterfs/homebridge:/homebridge oznu/homebridge:latest
+    -v "$HOMEBRIDGE_DATA_DIRECTORY:/homebridge" oznu/homebridge:latest
