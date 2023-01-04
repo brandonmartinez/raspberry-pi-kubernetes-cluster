@@ -1,5 +1,4 @@
 defaultSettings:
-  defaultDataPath: ${LONGHORN_DATAPATH}
   defaultDataLocality: best-effort
   backupTarget: ${LONGHORN_BACKUPTARGET}
   backupstorePollInterval: 300

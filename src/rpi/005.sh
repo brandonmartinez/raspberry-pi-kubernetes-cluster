@@ -13,7 +13,9 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 section "Addings Taint to Avoid Scheduling on Master Node"
 kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/control-plane:NoSchedule --overwrite
 kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint nodes $CLUSTER_HOSTNAME cattle.io/os=linux:NoSchedule --overwrite
+if [ "$MOUNT_USB" = false ] ; then
+    kubectl taint nodes $CLUSTER_HOSTNAME cattle.io/os=linux:NoSchedule --overwrite
+fi
 
 section "Adding ipv4Only Label to Cluster Master Node"
 kubectl label nodes $CLUSTER_HOSTNAME ipv4Only=true --overwrite
