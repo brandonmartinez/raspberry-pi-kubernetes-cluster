@@ -40,5 +40,5 @@ mkdir -p "$HOMEBRIDGE_DATA_DIRECTORY"
 docker run -d \
     --restart unless-stopped \
     --net=host --name=homebridge \
-    -e PGID=1000 -e PUID=1000 -e HOMEBRIDGE_CONFIG_UI=1 -e HOMEBRIDGE_CONFIG_UI_PORT=8081 -e TZ=America/Detroit \
+    -e PGID=1000 -e PUID=1000 -e HOMEBRIDGE_CONFIG_UI=1 -e HOMEBRIDGE_CONFIG_UI_PORT=8581 -e TZ=America/Detroit \
     -v "$HOMEBRIDGE_DATA_DIRECTORY:/homebridge" oznu/homebridge:latest
