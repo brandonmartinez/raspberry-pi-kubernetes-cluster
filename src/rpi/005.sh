@@ -27,6 +27,15 @@ mkdir -p "$LONGHORN_DATAPATH"
 
 deploy
 
+section "Starting Watchtower to Keep Docker Images Updated"
+
+docker run -d \
+  --name watchtower \
+  --restart unless-stopped \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower:latest \
+  --interval 3600 --cleanup
+
 section "Starting HomeBridge in Docker"
 
 HOMEBRIDGE_DATA_DIRECTORY="/home/pi/homebridge"
