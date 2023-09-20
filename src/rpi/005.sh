@@ -42,3 +42,20 @@ docker run -d \
     --net=host --name=homebridge \
     -e PGID=1000 -e PUID=1000 -e HOMEBRIDGE_CONFIG_UI=1 -e HOMEBRIDGE_CONFIG_UI_PORT=8581 -e TZ=America/Detroit \
     -v "$HOMEBRIDGE_DATA_DIRECTORY:/homebridge" oznu/homebridge:latest
+
+section "Starting Scrypted in Docker"
+
+SCRYPTED_DATA_DIRECTORY="/home/pi/scrypted"
+
+if [ "$MOUNT_USB" = true ] ; then
+    SCRYPTED_DATA_DIRECTORY="$MOUNT_USB_MOUNT_PATH/scrypted"
+fi
+
+mkdir -p "$SCRYPTED_DATA_DIRECTORY"
+
+docker run -d \
+    --restart unless-stopped \
+    --net=host --name=scrypted \
+    -e PGID=1000 -e PUID=1000 -e TZ=America/Detroit \
+    -v "$SCRYPTED_DATA_DIRECTORY:/server/volume" koush/scrypted:latest
+

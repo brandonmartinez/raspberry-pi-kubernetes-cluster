@@ -1,3 +1,4 @@
+*.DS_Store
 kubeconfig.yml
 compiled.yml
 /.env
