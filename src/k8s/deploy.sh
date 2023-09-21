@@ -21,19 +21,17 @@ function deploy_helm() {
     HELM_RELEASE_STATUS=$(helm status "${RELEASE}" --namespace "${NAMESPACE}" 2>&1 > /dev/null)
     set -e
 
-    if [[ $HELM_RELEASE_STATUS == *"Error"* ]]; then
-        log "Adding Helm Chart Repo ${REPO_ALIAS}"
-        helm repo add "${REPO_ALIAS}" "${REPO_URI}"
-        helm repo update
+    log "Adding Helm Chart Repo ${REPO_ALIAS}"
+    helm repo add "${REPO_ALIAS}" "${REPO_URI}"
+    helm repo update
 
+    if [[ $HELM_RELEASE_STATUS == *"Error"* ]]; then
         log "Installing Helm Chart ${CHART} as ${RELEASE}"
         helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
 
         log "Waiting ${SLEEP_INSTALL} seconds for ${RELEASE} to be Ready"
         sleep ${SLEEP_INSTALL}
     else
-        helm repo update
-
         log "Helm Chart ${CHART} already exists; upgrading ${RELEASE} release"
         helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
 
@@ -121,7 +119,7 @@ function deploy() {
     export DOLLAR='$'
     kubectl kustomize | envsubst > compiled.yml
     kubectl apply -f compiled.yml
-    
+
     ##################################################
     section "Done."
     ##################################################

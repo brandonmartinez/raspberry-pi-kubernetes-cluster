@@ -17,7 +17,7 @@ apt install nfs-common -y
 if [ "$TOKEN" = "" ]
 then
   section "Installing k3s"
-  curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=v1.24 sh -s - --write-kubeconfig-mode 644 --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0'
+  curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable sh -s - --write-kubeconfig-mode 644 --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0' --prefer-bundled-bin
 
   section "Sleeping for 30 Seconds to Wait for k3s"
 
@@ -30,5 +30,5 @@ then
   cat /var/lib/rancher/k3s/server/token
 else
   section "Installing k3s Node"
-  curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=v1.24 K3S_URL=https://$PRIMARY_IP:6443 K3S_TOKEN=$TOKEN sh -s - --kube-proxy-arg 'metrics-bind-address=0.0.0.0'
+  curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable K3S_URL=https://$PRIMARY_IP:6443 K3S_TOKEN=$TOKEN sh -s - --kube-proxy-arg 'metrics-bind-address=0.0.0.0'
 fi
