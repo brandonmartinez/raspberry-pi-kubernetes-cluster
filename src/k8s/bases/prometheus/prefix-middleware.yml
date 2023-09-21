@@ -7,5 +7,4 @@ spec:
     prefixes:
       - "/prometheus"
       - "/alertmanager"
-      - "/grafana"
     forceSlash: false

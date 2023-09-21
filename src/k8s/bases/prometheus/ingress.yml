@@ -25,5 +25,3 @@ spec:
       services:
         - name: monitoring-grafana
           port: 80
-      middlewares:
-        - name: stripprefix
