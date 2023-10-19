@@ -1,6 +1,6 @@
 *.DS_Store
 kubeconfig.yml
+kustomization.yml
 compiled.yml
 /.env
 /.tmp
-/src/k8s/kustomization.yml

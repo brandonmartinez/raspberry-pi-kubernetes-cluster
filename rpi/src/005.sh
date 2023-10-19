@@ -5,7 +5,7 @@ set -e
 set -o allexport
 source ../../.env
 source ../_shared/echo.sh
-source ../k8s/deploy.sh
+source ../../k8s/src/deploy.sh
 set +o allexport
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
