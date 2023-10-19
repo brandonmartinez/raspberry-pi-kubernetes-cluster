@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: homebridge
+
+commonLabels:
+  app: homebridge
+
+configMapGenerator:
+  - name: homebridge-configmap
+    envs:
+      - .env
+
+resources:
+  - namespace.yml
+  - pvc.yml
+  - statefulset.yml
+  - service.yml
+  - ingress.yml
