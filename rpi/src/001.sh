@@ -33,10 +33,10 @@ if [ "$MOUNT_USB" = true ] ; then
     section "Mounting attached USB Drive ${MOUNT_USB_DRIVE_PATH}1 to $MOUNT_USB_MOUNT_PATH"
     mkdir -p "$MOUNT_USB_MOUNT_PATH"
     mount "${MOUNT_USB_DRIVE_PATH}1" "$MOUNT_USB_MOUNT_PATH"
-    
+
     section "Setting up FSTAB entry for USB Drive"
     MOUNT_USB_UUID=$(lsblk -no UUID "${MOUNT_USB_DRIVE_PATH}1")
-    echo "UUID=$MOUNT_USB_UUID $MOUNT_USB_MOUNT_PATH ext4 defaults,auto,users,rw,nofail 0 0" | tee -a /etc/fstab
+    echo "UUID=$MOUNT_USB_UUID $MOUNT_USB_MOUNT_PATH ext4 defaults,auto,users,rw,exec,nofail 0 0" | tee -a /etc/fstab
 fi
 
 section "Rebooting"

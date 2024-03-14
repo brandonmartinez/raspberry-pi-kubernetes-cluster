@@ -4,7 +4,7 @@ set -e
 
 set -o allexport
 source ../../.env
-source ../_shared/echo.sh
+source ../../_shared/echo.sh
 source deploy.sh
 set +o allexport
 
