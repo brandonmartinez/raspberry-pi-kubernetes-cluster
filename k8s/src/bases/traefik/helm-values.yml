@@ -1,0 +1,10 @@
+# From: https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
+ingressRoute:
+  dashboard:
+    enabled: true
+    labels: { app: traefik }
+    matchRule: Host(`traefik.${NETWORK_HOSTNAME_SUFFIX}`)
+    entryPoints: ["web"]
+ports:
+  web:
+    exposeInternal: true

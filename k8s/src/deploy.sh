@@ -59,6 +59,17 @@ function deploy() {
         kubectl patch storageclass "longhorn" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     fi
 
+    if [ "$DEPLOY_TRAEFIK" = true ] ; then
+        ##################################################
+        section "Installing Traefik Ingress Controller"
+        ##################################################
+
+        deploy_helm "traefik" "https://traefik.github.io/charts" \
+            "traefik" "traefik/traefik" \
+            "bases/traefik/helm-values.yml" \
+            "kube-system"
+    fi
+
     if [ "$DEPLOY_PROMETHEUS" = true ] ; then
         ##################################################
         section "Installing Prometheus Monitoring Stack"
