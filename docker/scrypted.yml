@@ -1,0 +1,40 @@
+# based on https://github.com/koush/scrypted/blob/main/install/docker/docker-compose.yml
+version: '3.7'
+services:
+  scrypted:
+    environment:
+      - SCRYPTED_WEBHOOK_UPDATE_AUTHORIZATION=balance-propane-epitaph-denier
+      - SCRYPTED_WEBHOOK_UPDATE=http://localhost:10444/v1/update
+      - SCRYPTED_DOCKER_AVAHI=true
+    image: ghcr.io/koush/scrypted
+
+    volumes:
+      - scrypted_data:/server/volume
+    devices: []
+    container_name: scrypted
+    restart: unless-stopped
+    network_mode: host
+    logging:
+      driver: "none"
+    labels:
+      - "com.centurylinklabs.watchtower.scope=scrypted"
+  watchtower:
+    environment:
+      - WATCHTOWER_HTTP_API_TOKEN=balance-propane-epitaph-denier
+      - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_SCOPE=scrypted
+      - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
+    image: containrrr/watchtower
+    container_name: scrypted-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "com.centurylinklabs.watchtower.scope=scrypted"
+    ports:
+      - 10444:8080
+    command: --interval 3600 --cleanup --scope scrypted
+volumes:
+  scrypted_data:
+    external: true
+    name: scrypted_data
