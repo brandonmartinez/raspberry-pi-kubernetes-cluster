@@ -36,12 +36,6 @@ IS_CLUSTER_MASTER=$(ifconfig | grep ${CLUSTER_HOSTNETWORKINGIPADDRESS})
 
 BOOT_OPTIONS_TO_ADD="rootwait cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1"
 
-if [ "$IS_CLUSTER_MASTER" != "" ]
-then
-    log "Current node is the cluster master, disabling IPv6 for Homebridge"
-    BOOT_OPTIONS_TO_ADD="${BOOT_OPTIONS_TO_ADD} ipv6.disable=1"
-fi
-
 sed -i "s/rootwait/${BOOT_OPTIONS_TO_ADD}/g" /boot/cmdline.txt
 
 section "Rebooting"

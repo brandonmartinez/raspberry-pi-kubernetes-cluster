@@ -3,8 +3,10 @@ kind: Kustomization
 
 namespace: chrony
 
-commonLabels:
-  app: chrony
+labels:
+  - pairs:
+      app: chrony
+    includeSelectors: true
 
 configMapGenerator:
   - name: chrony-configmap

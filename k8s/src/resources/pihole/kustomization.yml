@@ -3,8 +3,10 @@ kind: Kustomization
 
 namespace: pihole
 
-commonLabels:
-  app: pihole
+labels:
+  - pairs:
+      app: pihole
+    includeSelectors: true
 
 configMapGenerator:
   - name: pihole-configmap

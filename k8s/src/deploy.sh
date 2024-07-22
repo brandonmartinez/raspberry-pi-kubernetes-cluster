@@ -4,7 +4,7 @@ set -e
 
 set -o allexport
 source ../../.env
-source ../_shared/echo.sh
+source ../../_shared/echo.sh
 set +o allexport
 
 function deploy_helm() {
@@ -47,7 +47,7 @@ function deploy() {
         ##################################################
         deploy_helm "longhorn" "https://charts.longhorn.io" \
             "longhorn" "longhorn/longhorn" \
-            "bases/longhorn/helm-values.yml" \
+            "resources/longhorn/helm-values.yml" \
             "longhorn-system" \
             120
 
@@ -66,7 +66,7 @@ function deploy() {
 
         deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
             "monitoring" "prometheus-community/kube-prometheus-stack" \
-            "bases/prometheus/helm-values.yml" \
+            "resources/prometheus/helm-values.yml" \
             "monitoring"
     fi
 
@@ -76,41 +76,41 @@ function deploy() {
     log "Creating network services to be consumed by cluster and network-wide resources."
 
     log "Generating kustomize script"
-    echo -e "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nbases:" > kustomization.yml
-    echo "- bases/kube-system" >> kustomization.yml
+    echo -e "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nresources:" > kustomization.yml
+    echo "- resources/kube-system" >> kustomization.yml
 
     if [ "$DEPLOY_LONGHORN" = true ] ; then
-        echo "- bases/longhorn" >> kustomization.yml
+        echo "- resources/longhorn" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_PROMETHEUS" = true ] ; then
-        echo "- bases/prometheus" >> kustomization.yml
+        echo "- resources/prometheus" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_PIHOLE" = true ] ; then
-        echo "- bases/unbound" >> kustomization.yml
-        echo "- bases/pihole" >> kustomization.yml
-        echo "- bases/orbitalsync" >> kustomization.yml
+        echo "- resources/unbound" >> kustomization.yml
+        echo "- resources/pihole" >> kustomization.yml
+        echo "- resources/orbitalsync" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_HOMEBRIDGE" = true ] ; then
-        echo "- bases/homebridge" >> kustomization.yml
+        echo "- resources/homebridge" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_DEEPSTACK" = true ] ; then
-        echo "- bases/deepstack" >> kustomization.yml
+        echo "- resources/deepstack" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_PORTAINER" = true ] ; then
-        echo "- bases/portainer" >> kustomization.yml
+        echo "- resources/portainer" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_CHRONY" = true ] ; then
-        echo "- bases/chrony" >> kustomization.yml
+        echo "- resources/chrony" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_MINECRAFT" = true ] ; then
-        echo "- bases/minecraft" >> kustomization.yml
+        echo "- resources/minecraft" >> kustomization.yml
     fi
 
     log "Deploying kustomize script via kubectl"

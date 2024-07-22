@@ -3,8 +3,10 @@ kind: Kustomization
 
 namespace: pihole
 
-commonLabels:
-  app: unbound
+labels:
+  - pairs:
+      app: unbound
+    includeSelectors: true
 
 configMapGenerator:
   - name: unbound-configmap

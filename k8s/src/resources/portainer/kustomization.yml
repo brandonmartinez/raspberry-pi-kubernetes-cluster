@@ -3,8 +3,10 @@ kind: Kustomization
 
 namespace: portainer
 
-commonLabels:
-  app: portainer
+labels:
+  - pairs:
+      app: portainer
+    includeSelectors: true
 
 resources:
   - namespace.yml

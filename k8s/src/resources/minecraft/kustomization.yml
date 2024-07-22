@@ -3,8 +3,10 @@ kind: Kustomization
 
 namespace: minecraft
 
-commonLabels:
-  app: minecraft
+labels:
+  - pairs:
+      app: minecraft
+    includeSelectors: true
 
 configMapGenerator:
   - name: minecraft-configmap

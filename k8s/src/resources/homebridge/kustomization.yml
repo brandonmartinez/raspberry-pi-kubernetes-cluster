@@ -1,20 +1,21 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: deepstack
+namespace: homebridge
 
-commonLabels:
-  app: deepstack
+labels:
+  - pairs:
+      app: homebridge
+    includeSelectors: true
 
 configMapGenerator:
-  - name: deepstack-configmap
+  - name: homebridge-configmap
     envs:
       - .env
 
 resources:
   - namespace.yml
   - pvc.yml
-  - deployment.yml
+  - statefulset.yml
   - service.yml
-  - horizontalpodautoscaler.yml
   - ingress.yml
