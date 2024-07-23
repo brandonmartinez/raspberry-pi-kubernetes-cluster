@@ -4,3 +4,5 @@ compiled.yml
 /.env
 /.tmp
 k8s/src/kustomization.yml
+k8s/src/resources/prometheus/grafana-dashboards/*.yml
+k8s/src/resources/prometheus/grafana-dashboards/*.tmp

@@ -68,6 +68,28 @@ function deploy() {
             "monitoring" "prometheus-community/kube-prometheus-stack" \
             "resources/prometheus/helm-values.yml" \
             "monitoring"
+
+        log "Building Grafana Dashboard Kustomize YAML Files from JSON Dashboards"
+        for file in resources/prometheus/grafana-dashboards/*.json; do
+            base_name=$(basename "$file" .json)
+            yml_file="resources/prometheus/grafana-dashboards/${base_name}.yml"
+            tmp_file="resources/prometheus/grafana-dashboards/${base_name}.tmp"
+
+            # Create the base template
+            echo "apiVersion: v1" > "$yml_file"
+            echo "kind: ConfigMap" >> "$yml_file"
+            echo "metadata:" >> "$yml_file"
+            echo "  name: grafana-$base_name" >> "$yml_file"
+            echo "  labels:" >> "$yml_file"
+            echo "    grafana_dashboard: \"1\"" >> "$yml_file"
+            echo "data:" >> "$yml_file"
+            echo "  grafana-$base_name.json: |-" >> "$yml_file"
+
+            # Convert the JSON to YAML
+            sed -e 's/\$/\${DOLLAR}/g' -e 's/^/    /' "$file" > "$tmp_file"
+            cat "$tmp_file" >> "$yml_file"
+            rm -f $tmp_file
+        done
     fi
 
     ##################################################

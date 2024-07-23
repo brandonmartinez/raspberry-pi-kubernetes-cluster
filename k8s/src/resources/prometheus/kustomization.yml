@@ -9,9 +9,9 @@ resources:
   - ingress.yml
   - service-monitor.yml
   - prometheus-rule.yml
-  - grafana-etcd-dashboard.yml
-  - grafana-kubelet-dashboard.yml
-  - grafana-kubernetes-api-server-dashboard.yml
-  - grafana-kubernetes-controller-manager-dashboard.yml
-  - grafana-kubernetes-proxy-dashboard.yml
-  - grafana-kubernetes-scheduler-dashboard.yml
+  - grafana-dashboards/etcd-dashboard.yml
+  - grafana-dashboards/kubernetes-api-server-dashboard.yml
+  - grafana-dashboards/kubernetes-controller-manager-dashboard.yml
+  - grafana-dashboards/kubernetes-kubelet-dashboard.yml
+  - grafana-dashboards/kubernetes-proxy-dashboard.yml
+  - grafana-dashboards/kubernetes-scheduler-dashboard.yml
