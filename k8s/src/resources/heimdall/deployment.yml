@@ -20,7 +20,7 @@ spec:
             claimName: heimdall-pvc
       containers:
         - name: heimdall
-          image: linuxserver/heimdall:latest
+          image: ghcr.io/linuxserver/heimdall:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: config
@@ -30,8 +30,8 @@ spec:
               containerPort: 80
           resources:
             limits:
-              memory: "200Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "500m"
             requests:
-              memory: "50Mi"
-              cpu: "50m"
+              memory: "250Mi"
+              cpu: "250m"
