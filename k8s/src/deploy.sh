@@ -115,6 +115,10 @@ function deploy() {
         echo "- resources/orbitalsync" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_HEIMDALL" = true ] ; then
+        echo "- resources/heimdall" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_HOMEBRIDGE" = true ] ; then
         echo "- resources/homebridge" >> kustomization.yml
     fi
