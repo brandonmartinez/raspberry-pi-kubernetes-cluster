@@ -26,19 +26,16 @@ spec:
             - configMapRef:
                 name: pikaraoke-configmap
           args:
-            - "-l10"
-            - "-u $(UI_URL)"
-            - "-m $(VIDEO_URL)"
-            - "-v 1"
-            - "--admin-password $(PIKARAOKE_ADMIN_PASSWORD)"
+            - -l10
+            - -u $(URL)
+            - -v 1
+            # - --admin-password $(PIKARAOKE_ADMIN_PASSWORD)
           volumeMounts:
             - name: pikaraoke
               mountPath: /app/pikaraoke-songs
           ports:
             - name: svc-5555-http
               containerPort: 5555
-            - name: svc-5556-ffmpeg
-              containerPort: 5556
           resources:
             limits:
               memory: "1Gi"

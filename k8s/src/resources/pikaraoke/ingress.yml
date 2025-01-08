@@ -16,10 +16,3 @@ spec:
                 name: pikaraoke-svc
                 port:
                   name: 5555-tcp
-          - pathType: Prefix
-            path: /video
-            backend:
-              service:
-                name: pikaraoke-svc
-                port:
-                  name: 5556-tcp
