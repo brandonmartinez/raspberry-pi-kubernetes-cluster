@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pikaraoke-svc
+spec:
+  ports:
+    - name: 5555-tcp
+      port: 5555
+    - name: 5556-tcp
+      port: 5556

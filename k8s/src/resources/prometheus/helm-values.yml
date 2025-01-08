@@ -91,7 +91,7 @@ grafana:
   sidecar:
     dashboards:
       enabled: true
-      labelValue: "1"
+      labelValue: "true"
 # Disabling monitoring of K8s services.
 # Monitoring of K3S components will be configured out of monitoring
 kubelet:

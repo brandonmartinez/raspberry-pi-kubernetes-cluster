@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pikaraoke-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: karaoke.${NETWORK_HOSTNAME_SUFFIX}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: pikaraoke-svc
+                port:
+                  name: 5555-tcp
+          - pathType: Prefix
+            path: /video
+            backend:
+              service:
+                name: pikaraoke-svc
+                port:
+                  name: 5556-tcp

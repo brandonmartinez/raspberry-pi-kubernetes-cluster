@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pikaraoke
+  labels:
+    app: pikaraoke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pikaraoke
+  template:
+    metadata:
+      labels:
+        app: pikaraoke
+    spec:
+      volumes:
+        - name: "pikaraoke"
+          persistentVolumeClaim:
+            claimName: pikaraoke-pvc
+      containers:
+        - name: pikaraoke
+          image: vicwomg/pikaraoke:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: pikaraoke-configmap
+          args:
+            - "-l10"
+            - "-u $(UI_URL)"
+            - "-m $(VIDEO_URL)"
+            - "-v 1"
+            - "--admin-password $(PIKARAOKE_ADMIN_PASSWORD)"
+          volumeMounts:
+            - name: pikaraoke
+              mountPath: /app/pikaraoke-songs
+          ports:
+            - name: svc-5555-http
+              containerPort: 5555
+            - name: svc-5556-ffmpeg
+              containerPort: 5556
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+            requests:
+              memory: "300Mi"
+              cpu: "500m"

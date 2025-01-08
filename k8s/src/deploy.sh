@@ -81,7 +81,7 @@ function deploy() {
             echo "metadata:" >> "$yml_file"
             echo "  name: grafana-$base_name" >> "$yml_file"
             echo "  labels:" >> "$yml_file"
-            echo "    grafana_dashboard: \"1\"" >> "$yml_file"
+            echo "    grafana_dashboard: \"true\"" >> "$yml_file"
             echo "data:" >> "$yml_file"
             echo "  grafana-$base_name.json: |-" >> "$yml_file"
 
@@ -137,6 +137,10 @@ function deploy() {
 
     if [ "$DEPLOY_MINECRAFT" = true ] ; then
         echo "- resources/minecraft" >> kustomization.yml
+    fi
+
+    if [ "$DEPLOY_PIKARAOKE" = true ] ; then
+        echo "- resources/pikaraoke" >> kustomization.yml
     fi
 
     log "Deploying kustomize script via kubectl"
