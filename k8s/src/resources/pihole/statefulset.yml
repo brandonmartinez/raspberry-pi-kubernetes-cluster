@@ -43,13 +43,13 @@ spec:
           #   failureThreshold: 3
           #   timeoutSeconds: 30
           #   httpGet:
-          #     path: /admin
+          #     path: /admin/login.php
           #     port: svc-ui
           # readinessProbe:
           #   failureThreshold: 3
           #   timeoutSeconds: 30
           #   httpGet:
-          #     path: /admin
+          #     path: /admin/login.php
           #     port: svc-ui
   volumeClaimTemplates:
     - metadata:

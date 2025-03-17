@@ -3,9 +3,16 @@ kind: Kustomization
 
 namespace: localproxy
 
+labels:
+  - pairs:
+      app: localproxy
+    includeSelectors: true
+
 resources:
   - namespace.yml
-  - service-cr10.yml
-  - service-ender3.yml
+  - config.yml
+  - deployment.yml
+  - service.yml
   - ingress-cr10.yml
   - ingress-ender3.yml
+  - ingress-nas.yml

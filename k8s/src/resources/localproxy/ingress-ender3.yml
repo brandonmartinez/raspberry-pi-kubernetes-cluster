@@ -2,6 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: localproxy-ender3-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/websocket-timeout: "600s"
 spec:
   ingressClassName: traefik
   rules:
@@ -12,6 +14,6 @@ spec:
             path: /
             backend:
               service:
-                name: localproxy-ender3-svc
+                name: localproxy-svc
                 port:
-                  name: 80-tcp
+                  number: 80

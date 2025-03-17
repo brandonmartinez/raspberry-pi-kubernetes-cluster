@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localproxy-nginx-deployment
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: "250m"
+            requests:
+              memory: "200Mi"
+              cpu: "150m"
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: localproxy-nginx-config
