@@ -3,12 +3,9 @@ apiVersion: v1
 metadata:
   name: localproxy-ender3-svc
 spec:
-  ipFamilies:
-  - IPv4
+  type: ExternalName
+  externalName: 192.168.18.103
   ports:
     - name: 80-tcp
       protocol: TCP
       port: 80
-spec:
-  type: ExternalName
-  externalName: 192.168.18.103
