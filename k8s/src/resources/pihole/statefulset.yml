@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: pihole/pihole:latest
+          image: pihole/pihole:2025.02.0
           envFrom:
             - configMapRef:
                 name: pihole-configmap
@@ -36,6 +36,18 @@ spec:
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc
+          livenessProbe:
+            failureThreshold: 3
+            timeoutSeconds: 5
+            httpGet:
+              path: /admin
+              port: http
+          readinessProbe:
+            failureThreshold: 3
+            timeoutSeconds: 5
+            httpGet:
+              path: /admin
+              port: http
   volumeClaimTemplates:
     - metadata:
         name: pihole-pvc

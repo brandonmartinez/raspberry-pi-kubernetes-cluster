@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pihole
+
+labels:
+  - pairs:
+      app: nebulasync
+    includeSelectors: true
+
+configMapGenerator:
+  - name: nebulasync-configmap
+    envs:
+      - .env
+
+secretGenerator:
+  - name: nebulasync-secret
+    envs:
+      - .env.secret
+
+resources:
+  - deployment-nebulasync.yml

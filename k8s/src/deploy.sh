@@ -101,6 +101,10 @@ function deploy() {
     echo -e "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nresources:" > kustomization.yml
     echo "- resources/kube-system" >> kustomization.yml
 
+    if [ "$DEPLOY_LOCALPROXY" = true ] ; then
+        echo "- resources/localproxy" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_LONGHORN" = true ] ; then
         echo "- resources/longhorn" >> kustomization.yml
     fi
@@ -112,7 +116,7 @@ function deploy() {
     if [ "$DEPLOY_PIHOLE" = true ] ; then
         echo "- resources/unbound" >> kustomization.yml
         echo "- resources/pihole" >> kustomization.yml
-        echo "- resources/orbitalsync" >> kustomization.yml
+        echo "- resources/nebulasync" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_HEIMDALL" = true ] ; then
