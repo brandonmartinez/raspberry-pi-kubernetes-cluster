@@ -151,6 +151,9 @@ function deploy() {
     # This is hack for the prometheus stack, as "$" is used in rules and dashboard definitions
     # When adding new templates, be sure to replace "$" with "${DOLLAR}" to avoid invalid YAML
     export DOLLAR='$'
+    find resources/ -name ".env.secret" | while read -r secret_file; do
+        envsubst < "$secret_file" > "${secret_file}.temp"
+    done
     kubectl kustomize | envsubst | sed "s/'''/'/g" > compiled.yml
     kubectl apply -f compiled.yml
 

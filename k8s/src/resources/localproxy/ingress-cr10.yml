@@ -12,6 +12,6 @@ spec:
             path: /
             backend:
               service:
-                name: localproxy-cr10-ui-svc
+                name: localproxy-cr10-svc
                 port:
                   name: 80-tcp

@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: pihole/pihole:2025.03.0
+          image: pihole/pihole:latest
           envFrom:
             - configMapRef:
                 name: pihole-configmap
@@ -26,28 +26,31 @@ spec:
             - name: svc-ui
               containerPort: 80
               protocol: TCP
+            - name: svc-ui-s
+              containerPort: 443
+              protocol: TCP
           resources:
             limits:
-              memory: "200Mi"
-              cpu: "150m"
+              memory: "500Mi"
+              cpu: "250m"
             requests:
               memory: "200Mi"
               cpu: "150m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc
-          livenessProbe:
-            failureThreshold: 3
-            timeoutSeconds: 5
-            httpGet:
-              path: /admin
-              port: http
-          readinessProbe:
-            failureThreshold: 3
-            timeoutSeconds: 5
-            httpGet:
-              path: /admin
-              port: http
+          # livenessProbe:
+          #   failureThreshold: 3
+          #   timeoutSeconds: 30
+          #   httpGet:
+          #     path: /admin
+          #     port: svc-ui
+          # readinessProbe:
+          #   failureThreshold: 3
+          #   timeoutSeconds: 30
+          #   httpGet:
+          #     path: /admin
+          #     port: svc-ui
   volumeClaimTemplates:
     - metadata:
         name: pihole-pvc

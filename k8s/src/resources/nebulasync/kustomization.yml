@@ -16,7 +16,7 @@ configMapGenerator:
 secretGenerator:
   - name: nebulasync-secret
     envs:
-      - .env.secret
+      - .env.secret.temp
 
 resources:
   - deployment-nebulasync.yml
