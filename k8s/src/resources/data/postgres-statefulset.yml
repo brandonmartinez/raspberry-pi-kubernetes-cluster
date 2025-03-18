@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+      containers:
+        - name: postgres
+          image: postgres:17.4
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          envFrom:
+            - configMapRef:
+                name: data-configmap
+            - secretRef:
+                name: data-secret
+          ports:
+            - name: svc-5432-tcp
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            limits:
+              memory: "1024Mi"
+              cpu: "1024m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"

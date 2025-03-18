@@ -127,6 +127,10 @@ function deploy() {
         echo "- resources/homebridge" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_DATA" = true ] ; then
+        echo "- resources/data" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_DEEPSTACK" = true ] ; then
         echo "- resources/deepstack" >> kustomization.yml
     fi

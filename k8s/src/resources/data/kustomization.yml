@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: data
+
+labels:
+  - pairs:
+      app: data
+    includeSelectors: true
+
+configMapGenerator:
+  - name: data-configmap
+    envs:
+      - .env
+
+secretGenerator:
+  - name: data-secret
+    envs:
+      - .env.secret.temp
+
+resources:
+  - namespace.yml
+  - postgres-service.yml
+  - postgres-statefulset.yml
+  - postgres-pvc.yml
