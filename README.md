@@ -42,3 +42,7 @@ via README files.
 > ```sh
 > echo 'pi:$6$i9XSzPaTyjaCnnKe$fwuKZKF9CYR/vJKVLVusR.NoHQxrj2XSVPK/g7N46RzSaB/9oNmxMXIC3uLIEGV.qg8MYmuJIFAL4ymF4YLeP.' > /Volumes/boot/userconf
 > ```
+
+## Resources
+
+- [k3s.rocks](https://k3s.rocks)

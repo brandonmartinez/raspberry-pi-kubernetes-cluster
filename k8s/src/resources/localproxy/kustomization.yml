@@ -17,3 +17,4 @@ resources:
   - ingress-ender3.yml
   - ingress-nas.yml
   - ingress-scrypted.yml
+  - ingress-homebridge.yml

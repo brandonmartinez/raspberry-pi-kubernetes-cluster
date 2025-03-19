@@ -10,7 +10,9 @@ labels:
 
 resources:
   - namespace.yml
+  - secrets.yml
   - middleware-https.yml
   - middleware-wss.yml
+  - middleware-basicauth.yml
   - clusterissuer-letsencrypt.yml
 

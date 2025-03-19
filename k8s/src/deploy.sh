@@ -114,6 +114,7 @@ function deploy() {
 
     if [ "$DEPLOY_SECURITY" = true ] ; then
         echo "- resources/security" >> kustomization.yml
+        echo "- resources/longhorn" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_LOCALPROXY" = true ] ; then

@@ -63,3 +63,12 @@ data:
         proxy_ssl_verify off;
       }
     }
+
+    server {
+      listen 80;
+      server_name homebridge.${NETWORK_HOSTNAME_SUFFIX};
+
+      location / {
+        proxy_pass http://192.168.52.110:8581/;
+      }
+    }
