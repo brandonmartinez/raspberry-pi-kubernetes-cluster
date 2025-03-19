@@ -72,7 +72,7 @@ spec:
       port: 53
       targetPort: 53
       protocol: UDP
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   type: LoadBalancer
 status:
   loadBalancer:
@@ -89,7 +89,7 @@ spec:
       port: 53
       targetPort: 53
       protocol: TCP
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   type: LoadBalancer
 status:
   loadBalancer:
