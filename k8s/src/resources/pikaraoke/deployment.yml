@@ -2,17 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pikaraoke
-  labels:
-    app: pikaraoke
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: pikaraoke
   template:
-    metadata:
-      labels:
-        app: pikaraoke
     spec:
       volumes:
         - name: "pikaraoke"

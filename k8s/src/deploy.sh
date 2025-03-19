@@ -170,6 +170,10 @@ function deploy() {
         echo "- resources/shlink" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_UPTIME" = true ] ; then
+        echo "- resources/uptime" >> kustomization.yml
+    fi
+
     log "Deploying kustomize script via kubectl"
     # This is hack for the prometheus stack, as "$" is used in rules and dashboard definitions
     # When adding new templates, be sure to replace "$" with "${DOLLAR}" to avoid invalid YAML

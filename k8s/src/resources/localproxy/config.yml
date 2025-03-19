@@ -27,29 +27,39 @@ data:
       }
     }
 
-      server {
-        listen 80;
-        server_name ender3.${NETWORK_HOSTNAME_SUFFIX};
+    server {
+      listen 80;
+      server_name ender3.${NETWORK_HOSTNAME_SUFFIX};
 
-        location / {
-          proxy_pass http://192.168.18.103;
-          proxy_http_version 1.1;
-          proxy_cache_bypass ${DOLLAR}http_upgrade;
-          proxy_read_timeout 86400;
-          proxy_set_header Connection ${DOLLAR}connection_upgrade;
-          proxy_set_header Host ${DOLLAR}host;
-          proxy_set_header Upgrade ${DOLLAR}http_upgrade;
-          proxy_set_header X-Forwarded-For ${DOLLAR}remote_addr;
-          proxy_set_header X-Forwarded-Host ${DOLLAR}http_host;
-          proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
-        }
+      location / {
+        proxy_pass http://192.168.18.103;
+        proxy_http_version 1.1;
+        proxy_cache_bypass ${DOLLAR}http_upgrade;
+        proxy_read_timeout 86400;
+        proxy_set_header Connection ${DOLLAR}connection_upgrade;
+        proxy_set_header Host ${DOLLAR}host;
+        proxy_set_header Upgrade ${DOLLAR}http_upgrade;
+        proxy_set_header X-Forwarded-For ${DOLLAR}remote_addr;
+        proxy_set_header X-Forwarded-Host ${DOLLAR}http_host;
+        proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
       }
+    }
 
-      server {
+    server {
       listen 80;
       server_name nas.${NETWORK_HOSTNAME_SUFFIX};
 
       location / {
         proxy_pass http://192.168.18.100:8080;
+      }
+    }
+
+    server {
+      listen 80;
+      server_name scrypted.${NETWORK_HOSTNAME_SUFFIX};
+
+      location / {
+        proxy_pass https://192.168.52.100:10443;
+        proxy_ssl_verify off;
       }
     }

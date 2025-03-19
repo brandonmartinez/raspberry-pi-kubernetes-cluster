@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: uptime.${NETWORK_HOSTNAME_SUFFIX}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: uptime-svc
+                port:
+                  name: 80-tcp
+  tls:
+    - secretName: uptime-tls
+      hosts:
+        - uptime.${NETWORK_HOSTNAME_SUFFIX}
