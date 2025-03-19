@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: security
+
+labels:
+  - pairs:
+      app: security
+    includeSelectors: true
+
+resources:
+  - namespace.yml
+  - middleware-https.yml
+  - middleware-wss.yml
+  - clusterissuer-letsencrypt.yml
+

@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: shlink
+
+labels:
+  - pairs:
+      app: shlink
+    includeSelectors: true
+
+configMapGenerator:
+  - name: shlink-configmap
+    envs:
+      - .env
+
+secretGenerator:
+  - name: shlink-secret
+    envs:
+      - .env.secret.temp
+
+# https://shlink.io/documentation/install-docker-image/
+resources:
+  - namespace.yml
+  - deployment.yml
+  - service.yml
+  - ingress.yml

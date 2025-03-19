@@ -59,6 +59,17 @@ function deploy() {
         kubectl patch storageclass "longhorn" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     fi
 
+    if [ "$DEPLOY_CERTMANAGER" = true ] ; then
+        ##################################################
+        section "Installing Cert Manager Stack"
+        ##################################################
+        deploy_helm "jetstack" "https://charts.jetstack.io" \
+            "cert-manager" "jetstack/cert-manager" \
+            "resources/cert-manager/helm-values.yml" \
+            "cert-manager" \
+            120
+    fi
+
     if [ "$DEPLOY_PROMETHEUS" = true ] ; then
         ##################################################
         section "Installing Prometheus Monitoring Stack"
@@ -100,6 +111,10 @@ function deploy() {
     log "Generating kustomize script"
     echo -e "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nresources:" > kustomization.yml
     echo "- resources/kube-system" >> kustomization.yml
+
+    if [ "$DEPLOY_SECURITY" = true ] ; then
+        echo "- resources/security" >> kustomization.yml
+    fi
 
     if [ "$DEPLOY_LOCALPROXY" = true ] ; then
         echo "- resources/localproxy" >> kustomization.yml
@@ -149,6 +164,10 @@ function deploy() {
 
     if [ "$DEPLOY_PIKARAOKE" = true ] ; then
         echo "- resources/pikaraoke" >> kustomization.yml
+    fi
+
+    if [ "$DEPLOY_SHLINK" = true ] ; then
+        echo "- resources/shlink" >> kustomization.yml
     fi
 
     log "Deploying kustomize script via kubectl"
