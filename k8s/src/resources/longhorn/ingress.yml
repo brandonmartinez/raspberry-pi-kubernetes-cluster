@@ -4,9 +4,10 @@ kind: Ingress
 metadata:
   name: longhorn-ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.middlewares: security-basicauth@kubernetescrd
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-basicauth@kubernetescrd,security-redirect-https@kubernetescrd
 spec:
+  ingressClassName: traefik
   rules:
     - host: storage.${NETWORK_HOSTNAME_SUFFIX}
       http:
@@ -18,3 +19,7 @@ spec:
                 name: longhorn-frontend
                 port:
                   number: 80
+  tls:
+    - secretName: longhorn-tls
+      hosts:
+        - storage.${NETWORK_HOSTNAME_SUFFIX}

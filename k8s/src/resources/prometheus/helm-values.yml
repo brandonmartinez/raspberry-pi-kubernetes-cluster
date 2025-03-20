@@ -4,12 +4,12 @@ prometheusOperator:
   # Relabeling job name for operator metrics
   serviceMonitor:
     relabelings:
-    # Replace job value
-    - sourceLabels:
-      - __address__
-      action: replace
-      targetLabel: job
-      replacement: prometheus-operator
+      # Replace job value
+      - sourceLabels:
+          - __address__
+        action: replace
+        targetLabel: job
+        replacement: prometheus-operator
   # Disable creation of kubelet service
   kubeletService:
     enabled: false
@@ -31,12 +31,17 @@ alertmanager:
     relabelings:
       # Replace job value
       - sourceLabels:
-        - __address__
+          - __address__
         action: replace
         targetLabel: job
         replacement: alertmanager
 prometheus:
   prometheusSpec:
+    containers:
+      - name: prometheus
+        startupProbe:
+          failureThreshold: 30
+          periodSeconds: 10
     # Subpath /prometheus configuration
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/prometheus/
     routePrefix: /
@@ -45,7 +50,7 @@ prometheus:
       requests:
         memory: 1Gi
       limits:
-        memory: 1Gi
+        memory: 3Gi
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -59,7 +64,7 @@ prometheus:
     relabelings:
       # Replace job value
       - sourceLabels:
-        - __address__
+          - __address__
         action: replace
         targetLabel: job
         replacement: prometheus
@@ -84,7 +89,7 @@ grafana:
     relabelings:
       # Replace job value
       - sourceLabels:
-        - __address__
+          - __address__
         action: replace
         targetLabel: job
         replacement: grafana
@@ -125,3 +130,6 @@ defaultRules:
     kubernetesStorage: false
     kubernetesSystem: true
     kubeScheduler: false
+crds:
+  upgradeJob:
+    enabled: true
