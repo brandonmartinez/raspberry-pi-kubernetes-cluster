@@ -59,6 +59,16 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+    additionalScrapeConfigs:
+      - job_name: "uptime"
+        scrape_interval: 30s
+        scheme: http
+        metrics_path: "/metrics"
+        static_configs:
+          - targets: ["uptime.${NETWORK_HOSTNAME_SUFFIX}"]
+        basic_auth:
+          username: ${UPTIME_USERNAME}
+          password: ${UPTIME_PASSWORD}
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:
