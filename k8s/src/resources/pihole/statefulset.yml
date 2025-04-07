@@ -8,6 +8,14 @@ spec:
     type: RollingUpdate
   template:
     spec:
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: pihole
+          maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
       containers:
         - name: pihole
           image: pihole/pihole:latest
@@ -39,6 +47,10 @@ spec:
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc
+          securityContext:
+            capabilities:
+              add:
+                - SYS_NICE
           # livenessProbe:
           #   failureThreshold: 3
           #   timeoutSeconds: 30

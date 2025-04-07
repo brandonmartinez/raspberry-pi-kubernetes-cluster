@@ -129,8 +129,11 @@ function deploy() {
         echo "- resources/prometheus" >> kustomization.yml
     fi
 
-    if [ "$DEPLOY_PIHOLE" = true ] ; then
+    if [ "$DEPLOY_UNBOUND" = true ] ; then
         echo "- resources/unbound" >> kustomization.yml
+    fi
+
+    if [ "$DEPLOY_PIHOLE" = true ] ; then
         echo "- resources/pihole" >> kustomization.yml
         echo "- resources/nebulasync" >> kustomization.yml
     fi

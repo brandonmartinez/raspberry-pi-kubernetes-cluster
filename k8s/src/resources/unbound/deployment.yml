@@ -5,6 +5,14 @@ metadata:
 spec:
   template:
     spec:
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: pihole
+          maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
       containers:
         - name: unbound
           image: mvance/unbound-rpi:latest
