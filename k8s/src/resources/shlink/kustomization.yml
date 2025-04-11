@@ -18,7 +18,6 @@ secretGenerator:
     envs:
       - .env.secret.temp
 
-# https://shlink.io/documentation/install-docker-image/
 resources:
   - namespace.yml
   - deployment.yml

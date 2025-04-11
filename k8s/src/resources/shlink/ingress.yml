@@ -1,10 +1,35 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: shlink-ingress
+  name: shlink-shortener-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: $SHLINK_DEFAULT_DOMAIN
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: shlink-shortener-svc
+                port:
+                  name: 80-tcp
+  tls:
+    - secretName: shlink-tls
+      hosts:
+        - $SHLINK_DEFAULT_DOMAIN
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shlink-web-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-basicauth@kubernetescrd,security-redirect-https@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
@@ -15,21 +40,10 @@ spec:
             path: /
             backend:
               service:
-                name: shlink-svc
-                port:
-                  name: 80-tcp
-    - host: $SHLINK_DEFAULT_DOMAIN
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: shlink-svc
+                name: shlink-web-svc
                 port:
                   name: 80-tcp
   tls:
-    - secretName: shlink-tls
+    - secretName: shlink-web-tls
       hosts:
         - shlink.${NETWORK_HOSTNAME_SUFFIX}
-        - $SHLINK_DEFAULT_DOMAIN
