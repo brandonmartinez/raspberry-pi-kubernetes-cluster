@@ -21,5 +21,6 @@ secretGenerator:
 resources:
   - namespace.yml
   - deployment.yml
+  - horizontalpodautoscaler.yml
   - service.yml
   - ingress.yml
