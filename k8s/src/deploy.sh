@@ -174,6 +174,10 @@ function deploy() {
         echo "- resources/shlink" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_SPEEDTEST" = true ] ; then
+        echo "- resources/speedtest" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_UPTIME" = true ] ; then
         echo "- resources/uptime" >> kustomization.yml
     fi

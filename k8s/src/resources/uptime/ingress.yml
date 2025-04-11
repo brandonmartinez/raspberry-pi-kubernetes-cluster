@@ -5,6 +5,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+    traefik.ingress.kubernetes.io/websocket-timeout: "600s"
 spec:
   ingressClassName: traefik
   rules:
