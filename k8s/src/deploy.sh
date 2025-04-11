@@ -138,20 +138,12 @@ function deploy() {
         echo "- resources/nebulasync" >> kustomization.yml
     fi
 
-    if [ "$DEPLOY_HEIMDALL" = true ] ; then
-        echo "- resources/heimdall" >> kustomization.yml
-    fi
-
     if [ "$DEPLOY_HOMEBRIDGE" = true ] ; then
         echo "- resources/homebridge" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_DATA" = true ] ; then
         echo "- resources/data" >> kustomization.yml
-    fi
-
-    if [ "$DEPLOY_DEEPSTACK" = true ] ; then
-        echo "- resources/deepstack" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_PORTAINER" = true ] ; then
@@ -172,10 +164,6 @@ function deploy() {
 
     if [ "$DEPLOY_SHLINK" = true ] ; then
         echo "- resources/shlink" >> kustomization.yml
-    fi
-
-    if [ "$DEPLOY_SPEEDTEST" = true ] ; then
-        echo "- resources/speedtest" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_UPTIME" = true ] ; then
