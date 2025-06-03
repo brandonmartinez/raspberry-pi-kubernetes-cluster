@@ -52,19 +52,12 @@ spec:
               add:
                 - SYS_NICE
           livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  sqlite3 /etc/pihole/gravity.db "PRAGMA journal_mode;" >/dev/null 2>&1 \
-                    && sqlite3 /etc/pihole/gravity.db "CREATE TABLE IF NOT EXISTS probe_check (id INTEGER);" \
-                    && sqlite3 /etc/pihole/gravity.db "DROP TABLE probe_check;" \
-                    || exit 1
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
             failureThreshold: 3
+            timeoutSeconds: 60
+            initialDelaySeconds: 30
+            httpGet:
+              path: /admin/login
+              port: svc-ui
           readinessProbe:
             failureThreshold: 3
             timeoutSeconds: 60
