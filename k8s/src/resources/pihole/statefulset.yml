@@ -52,17 +52,19 @@ spec:
               add:
                 - SYS_NICE
           livenessProbe:
-            failureThreshold: 3
-            timeoutSeconds: 30
             exec:
               command:
                 - /bin/sh
                 - -c
                 - |
-                  if grep -q "database is readonly" /var/log/pihole.log; then
-                    sed -i '/database is readonly/d' /var/log/pihole.log
-                    exit 1
-                  fi
+                  sqlite3 /etc/pihole/gravity.db "PRAGMA journal_mode;" >/dev/null 2>&1 \
+                    && sqlite3 /etc/pihole/gravity.db "CREATE TABLE IF NOT EXISTS probe_check (id INTEGER);" \
+                    && sqlite3 /etc/pihole/gravity.db "DROP TABLE probe_check;" \
+                    || exit 1
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             failureThreshold: 3
             timeoutSeconds: 60
