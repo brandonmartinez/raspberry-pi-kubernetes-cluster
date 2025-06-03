@@ -9,6 +9,7 @@ spec:
     type: RollingUpdate
   template:
     spec:
+      terminationGracePeriodSeconds: 30
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -35,3 +36,23 @@ spec:
             requests:
               memory: "512Mi"
               cpu: "0.25"
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "$POSTGRES_USER"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "$POSTGRES_USER"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

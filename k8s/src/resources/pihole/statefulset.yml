@@ -51,18 +51,25 @@ spec:
             capabilities:
               add:
                 - SYS_NICE
-          # livenessProbe:
-          #   failureThreshold: 3
-          #   timeoutSeconds: 30
-          #   httpGet:
-          #     path: /admin/login.php
-          #     port: svc-ui
-          # readinessProbe:
-          #   failureThreshold: 3
-          #   timeoutSeconds: 30
-          #   httpGet:
-          #     path: /admin/login.php
-          #     port: svc-ui
+          livenessProbe:
+            failureThreshold: 3
+            timeoutSeconds: 30
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  if grep -q "database is readonly" /var/log/pihole.log; then
+                    sed -i '/database is readonly/d' /var/log/pihole.log
+                    exit 1
+                  fi
+          readinessProbe:
+            failureThreshold: 3
+            timeoutSeconds: 60
+            initialDelaySeconds: 30
+            httpGet:
+              path: /admin/login
+              port: svc-ui
   volumeClaimTemplates:
     - metadata:
         name: pihole-pvc
