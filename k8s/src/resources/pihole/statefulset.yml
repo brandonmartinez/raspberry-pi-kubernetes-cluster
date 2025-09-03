@@ -54,14 +54,14 @@ spec:
           livenessProbe:
             failureThreshold: 3
             timeoutSeconds: 60
-            initialDelaySeconds: 30
+            initialDelaySeconds: 90
             httpGet:
               path: /admin/login
               port: svc-ui
           readinessProbe:
             failureThreshold: 3
             timeoutSeconds: 60
-            initialDelaySeconds: 30
+            initialDelaySeconds: 90
             httpGet:
               path: /admin/login
               port: svc-ui
