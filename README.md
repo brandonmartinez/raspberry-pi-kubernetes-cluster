@@ -46,3 +46,4 @@ via README files.
 ## Resources
 
 - [k3s.rocks](https://k3s.rocks)
+- [kube-prometheus-stack upgrades](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/UPGRADE.md)
