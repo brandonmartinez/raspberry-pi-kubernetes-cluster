@@ -34,6 +34,9 @@ spec:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
               name: unbound-config-files
               subPath: a-records.conf
+            - mountPath: /opt/unbound/etc/unbound/unbound.conf
+              name: unbound-config-files
+              subPath: unbound.conf
           livenessProbe:
             tcpSocket:
               port: 53
@@ -51,3 +54,5 @@ spec:
             items:
               - key: a-records.conf
                 path: a-records.conf
+              - key: unbound.conf
+                path: unbound.conf

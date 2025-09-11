@@ -12,6 +12,7 @@ configMapGenerator:
   - name: unbound-configmap
     files:
       - a-records.conf
+      - unbound.conf
 
 resources:
   - namespace.yml
