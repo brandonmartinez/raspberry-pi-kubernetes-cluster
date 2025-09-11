@@ -52,16 +52,18 @@ spec:
               add:
                 - SYS_NICE
           livenessProbe:
-            failureThreshold: 3
-            timeoutSeconds: 60
-            initialDelaySeconds: 90
+            failureThreshold: 8
+            timeoutSeconds: 30
+            initialDelaySeconds: 420
+            periodSeconds: 60
             httpGet:
               path: /admin/login
               port: svc-ui
           readinessProbe:
-            failureThreshold: 3
-            timeoutSeconds: 60
-            initialDelaySeconds: 90
+            failureThreshold: 15
+            timeoutSeconds: 30
+            initialDelaySeconds: 300
+            periodSeconds: 30
             httpGet:
               path: /admin/login
               port: svc-ui
