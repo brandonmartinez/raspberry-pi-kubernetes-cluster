@@ -1,0 +1,24 @@
+auth:
+  adminUser: admin
+  adminPassword: changeit  # Consider sourcing this from a Secret
+replicaCount: 1
+service:
+  type: ClusterIP
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: 10.43.100.50
+  user: $POSTGRES_USER
+  password: $POSTGRES_PASSWORD
+  database: keycloak
+  existingSecret: ""
+  port: 5432
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: keycloak.$NETWORK_HOSTNAME_SUFFIX
+  tls: false                # Or true + cert-manager config
+  path: /
