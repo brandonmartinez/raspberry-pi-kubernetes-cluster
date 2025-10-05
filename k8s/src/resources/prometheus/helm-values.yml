@@ -1,6 +1,14 @@
 # Taken from: https://picluster.ricsanfre.com/docs/prometheus/
 
 prometheusOperator:
+  # Resources for the operator
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
   # Relabeling job name for operator metrics
   serviceMonitor:
     relabelings:
@@ -18,6 +26,14 @@ alertmanager:
     # Subpath /alertmanager configuration
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/alertmanager/
     routePrefix: /
+    # Resources configuration
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
     # PVC configuration
     storage:
       volumeClaimTemplate:
@@ -25,7 +41,7 @@ alertmanager:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 10Gi
+              storage: 5Gi
   # ServiceMonitor job relabel
   serviceMonitor:
     relabelings:
@@ -42,15 +58,35 @@ prometheus:
         startupProbe:
           failureThreshold: 30
           periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 5
+          timeoutSeconds: 10
+          periodSeconds: 5
     # Subpath /prometheus configuration
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/prometheus/
     routePrefix: /
+    # Data retention configuration
+    retention: 30d
+    retentionSize: 18GB
+    walCompression: true
     # Resources request and limits
     resources:
       requests:
         memory: 1Gi
+        cpu: 500m
       limits:
         memory: 3Gi
+        cpu: 2000m
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -58,10 +94,15 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 10Gi
+              storage: 20Gi
+    # Global scrape configuration
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+    evaluationInterval: 30s
     additionalScrapeConfigs:
       - job_name: "uptime"
         scrape_interval: 30s
+        scrape_timeout: 10s
         scheme: http
         metrics_path: "/metrics"
         static_configs:
@@ -92,6 +133,37 @@ grafana:
   # List of grafana plugins to be installed
   plugins:
     - grafana-piechart-panel
+  # Resources configuration
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  # Improved liveness and readiness probes for Raspberry Pi
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 120
+    timeoutSeconds: 30
+    periodSeconds: 30
+    failureThreshold: 5
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    periodSeconds: 10
+    failureThreshold: 10
+  # Persistence configuration
+  persistence:
+    enabled: true
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
@@ -140,6 +212,27 @@ defaultRules:
     kubernetesStorage: false
     kubernetesSystem: true
     kubeScheduler: false
+# Node Exporter configuration
+nodeExporter:
+  enabled: true
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 200m
+
+# Kube State Metrics configuration
+kube-state-metrics:
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 500m
+
 crds:
   upgradeJob:
     enabled: true
