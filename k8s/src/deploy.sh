@@ -16,6 +16,7 @@ function deploy_helm() {
     NAMESPACE=$6
     SLEEP_INSTALL=${7:-60}
     SLEEP_UPGRADE=${8:-10}
+    CHART_VERSION=${9:-""}
 
     set +e
     HELM_RELEASE_STATUS=$(helm status "${RELEASE}" --namespace "${NAMESPACE}" 2>&1 > /dev/null)
@@ -25,15 +26,22 @@ function deploy_helm() {
     helm repo add "${REPO_ALIAS}" "${REPO_URI}"
     helm repo update
 
+    # Build version flag if version is specified
+    VERSION_FLAG=""
+    if [[ -n "${CHART_VERSION}" ]]; then
+        VERSION_FLAG="--version ${CHART_VERSION}"
+        log "Using chart version: ${CHART_VERSION}"
+    fi
+
     if [[ $HELM_RELEASE_STATUS == *"Error"* ]]; then
         log "Installing Helm Chart ${CHART} as ${RELEASE}"
-        helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+        helm install -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace ${VERSION_FLAG}
 
         log "Waiting ${SLEEP_INSTALL} seconds for ${RELEASE} to be Ready"
         sleep ${SLEEP_INSTALL}
     else
         log "Helm Chart ${CHART} already exists; upgrading ${RELEASE} release"
-        helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace
+        helm upgrade -f <(cat "${HELM_VALUES}" | envsubst) "${RELEASE}" "${CHART}" --namespace ${NAMESPACE} --create-namespace ${VERSION_FLAG}
 
         log "Waiting ${SLEEP_UPGRADE} seconds for ${RELEASE} to be Ready"
         sleep ${SLEEP_UPGRADE}
@@ -49,7 +57,9 @@ function deploy() {
             "longhorn" "longhorn/longhorn" \
             "resources/longhorn/helm-values.yml" \
             "longhorn-system" \
-            120
+            120 \
+            10 \
+            "${LONGHORN_CHART_VERSION}"
 
         ##################################################
         section "Setting Longhorn as the Default Storage Class"

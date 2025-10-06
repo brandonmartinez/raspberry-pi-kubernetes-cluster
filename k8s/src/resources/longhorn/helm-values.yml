@@ -1,12 +1,21 @@
 defaultSettings:
-  defaultDataLocality: best-effort
-  backupTarget: ${LONGHORN_BACKUPTARGET}
+  autoDeletePodWhenVolumeDetachedUnexpectedly: true
   backupstorePollInterval: 300
-  reclaimPolicy: Retain
+  backupTarget: ${LONGHORN_BACKUPTARGET}
+  concurrentAutomaticEngineUpgradePerNodeLimit: "1"
+  concurrentReplicaRebuildPerNodeLimit: "2"
+  createDefaultDiskLabeledNodes: true
+  defaultDataLocality: best-effort
+  defaultReplicaCount: "${LONGHORN_REPLICACOUNT}"
+  disableSchedulingOnCordonedNode: true
+  engineReplicaTimeout: "16"
   guaranteedEngineManagerCPU: 200m
   guaranteedReplicaManagerCPU: 200m
-  defaultReplicaCount: ${LONGHORN_REPLICACOUNT}
-  autoDeletePodWhenVolumeDetachedUnexpectedly: true
+  reclaimPolicy: Retain
+  storageMinimalAvailablePercentage: "15"
+  storageOverProvisioningPercentage: "200"
+  storageReservedPercentageForDefaultDisk: "25"
+
 persistence:
   defaultDataLocality: best-effort
   reclaimPolicy: Retain
