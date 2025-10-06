@@ -1,0 +1,90 @@
+# Descheduler for Kubernetes
+# https://github.com/kubernetes-sigs/descheduler/tree/master/charts/descheduler
+
+# Run as a CronJob (default) or Job
+kind: CronJob
+
+# Schedule for CronJob (every 30 minutes)
+schedule: "*/30 * * * *"
+
+# Descheduler configuration
+deschedulerPolicy:
+  strategies:
+    # Remove duplicate pods
+    RemoveDuplicates:
+      enabled: true
+    # Remove pods that are running longer than specified time
+    PodLifeTime:
+      enabled: true
+      params:
+        podLifeTime:
+          maxPodLifeTimeSeconds: 86400  # 24 hours
+    # Remove pods violating inter-pod anti-affinity
+    RemovePodsViolatingInterPodAntiAffinity:
+      enabled: true
+    # Remove pods violating node affinity
+    RemovePodsViolatingNodeAffinity:
+      enabled: true
+      params:
+        nodeAffinityType:
+          - requiredDuringSchedulingIgnoredDuringExecution
+    # Remove pods violating node taints
+    RemovePodsViolatingNodeTaints:
+      enabled: true
+    # Remove failed pods
+    RemoveFailedPods:
+      enabled: true
+      params:
+        failedPods:
+          reasons:
+            - OutOfcpu
+            - CreateContainerConfigError
+          includingInitContainers: true
+          excludeOwnerKinds:
+            - Job
+          minPodLifetimeSeconds: 3600  # 1 hour
+
+# Resource limits and requests
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Node selector for scheduling the descheduler
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Tolerations (if needed for master nodes)
+tolerations: []
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+
+# RBAC
+rbac:
+  create: true
+
+# Priority class
+priorityClassName: ""
+
+# Image configuration
+image:
+  repository: registry.k8s.io/descheduler/descheduler
+  tag: ""  # Uses chart appVersion if not specified
+  pullPolicy: IfNotPresent
+
+# Additional command line arguments
+cmdOptions:
+  v: 2  # Verbosity level
+
+# Dry run mode (set to true for testing)
+dryRun: false

@@ -113,6 +113,17 @@ function deploy() {
         done
     fi
 
+    if [ "$DEPLOY_DESCHEDULER" = true ] ; then
+        ##################################################
+        section "Installing Descheduler"
+        ##################################################
+        deploy_helm "descheduler" "https://kubernetes-sigs.github.io/descheduler" \
+            "descheduler" "descheduler/descheduler" \
+            "resources/descheduler/helm-values.yml" \
+            "kube-system" \
+            60
+    fi
+
     ##################################################
     section "Deploying Service Stacks"
     ##################################################
