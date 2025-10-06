@@ -88,7 +88,10 @@ function deploy() {
         deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
             "monitoring" "prometheus-community/kube-prometheus-stack" \
             "resources/prometheus/helm-values.yml" \
-            "monitoring"
+            "monitoring" \
+            60 \
+            10 \
+            "${PROMETHEUS_CHART_VERSION}"
 
         log "Building Grafana Dashboard Kustomize YAML Files from JSON Dashboards"
         for file in resources/prometheus/grafana-dashboards/*.json; do
