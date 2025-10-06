@@ -9,28 +9,77 @@ schedule: "*/30 * * * *"
 
 # Descheduler configuration
 deschedulerPolicy:
+  # Global namespace exclusions - avoid critical system namespaces
+  nodeResourceUtilizationThresholds:
+    # Exclude critical namespaces from descheduling
+    includedNamespaces: []
+    excludedNamespaces:
+      - longhorn-system     # Longhorn storage system
+      - kube-system        # Core Kubernetes system
+      - kube-public        # Public Kubernetes resources
+      - kube-node-lease    # Node lease objects
+      - cert-manager       # Certificate management
+
   strategies:
     # Remove duplicate pods
     RemoveDuplicates:
       enabled: true
+      params:
+        excludeOwnerKinds:
+          - DaemonSet          # Don't touch DaemonSets (Longhorn uses these)
+          - StatefulSet        # Don't touch StatefulSets (Longhorn uses these)
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
+
     # Remove pods that are running longer than specified time
     PodLifeTime:
       enabled: true
       params:
         podLifeTime:
           maxPodLifeTimeSeconds: 86400  # 24 hours
+        excludeOwnerKinds:
+          - DaemonSet          # Don't touch DaemonSets
+          - StatefulSet        # Don't touch StatefulSets
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
+
     # Remove pods violating inter-pod anti-affinity
     RemovePodsViolatingInterPodAntiAffinity:
       enabled: true
+      params:
+        excludeOwnerKinds:
+          - DaemonSet
+          - StatefulSet
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
+
     # Remove pods violating node affinity
     RemovePodsViolatingNodeAffinity:
       enabled: true
       params:
         nodeAffinityType:
           - requiredDuringSchedulingIgnoredDuringExecution
+        excludeOwnerKinds:
+          - DaemonSet
+          - StatefulSet
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
+
     # Remove pods violating node taints
     RemovePodsViolatingNodeTaints:
       enabled: true
+      params:
+        excludeOwnerKinds:
+          - DaemonSet
+          - StatefulSet
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
+
     # Remove failed pods
     RemoveFailedPods:
       enabled: true
@@ -42,7 +91,12 @@ deschedulerPolicy:
           includingInitContainers: true
           excludeOwnerKinds:
             - Job
+            - DaemonSet
+            - StatefulSet
           minPodLifetimeSeconds: 3600  # 1 hour
+        excludedNamespaces:
+          - longhorn-system
+          - kube-system
 
 # Resource limits and requests
 resources:
