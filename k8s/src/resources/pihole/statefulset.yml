@@ -58,7 +58,7 @@ spec:
             initialDelaySeconds: 300
             periodSeconds: 60
             httpGet:
-              path: /admin/login.php
+              path: /admin/login
               port: svc-ui
           readinessProbe:
             failureThreshold: 10
@@ -66,15 +66,15 @@ spec:
             initialDelaySeconds: 180
             periodSeconds: 30
             httpGet:
-              path: /admin/login.php
+              path: /admin/login
               port: svc-ui
           startupProbe:
-            failureThreshold: 60
-            timeoutSeconds: 15
-            initialDelaySeconds: 60
-            periodSeconds: 15
+            failureThreshold: 120
+            timeoutSeconds: 10
+            initialDelaySeconds: 120
+            periodSeconds: 10
             httpGet:
-              path: /admin/login.php
+              path: /admin/login
               port: svc-ui
   volumeClaimTemplates:
     - metadata:
