@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: unbound
 spec:
+  replicas: 3
   template:
     spec:
       topologySpreadConstraints:
         - labelSelector:
             matchLabels:
-              app: pihole
-          maxSkew: 1
-          minDomains: 2
+              app: unbound
+          maxSkew: 2
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: unbound
           image: mvance/unbound-rpi:latest
@@ -25,11 +25,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "50Mi"
-              cpu: "50m"
+              memory: "64Mi"
+              cpu: "200m"
             requests:
-              memory: "50Mi"
-              cpu: "50m"
+              memory: "32Mi"
+              cpu: "25m"
           volumeMounts:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
               name: unbound-config-files
