@@ -22,5 +22,5 @@ resources:
   - statefulset.yml
   - service.yml
   - headless-service.yml
-  - horizontalpodautoscaler.yml
+  - poddisruptionbudget.yml
   - ingress.yml
