@@ -19,4 +19,4 @@ secretGenerator:
       - .env.secret.temp
 
 resources:
-  - deployment-nebulasync.yml
+  - deployment.yml
