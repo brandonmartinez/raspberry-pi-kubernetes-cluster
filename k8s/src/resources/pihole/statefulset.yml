@@ -16,7 +16,7 @@ spec:
           maxSkew: 2
           minDomains: 3
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
+          whenUnsatisfiable: DoNotSchedule
       containers:
         - name: pihole
           image: pihole/pihole:latest
