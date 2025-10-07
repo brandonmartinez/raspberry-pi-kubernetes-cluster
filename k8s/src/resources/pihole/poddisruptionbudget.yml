@@ -4,4 +4,6 @@ metadata:
   name: pihole-pdb
 spec:
   minAvailable: 2
-  selector: {}
+  selector:
+    matchLabels:
+      app: pihole
