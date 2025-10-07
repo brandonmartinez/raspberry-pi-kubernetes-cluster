@@ -4,6 +4,7 @@ metadata:
   name: pihole
 spec:
   serviceName: pihole
+  replicas: 3
   updateStrategy:
     type: RollingUpdate
   template:
@@ -12,10 +13,10 @@ spec:
         - labelSelector:
             matchLabels:
               app: pihole
-          maxSkew: 1
-          minDomains: 2
+          maxSkew: 2
+          minDomains: 3
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: pihole
           image: pihole/pihole:latest
@@ -39,11 +40,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1.0"
+              memory: "512Mi"
+              cpu: "800m"
             requests:
-              memory: "250Mi"
-              cpu: "0.5"
+              memory: "128Mi"
+              cpu: "200m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc
@@ -52,20 +53,28 @@ spec:
               add:
                 - SYS_NICE
           livenessProbe:
-            failureThreshold: 8
-            timeoutSeconds: 30
-            initialDelaySeconds: 420
+            failureThreshold: 5
+            timeoutSeconds: 20
+            initialDelaySeconds: 300
             periodSeconds: 60
             httpGet:
-              path: /admin/login
+              path: /admin/login.php
               port: svc-ui
           readinessProbe:
-            failureThreshold: 15
-            timeoutSeconds: 30
-            initialDelaySeconds: 300
+            failureThreshold: 10
+            timeoutSeconds: 15
+            initialDelaySeconds: 180
             periodSeconds: 30
             httpGet:
-              path: /admin/login
+              path: /admin/login.php
+              port: svc-ui
+          startupProbe:
+            failureThreshold: 60
+            timeoutSeconds: 15
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            httpGet:
+              path: /admin/login.php
               port: svc-ui
   volumeClaimTemplates:
     - metadata:
