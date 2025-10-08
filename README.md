@@ -43,6 +43,40 @@ via README files.
 > echo 'pi:$6$i9XSzPaTyjaCnnKe$fwuKZKF9CYR/vJKVLVusR.NoHQxrj2XSVPK/g7N46RzSaB/9oNmxMXIC3uLIEGV.qg8MYmuJIFAL4ymF4YLeP.' > /Volumes/boot/userconf
 > ```
 
+## Getting started
+
+1. Clone the repository onto each Raspberry Pi host (for example,
+   `~/src/raspberry-pi-kubernetes-cluster`).
+2. Copy the sample environment file and tailor it to your network:
+
+```sh
+cd ~/src/raspberry-pi-kubernetes-cluster
+cp .env.sample .env
+```
+
+The `.env` file powers both the provisioning scripts under `rpi/src` and the
+Kubernetes deployments under `k8s/src`. Keep secrets out of source control and
+document any required variables in `.env.sample`. 3. For every node, run the
+numbered scripts in `rpi/src` with `sudo`, rebooting when prompted. Script
+`004.sh` installs k3s; run it without arguments on the master and with
+`PRIMARY_IP` and `TOKEN` on workers. Detailed steps live in
+[`rpi/README.md`](rpi/README.md). 4. After the cluster is ready, deploy the core
+services:
+
+- On the master node: run `sudo ./005.sh` from
+  `~/src/raspberry-pi-kubernetes-cluster/rpi/src`.
+- From a workstation: run `./deploy-from-local.sh` inside
+  `~/src/raspberry-pi-kubernetes-cluster/k8s/src` to fetch the live kubeconfig
+  and call `k8s/src/deploy.sh`.
+
+`k8s/src/deploy.sh` assembles a temporary `kustomization.yml`, renders manifests
+with `kubectl kustomize | envsubst`, and applies them to the cluster. To keep
+literal `$` characters in YAML or Helm values, escape them as `${DOLLAR}` so
+they survive `envsubst`.
+
+Refer to [`k8s/README.md`](k8s/README.md) for service details and namespace
+layout, and use `_shared/echo.sh` helpers when extending Bash scripts.
+
 ## Resources
 
 - [k3s.rocks](https://k3s.rocks)
