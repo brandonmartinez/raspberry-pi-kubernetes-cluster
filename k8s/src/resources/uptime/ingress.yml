@@ -4,6 +4,7 @@ metadata:
   name: uptime-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/websocket: "true"
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
     traefik.ingress.kubernetes.io/websocket-timeout: "600s"
 spec:

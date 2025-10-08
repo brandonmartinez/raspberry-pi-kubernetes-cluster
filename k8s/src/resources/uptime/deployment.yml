@@ -4,7 +4,13 @@ metadata:
   name: uptime
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: uptime
   template:
+    metadata:
+      labels:
+        app: uptime
     spec:
       volumes:
         - name: "uptime"
@@ -12,7 +18,7 @@ spec:
             claimName: uptime-pvc
       containers:
         - name: uptime
-          image: louislam/uptime-kuma:1
+          image: louislam/uptime-kuma:1.23.16
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -25,14 +31,26 @@ spec:
               containerPort: 3001
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "0.75"
+              memory: "1Gi"
+              cpu: "1"
             requests:
-              memory: "256Mi"
-              cpu: "0.55"
+              memory: "512Mi"
+              cpu: "250m"
           livenessProbe:
             httpGet:
               path: /
               port: 3001
             initialDelaySeconds: 30
             periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3001
+            failureThreshold: 10
+            periodSeconds: 10
