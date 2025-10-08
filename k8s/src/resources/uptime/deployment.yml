@@ -15,7 +15,7 @@ spec:
       volumes:
         - name: "uptime"
           persistentVolumeClaim:
-            claimName: uptime-pvc
+            claimName: uptime-pvc-rwo
       containers:
         - name: uptime
           image: louislam/uptime-kuma:1.23.16
