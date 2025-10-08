@@ -54,12 +54,12 @@ function deploy() {
         section "Installing Longhorn Storage Provider"
         ##################################################
         deploy_helm "longhorn" "https://charts.longhorn.io" \
-            "longhorn" "longhorn/longhorn" \
-            "resources/longhorn/helm-values.yml" \
-            "longhorn-system" \
-            120 \
-            10 \
-            "${LONGHORN_CHART_VERSION}"
+        "longhorn" "longhorn/longhorn" \
+        "resources/longhorn/helm-values.yml" \
+        "longhorn-system" \
+        120 \
+        10 \
+        "${LONGHORN_CHART_VERSION}"
 
         ##################################################
         section "Setting Longhorn as the Default Storage Class"
@@ -69,15 +69,58 @@ function deploy() {
         kubectl patch storageclass "longhorn" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     fi
 
+    if [ "$DEPLOY_LOCAL_PATH" = true ] && [ "$MOUNT_USB" = true ]; then
+        section "Configuring local-path provisioner to use $MOUNT_USB_MOUNT_PATH/local-path for storage"
+        kubectl apply -n kube-system -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: local-path-config
+    namespace: kube-system
+data:
+    config.json: |
+        {
+            "nodePathMap":[
+            {
+                "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
+                "paths":["$MOUNT_USB_MOUNT_PATH/local-path"]
+            }
+            ]
+        }
+    helperPod.yaml: |-
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: helper-pod
+        spec:
+          containers:
+            - name: helper-pod
+              image: rancher/mirrored-library-busybox:1.36.1
+              imagePullPolicy: IfNotPresent
+    setup: |-
+        #!/bin/sh
+        set -eu
+        mkdir -m 0777 -p "\${VOL_DIR}"
+        chmod 700 "\${VOL_DIR}/.."
+    teardown: |-
+        #!/bin/sh
+        set -eu
+        rm -rf "\${VOL_DIR}"
+EOF
+
+        section "Restarting local-path provisioner to pick up new path"
+        kubectl -n kube-system delete pod -l app=local-path-provisioner --ignore-not-found
+    fi
+
     if [ "$DEPLOY_CERTMANAGER" = true ] ; then
         ##################################################
         section "Installing Cert Manager Stack"
         ##################################################
         deploy_helm "jetstack" "https://charts.jetstack.io" \
-            "cert-manager" "jetstack/cert-manager" \
-            "resources/cert-manager/helm-values.yml" \
-            "cert-manager" \
-            120
+        "cert-manager" "jetstack/cert-manager" \
+        "resources/cert-manager/helm-values.yml" \
+        "cert-manager" \
+        120
     fi
 
     if [ "$DEPLOY_PROMETHEUS" = true ] ; then
@@ -86,12 +129,12 @@ function deploy() {
         ##################################################
 
         deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
-            "monitoring" "prometheus-community/kube-prometheus-stack" \
-            "resources/prometheus/helm-values.yml" \
-            "monitoring" \
-            60 \
-            10 \
-            "${PROMETHEUS_CHART_VERSION}"
+        "monitoring" "prometheus-community/kube-prometheus-stack" \
+        "resources/prometheus/helm-values.yml" \
+        "monitoring" \
+        60 \
+        10 \
+        "${PROMETHEUS_CHART_VERSION}"
 
         log "Building Grafana Dashboard Kustomize YAML Files from JSON Dashboards"
         for file in resources/prometheus/grafana-dashboards/*.json; do
@@ -121,10 +164,10 @@ function deploy() {
         section "Installing Descheduler"
         ##################################################
         deploy_helm "descheduler" "https://kubernetes-sigs.github.io/descheduler" \
-            "descheduler" "descheduler/descheduler" \
-            "resources/descheduler/helm-values.yml" \
-            "kube-system" \
-            60
+        "descheduler" "descheduler/descheduler" \
+        "resources/descheduler/helm-values.yml" \
+        "kube-system" \
+        60
     fi
 
     ##################################################

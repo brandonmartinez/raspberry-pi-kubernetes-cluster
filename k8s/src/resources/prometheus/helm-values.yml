@@ -101,7 +101,7 @@ prometheus:
     evaluationInterval: 60s
     additionalScrapeConfigs:
       - job_name: "uptime"
-        scrape_interval: 60s
+        scrape_interval: 300s
         scrape_timeout: 15s
         scheme: http
         metrics_path: "/metrics"

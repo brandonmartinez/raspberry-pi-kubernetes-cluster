@@ -1,10 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: uptime-pvc-rwo
+  name: uptime-pvc-local
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi

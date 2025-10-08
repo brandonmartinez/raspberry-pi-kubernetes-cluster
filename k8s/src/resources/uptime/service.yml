@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: uptime-svc
 spec:
+  selector:
+    app: uptime
   ports:
     - name: 80-tcp
       port: 80

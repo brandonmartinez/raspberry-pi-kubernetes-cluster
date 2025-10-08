@@ -5,6 +5,7 @@ defaultSettings:
   concurrentAutomaticEngineUpgradePerNodeLimit: "1"
   concurrentReplicaRebuildPerNodeLimit: "2"
   createDefaultDiskLabeledNodes: true
+  defaultDataPath: "${MOUNT_USB_MOUNT_PATH}/longhorn"
   defaultDataLocality: best-effort
   defaultReplicaCount: "${LONGHORN_REPLICACOUNT}"
   disableSchedulingOnCordonedNode: true

@@ -12,10 +12,12 @@ spec:
       labels:
         app: uptime
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${UPTIME_NODE}
       volumes:
-        - name: "uptime"
+        - name: uptime-data
           persistentVolumeClaim:
-            claimName: uptime-pvc-rwo
+            claimName: uptime-pvc-local
       containers:
         - name: uptime
           image: louislam/uptime-kuma:1.23.16
@@ -24,7 +26,7 @@ spec:
             - configMapRef:
                 name: uptime-configmap
           volumeMounts:
-            - name: uptime
+            - name: uptime-data
               mountPath: /app/data
           ports:
             - name: 3001-tcp
@@ -32,25 +34,30 @@ spec:
           resources:
             limits:
               memory: "1Gi"
-              cpu: "1"
+              cpu: "500m"
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "256Mi"
+              cpu: "150m"
           livenessProbe:
             httpGet:
               path: /
               port: 3001
-            initialDelaySeconds: 30
+            initialDelaySeconds: 120
             periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               path: /
               port: 3001
-            initialDelaySeconds: 20
+            initialDelaySeconds: 90
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 10
           startupProbe:
             httpGet:
               path: /
               port: 3001
-            failureThreshold: 10
-            periodSeconds: 10
+            failureThreshold: 60
+            periodSeconds: 15
+            timeoutSeconds: 5

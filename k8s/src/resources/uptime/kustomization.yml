@@ -15,7 +15,9 @@ configMapGenerator:
 
 resources:
   - namespace.yml
-  - pvc.yml
+  - pvc-local.yml
+  - pvc-backup.yml
   - deployment.yml
   - service.yml
   - ingress.yml
+  - backup-cronjob.yml

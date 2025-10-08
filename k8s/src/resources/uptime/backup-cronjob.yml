@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: uptime-db-backup
+spec:
+  schedule: ${UPTIME_BACKUP_SCHEDULE}
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: sqlite-backup
+              image: public.ecr.aws/docker/library/alpine:3.20
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  apk add --no-cache sqlite >/tmp/apk-sqlite.log 2>&1
+                  TIMESTAMP=${DOLLAR}(date +%Y%m%d%H%M%S)
+                  DEST="/backup/kuma-${DOLLAR}{TIMESTAMP}.db"
+                  sqlite3 /data/kuma.db ".backup '${DOLLAR}{DEST}'"
+                  find /backup -maxdepth 1 -type f -name 'kuma-*.db' -mtime +${UPTIME_BACKUP_RETENTION_DAYS} -delete
+              volumeMounts:
+                - name: uptime-data
+                  mountPath: /data
+                  readOnly: true
+                - name: uptime-backup
+                  mountPath: /backup
+          volumes:
+            - name: uptime-data
+              persistentVolumeClaim:
+                claimName: uptime-pvc-local
+            - name: uptime-backup
+              persistentVolumeClaim:
+                claimName: uptime-pvc-backup

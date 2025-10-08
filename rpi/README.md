@@ -34,6 +34,23 @@ cp .env.sample .env
 # When you're done editing, ctrl+o to save, ctrl+x to quite nano
 nano .env
 
+### USB-backed storage configuration
+
+If you plan to attach an external USB drive for Longhorn data or for
+local-path volumes, set the following environment variables before running the
+provisioning scripts:
+
+- `MOUNT_USB=true` to enable automounting during `001.sh`.
+- `MOUNT_USB_DRIVE_PATH` to the block device (for example `/dev/sda`).
+- `MOUNT_USB_DRIVE_FORMAT=true` if the drive should be wiped and formatted.
+- `MOUNT_USB_MOUNT_PATH` to the directory you want mounted (for example
+	`/media/data`). This same path must exist on every node and should match the
+	value configured in the `local-path-config` ConfigMap when using local-path
+	PersistentVolumes.
+
+Script `001.sh` will create the mountpoint, add an `/etc/fstab` entry, and mount
+the drive automatically when `MOUNT_USB=true`.
+
 # return home
 cd ~
 ```

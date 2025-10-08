@@ -10,7 +10,7 @@ set +o allexport
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-section "Addings Taint to Avoid Scheduling on Master Node"
+section "Adding Taints to Avoid Scheduling on Master Node"
 kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/control-plane:NoSchedule --overwrite
 kubectl taint nodes $CLUSTER_HOSTNAME node-role.kubernetes.io/master:NoSchedule --overwrite
 if [ "$MOUNT_USB" = false ]; then
@@ -23,7 +23,7 @@ kubectl label nodes $CLUSTER_HOSTNAME ipv4Only=true --overwrite
 section "Moving to k8s directory"
 cd ../k8s
 
-mkdir -p "$LONGHORN_DATAPATH"
+mkdir -p "$MOUNT_USB_MOUNT_PATH/longhorn"
 
 deploy
 
