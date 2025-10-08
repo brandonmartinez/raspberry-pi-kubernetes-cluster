@@ -4,11 +4,11 @@ prometheusOperator:
   # Resources for the operator
   resources:
     requests:
-      memory: 256Mi
-      cpu: 100m
+      memory: 192Mi
+      cpu: 75m
     limits:
-      memory: 512Mi
-      cpu: 500m
+      memory: 384Mi
+      cpu: 300m
   # Relabeling job name for operator metrics
   serviceMonitor:
     relabelings:
@@ -29,11 +29,11 @@ alertmanager:
     # Resources configuration
     resources:
       requests:
-        memory: 256Mi
-        cpu: 100m
+        memory: 128Mi
+        cpu: 50m
       limits:
-        memory: 512Mi
-        cpu: 500m
+        memory: 256Mi
+        cpu: 250m
     # PVC configuration
     storage:
       volumeClaimTemplate:
@@ -76,17 +76,17 @@ prometheus:
     externalUrl: http://monitoring.${NETWORK_HOSTNAME_SUFFIX}/prometheus/
     routePrefix: /
     # Data retention configuration
-    retention: 30d
-    retentionSize: 18GB
+    retention: 21d
+    retentionSize: 12GB
     walCompression: true
     # Resources request and limits
     resources:
       requests:
-        memory: 1Gi
-        cpu: 500m
+        memory: 768Mi
+        cpu: 300m
       limits:
-        memory: 3Gi
-        cpu: 2000m
+        memory: 2Gi
+        cpu: 1500m
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -94,15 +94,15 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 15Gi
     # Global scrape configuration
-    scrapeInterval: 30s
-    scrapeTimeout: 10s
-    evaluationInterval: 30s
+    scrapeInterval: 60s
+    scrapeTimeout: 15s
+    evaluationInterval: 60s
     additionalScrapeConfigs:
       - job_name: "uptime"
-        scrape_interval: 30s
-        scrape_timeout: 10s
+        scrape_interval: 60s
+        scrape_timeout: 15s
         scheme: http
         metrics_path: "/metrics"
         static_configs:
@@ -130,17 +130,15 @@ grafana:
   adminPassword: ${GRAFANA_PASSWORD}
   # Set timezone to be browser
   defaultDashboardsTimezone: browser
-  # List of grafana plugins to be installed
-  plugins:
-    - grafana-piechart-panel
+  # No extra plugins; avoids unsupported Angular panels on Grafana 11+
   # Resources configuration
   resources:
     requests:
-      memory: 256Mi
-      cpu: 100m
+      memory: 192Mi
+      cpu: 75m
     limits:
-      memory: 512Mi
-      cpu: 500m
+      memory: 384Mi
+      cpu: 300m
   # Improved liveness and readiness probes for Raspberry Pi
   livenessProbe:
     httpGet:
@@ -206,7 +204,7 @@ defaultRules:
     kubeApiserverSlos: false
     kubeControllerManager: false
     kubelet: false
-    kubeProxy: true
+    kubeProxy: false
     kubernetesApps: false
     kubernetesResources: false
     kubernetesStorage: false
@@ -217,21 +215,21 @@ nodeExporter:
   enabled: true
   resources:
     requests:
-      memory: 64Mi
-      cpu: 50m
+      memory: 48Mi
+      cpu: 30m
     limits:
-      memory: 128Mi
-      cpu: 200m
+      memory: 96Mi
+      cpu: 100m
 
 # Kube State Metrics configuration
 kube-state-metrics:
   resources:
     requests:
-      memory: 128Mi
-      cpu: 100m
+      memory: 96Mi
+      cpu: 75m
     limits:
-      memory: 256Mi
-      cpu: 500m
+      memory: 192Mi
+      cpu: 250m
 
 crds:
   upgradeJob:

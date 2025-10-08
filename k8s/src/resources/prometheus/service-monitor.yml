@@ -9,6 +9,8 @@ spec:
     # /metrics endpoint
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       honorLabels: true
+      interval: 60s
+      scrapeTimeout: 15s
       metricRelabelings:
         # apiserver
         - action: drop
@@ -29,6 +31,8 @@ spec:
     # /metrics/cadvisor
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       honorLabels: true
+      interval: 60s
+      scrapeTimeout: 15s
       metricRelabelings:
         - action: drop
           regex: container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)
@@ -50,6 +54,14 @@ spec:
           regex: container_spec.*
           sourceLabels:
             - __name__
+        - action: drop
+          regex: container_network_.*
+          sourceLabels:
+            - __name__
+        - action: drop
+          regex: container_memory_failures_total
+          sourceLabels:
+            - __name__
       path: /metrics/cadvisor
       port: https-metrics
       relabelings:
@@ -64,6 +76,8 @@ spec:
       # /metrics/probes
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       honorLabels: true
+      interval: 120s
+      scrapeTimeout: 15s
       path: /metrics/probes
       port: https-metrics
       relabelings:
