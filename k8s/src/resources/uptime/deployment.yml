@@ -20,7 +20,7 @@ spec:
             claimName: uptime-pvc-local
       containers:
         - name: uptime
-          image: louislam/uptime-kuma:1.23.16
+          image: louislam/uptime-kuma:beta-slim
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
