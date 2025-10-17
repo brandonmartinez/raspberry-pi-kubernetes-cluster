@@ -124,8 +124,16 @@ grafana:
   grafana.ini:
     server:
       domain: monitoring.${NETWORK_HOSTNAME_SUFFIX}
-      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+      root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
+    database:
+      # Enable WAL to reduce writer lock contention on SQLite
+      wal: true
+      # Keep connections private per process to avoid shared cache issues
+      cache_mode: private
+      # Cap open connections so sidecars don't overwhelm the lightweight SQLite backend
+      max_open_conn: 5
+      max_idle_conn: 5
   # Admin user password
   adminPassword: ${GRAFANA_PASSWORD}
   # Set timezone to be browser
@@ -159,9 +167,11 @@ grafana:
   # Persistence configuration
   persistence:
     enabled: true
+    type: pvc
     size: 5Gi
     accessModes:
       - ReadWriteOnce
+    storageClassName: longhorn
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
