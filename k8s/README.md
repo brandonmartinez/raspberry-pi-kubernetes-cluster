@@ -68,7 +68,17 @@ block ads from publicly available ad lists. The following services are deployed
 as part of the `pihole` namespace:
 
 - [Pi-hole](https://pi-hole.net): an HA (highly available) deployment of
-  Pi-hole, running 4 instances by default.
+  Pi-hole, running 3 instances by default. The deployment flushes FTL metrics
+  to disk every 15 minutes and trims historical data to seven days to minimize
+  SQLite contention; adjust `FTLCONF_database_DBinterval` and
+  `FTLCONF_database_maxDBdays` in `k8s/src/resources/pihole/.env` if you need
+  different retention, and use `FTLCONF_dns_rateLimit_count` /
+  `FTLCONF_dns_rateLimit_interval` to tune per-client query throttling.
+  Upstream resolution defaults to the in-cluster Unbound service using
+  `FTLCONF_dns_upstreams=10.43.100.20#53;1.1.1.1#53`; adjust the fallback or the
+  first hop if you relocate Unbound. Reverse DNS helpers live in
+  `LAN_NETWORK_CIDR` / `LAN_ROUTER_IP`; Pi-hole consumes them through
+  `FTLCONF_dns_revServers` to keep client hostnames accurate in the UI.
 - [orbital-sync](https://github.com/mattwebbio/orbital-sync): a service to
   synchronize Pi-hole configurations across multiple instances of Pi-hole using
   the _teleporter_ functionality of Pi-hole.

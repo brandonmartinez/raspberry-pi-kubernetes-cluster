@@ -9,6 +9,7 @@ spec:
     type: RollingUpdate
   template:
     spec:
+      terminationGracePeriodSeconds: 120
       topologySpreadConstraints:
         - labelSelector:
             matchLabels:
@@ -20,6 +21,7 @@ spec:
       containers:
         - name: pihole
           image: pihole/pihole:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: pihole-configmap
@@ -41,10 +43,10 @@ spec:
           resources:
             limits:
               memory: "512Mi"
-              cpu: "800m"
+              cpu: "1500m"
             requests:
               memory: "128Mi"
-              cpu: "200m"
+              cpu: "300m"
           volumeMounts:
             - mountPath: /etc/pihole
               name: pihole-pvc

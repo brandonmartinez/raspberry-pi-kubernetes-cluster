@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: unbound
 spec:
-  replicas: 3
+  replicas: 2
   template:
     spec:
       topologySpreadConstraints:
@@ -25,11 +25,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "64Mi"
-              cpu: "200m"
+              memory: "128Mi"
+              cpu: "500m"
             requests:
-              memory: "32Mi"
-              cpu: "25m"
+              memory: "64Mi"
+              cpu: "150m"
           volumeMounts:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
               name: unbound-config-files
@@ -41,12 +41,14 @@ spec:
             tcpSocket:
               port: 53
             initialDelaySeconds: 30
-            periodSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             tcpSocket:
               port: 53
             initialDelaySeconds: 25
-            periodSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
       volumes:
         - name: unbound-config-files
           configMap:

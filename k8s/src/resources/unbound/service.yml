@@ -7,6 +7,7 @@ spec:
     app: unbound
   type: ClusterIP
   clusterIP: 10.43.100.20
+  sessionAffinity: ClientIP
   ports:
     - name: 53-udp
       port: 53
