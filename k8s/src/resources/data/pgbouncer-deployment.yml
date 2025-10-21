@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  labels:
+    app: pgbouncer
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: pgbouncer
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+    spec:
+      # Anti-affinity to avoid scheduling on same node as PostgreSQL (if possible)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: data
+                topologyKey: kubernetes.io/hostname
+
+      # Init container to generate userlist.txt with MD5 password hash
+      initContainers:
+        - name: generate-userlist
+          image: postgres:17.4-alpine
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              PGU=${DOLLAR}{POSTGRES_USER}
+              PGP=${DOLLAR}{POSTGRES_PASSWORD}
+              echo "DEBUG: POSTGRES_USER=${DOLLAR}{PGU}"
+              echo "DEBUG: POSTGRES_PASSWORD length: ${DOLLAR}{#PGP}"
+              echo "Generating userlist.txt for user: ${DOLLAR}{PGU}"
+
+              # For md5 auth, we need to generate: md5 + md5(password + username)
+              # Using psql to generate the proper md5 hash
+              MD5_HASH=${DOLLAR}(echo -n "${DOLLAR}{PGP}${DOLLAR}{PGU}" | md5sum | awk '{print "md5"${DOLLAR}1}')
+
+              # Write userlist with MD5 hash
+              echo "\"${DOLLAR}{PGU}\" \"${DOLLAR}{MD5_HASH}\"" > /etc/pgbouncer/userlist.txt
+
+              # Set permissions so pgbouncer user (1001) can read it
+              chmod 644 /etc/pgbouncer/userlist.txt
+              echo "Generated userlist.txt:"
+              cat /etc/pgbouncer/userlist.txt
+          envFrom:
+            - configMapRef:
+                name: data-configmap
+            - secretRef:
+                name: data-secret
+          volumeMounts:
+            - name: pgbouncer-secret
+              mountPath: /etc/pgbouncer
+
+      containers:
+        - name: pgbouncer
+          image: perconalab/percona-pgbouncer:1.24.1
+          command:
+            - pgbouncer
+            - /etc/pgbouncer/pgbouncer.ini
+          ports:
+            - name: pgbouncer
+              containerPort: 5432
+              protocol: TCP
+
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 50m
+            limits:
+              memory: 128Mi
+              cpu: 200m
+
+          volumeMounts:
+            - name: pgbouncer-config
+              mountPath: /etc/pgbouncer/pgbouncer.ini
+              subPath: pgbouncer-config.ini
+            - name: pgbouncer-secret
+              mountPath: /etc/pgbouncer/userlist.txt
+              subPath: userlist.txt
+
+          # Liveness probe - check if PgBouncer is responding
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe - check if PgBouncer can connect to PostgreSQL
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Startup probe for initial connection establishment
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+
+          # Security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: pgbouncer-config
+          configMap:
+            name: pgbouncer-config
+        - name: pgbouncer-secret
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi

@@ -15,6 +15,9 @@ configMapGenerator:
   - name: postgres-config
     files:
       - postgresql.conf
+  - name: pgbouncer-config
+    files:
+      - pgbouncer-config.ini
 
 secretGenerator:
   - name: data-secret
@@ -23,6 +26,8 @@ secretGenerator:
 
 resources:
   - namespace.yml
+  - postgres-init.yml
   - postgres-service.yml
   - postgres-statefulset.yml
   - postgres-pvc.yml
+  - pgbouncer-deployment.yml
