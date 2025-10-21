@@ -39,22 +39,16 @@ spec:
             - -c
             - |
               set -e
-              PGU=${DOLLAR}{POSTGRES_USER}
-              PGP=${DOLLAR}{POSTGRES_PASSWORD}
-              echo "DEBUG: POSTGRES_USER=${DOLLAR}{PGU}"
-              echo "DEBUG: POSTGRES_PASSWORD length: ${DOLLAR}{#PGP}"
-              echo "Generating userlist.txt for user: ${DOLLAR}{PGU}"
+              echo "Generating userlist.txt for user: ${DOLLAR}POSTGRES_USER"
 
-              # For md5 auth, we need to generate: md5 + md5(password + username)
-              # Using psql to generate the proper md5 hash
-              MD5_HASH=${DOLLAR}(echo -n "${DOLLAR}{PGP}${DOLLAR}{PGU}" | md5sum | awk '{print "md5"${DOLLAR}1}')
-
-              # Write userlist with MD5 hash
-              echo "\"${DOLLAR}{PGU}\" \"${DOLLAR}{MD5_HASH}\"" > /etc/pgbouncer/userlist.txt
+              # For auth_query mode, we need the auth_user's credentials in plain text
+              # PgBouncer will use this user to connect and run auth_query
+              # Other users will be authenticated via the query
+              echo "\"${DOLLAR}POSTGRES_USER\" \"${DOLLAR}POSTGRES_PASSWORD\"" > /etc/pgbouncer/userlist.txt
 
               # Set permissions so pgbouncer user (1001) can read it
               chmod 644 /etc/pgbouncer/userlist.txt
-              echo "Generated userlist.txt:"
+              echo "Generated userlist.txt for auth_query mode"
               cat /etc/pgbouncer/userlist.txt
           envFrom:
             - configMapRef:

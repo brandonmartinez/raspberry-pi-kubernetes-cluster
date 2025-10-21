@@ -154,8 +154,8 @@ EOF
         log "Waiting for PostgreSQL to be ready"
         kubectl wait --for=condition=ready pod -l app=data -n data --timeout=120s || true
 
-        log "Waiting additional 30 seconds for PostgreSQL to fully initialize"
-        sleep 30
+        # log "Waiting additional 30 seconds for PostgreSQL to fully initialize"
+        # sleep 30
     fi
 
     if [ "$DEPLOY_MONITORING" = true ] ; then

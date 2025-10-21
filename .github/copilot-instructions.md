@@ -39,6 +39,7 @@
 - In Bash scripts, log progress with `section`/`log` from `_shared/echo.sh` for consistency.
 - Preserve YAML indentation (2 spaces) and Bash style used in existing files.
 - Tests are manual (cluster deployment). Favor small, reviewable changes and document manual verification steps in comments or READMEs.
+- **CRITICAL:** NEVER use `kubectl apply -k` directly on the kustomize resources. ALWAYS use `./deploy-from-local.sh` or `./deploy.sh` which handle `envsubst` substitution for environment variables. Direct `kubectl apply -k` will deploy resources with unsubstituted placeholders like `${POSTGRES_USER}` instead of actual values.
 
 ## Documentation expectations
 - The root `README.md` introduces the two project areas. If new workflows are added (e.g., extra provisioning steps or deploy flags), update that README and any subfolder READMEs accordingly.
