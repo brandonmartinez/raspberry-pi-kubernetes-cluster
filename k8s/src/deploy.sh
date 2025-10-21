@@ -5,6 +5,9 @@ set -e
 set -o allexport
 source ../../.env
 source ../../_shared/echo.sh
+# This is hack for the prometheus stack, as "$" is used in rules and dashboard definitions
+# When adding new templates, be sure to replace "$" with "${DOLLAR}" to avoid invalid YAML
+export DOLLAR='$'
 set +o allexport
 
 function deploy_helm() {
@@ -46,6 +49,23 @@ function deploy_helm() {
         log "Waiting ${SLEEP_UPGRADE} seconds for ${RELEASE} to be Ready"
         sleep ${SLEEP_UPGRADE}
     fi
+}
+
+function deploy_kustomize() {
+    RESOURCE_PATH=$1
+    OUTPUT_FILE=$2
+    DESCRIPTION=${3:-"resources"}
+
+    log "Processing .env.secret files in ${DESCRIPTION}"
+    find "${RESOURCE_PATH}" -name ".env.secret" 2>/dev/null | while read -r secret_file; do
+        envsubst < "$secret_file" > "${secret_file}.temp"
+    done
+
+    log "Deploying ${DESCRIPTION} via kustomize"
+    # The sed substitution handles triple-quoted strings that may appear in manifests
+    # The envsubst allows environment variable substitution in manifests
+    kubectl kustomize "${RESOURCE_PATH}" | envsubst | sed "s/'''/'/g" > "${OUTPUT_FILE}"
+    kubectl apply -f "${OUTPUT_FILE}"
 }
 
 function deploy() {
@@ -123,24 +143,42 @@ EOF
         120
     fi
 
-    if [ "$DEPLOY_PROMETHEUS" = true ] ; then
+    if [ "$DEPLOY_DATA" = true ] ; then
+        ##################################################
+        section "Deploying PostgreSQL Database"
+        ##################################################
+        log "PostgreSQL must be deployed before Prometheus stack (Grafana dependency)"
+
+        deploy_kustomize "resources/data" "compiled-data.yml" "data namespace (PostgreSQL)"
+
+        log "Waiting for PostgreSQL to be ready"
+        kubectl wait --for=condition=ready pod -l app=data -n data --timeout=120s || true
+
+        log "Waiting additional 30 seconds for PostgreSQL to fully initialize"
+        sleep 30
+    fi
+
+    if [ "$DEPLOY_MONITORING" = true ] ; then
         ##################################################
         section "Installing Prometheus Monitoring Stack"
         ##################################################
 
+        log "Some resources must be deployed before Prometheus stack"
+        deploy_kustomize "resources/monitoring" "compiled-monitoring.yml" "monitoring namespace"
+
         deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
         "monitoring" "prometheus-community/kube-prometheus-stack" \
-        "resources/prometheus/helm-values.yml" \
+        "resources/monitoring/helm-values.yml" \
         "monitoring" \
         60 \
         10 \
         "${PROMETHEUS_CHART_VERSION}"
 
         log "Building Grafana Dashboard Kustomize YAML Files from JSON Dashboards"
-        for file in resources/prometheus/grafana-dashboards/*.json; do
+        for file in resources/monitoring/grafana-dashboards/*.json; do
             base_name=$(basename "$file" .json)
-            yml_file="resources/prometheus/grafana-dashboards/${base_name}.yml"
-            tmp_file="resources/prometheus/grafana-dashboards/${base_name}.tmp"
+            yml_file="resources/monitoring/grafana-dashboards/${base_name}.yml"
+            tmp_file="resources/monitoring/grafana-dashboards/${base_name}.tmp"
 
             # Create the base template
             echo "apiVersion: v1" > "$yml_file"
@@ -192,8 +230,8 @@ EOF
         echo "- resources/longhorn" >> kustomization.yml
     fi
 
-    if [ "$DEPLOY_PROMETHEUS" = true ] ; then
-        echo "- resources/prometheus" >> kustomization.yml
+    if [ "$DEPLOY_MONITORING" = true ] ; then
+        echo "- resources/monitoring" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_UNBOUND" = true ] ; then
@@ -209,9 +247,8 @@ EOF
         echo "- resources/homebridge" >> kustomization.yml
     fi
 
-    if [ "$DEPLOY_DATA" = true ] ; then
-        echo "- resources/data" >> kustomization.yml
-    fi
+    # Note: DEPLOY_DATA (PostgreSQL) is deployed earlier in the script
+    # before Prometheus to satisfy Grafana's database dependency
 
     if [ "$DEPLOY_PORTAINER" = true ] ; then
         echo "- resources/portainer" >> kustomization.yml
@@ -237,15 +274,7 @@ EOF
         echo "- resources/uptime" >> kustomization.yml
     fi
 
-    log "Deploying kustomize script via kubectl"
-    # This is hack for the prometheus stack, as "$" is used in rules and dashboard definitions
-    # When adding new templates, be sure to replace "$" with "${DOLLAR}" to avoid invalid YAML
-    export DOLLAR='$'
-    find resources/ -name ".env.secret" | while read -r secret_file; do
-        envsubst < "$secret_file" > "${secret_file}.temp"
-    done
-    kubectl kustomize | envsubst | sed "s/'''/'/g" > compiled.yml
-    kubectl apply -f compiled.yml
+    deploy_kustomize "." "compiled.yml" "service stacks"
 
     ##################################################
     section "Done."

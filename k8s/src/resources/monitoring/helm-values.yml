@@ -127,26 +127,39 @@ grafana:
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
     database:
-      # Enable WAL to reduce writer lock contention on SQLite
-      wal: true
-      # Keep connections private per process to avoid shared cache issues
-      cache_mode: private
-      # Cap open connections so sidecars don't overwhelm the lightweight SQLite backend
-      max_open_conn: 5
-      max_idle_conn: 5
+      # Use PostgreSQL for better concurrency and reliability
+      type: postgres
+      host: 10.43.100.50:5432
+      name: grafana
+      # IMPORTANT: Do not set 'user' and 'password' here directly
+      # The Helm chart validation (assertNoLeakedSecrets) prevents hardcoded sensitive values
+      # Instead, we use environment variables GF_DATABASE_USER and GF_DATABASE_PASSWORD
+      # which Grafana automatically picks up for database configuration
+      ssl_mode: disable
+      # PostgreSQL can handle more connections than SQLite
+      max_open_conn: 10
+      max_idle_conn: 2
+      conn_max_lifetime: 14400
+  # Inject database credentials from secret
+  # Grafana automatically uses GF_DATABASE_USER and GF_DATABASE_PASSWORD environment variables
+  # This approach satisfies the Helm chart's assertNoLeakedSecrets validation
+  envFromSecret: monitoring-secret
   # Admin user password
   adminPassword: ${GRAFANA_PASSWORD}
   # Set timezone to be browser
   defaultDashboardsTimezone: browser
+  # Use Recreate strategy to avoid multi-attach issues with ReadWriteOnce PVC
+  deploymentStrategy:
+    type: Recreate
   # No extra plugins; avoids unsupported Angular panels on Grafana 11+
-  # Resources configuration
+  # Resources configuration - increased for better performance
   resources:
     requests:
-      memory: 192Mi
-      cpu: 75m
+      memory: 256Mi
+      cpu: 100m
     limits:
-      memory: 384Mi
-      cpu: 300m
+      memory: 768Mi
+      cpu: 500m
   # Improved liveness and readiness probes for Raspberry Pi
   livenessProbe:
     httpGet:
@@ -172,6 +185,16 @@ grafana:
     accessModes:
       - ReadWriteOnce
     storageClassName: longhorn
+  # Pod scheduling - avoid co-locating with Prometheus
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: prometheus
+            topologyKey: kubernetes.io/hostname
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
@@ -187,6 +210,19 @@ grafana:
     dashboards:
       enabled: true
       labelValue: "true"
+      # Reduce sidecar resource usage and polling frequency
+      resource: both  # Watch both ConfigMaps and Secrets
+      searchNamespace: ALL
+      # Increase watch interval to reduce database load
+      watchMethod: WATCH
+      # Resource limits for sidecar
+      resources:
+        requests:
+          memory: 64Mi
+          cpu: 25m
+        limits:
+          memory: 128Mi
+          cpu: 100m
 # Disabling monitoring of K8s services.
 # Monitoring of K3S components will be configured out of monitoring
 kubelet:

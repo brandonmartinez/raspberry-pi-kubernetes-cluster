@@ -4,7 +4,7 @@
 - The repo has two active surfaces:
   - `rpi/` contains single-run Bash scripts (`rpi/src/001.sh` → `005.sh`) that prepare Raspberry Pi hosts as k3s master or worker nodes. They are executed manually with `sudo` on the device.
   - `k8s/` holds the long-lived Kubernetes (k3s) application definitions and deployment tooling for the home lab cluster.
-- Cluster monitoring is provided by the community `kube-prometheus-stack` Helm chart; manifests and values live in `k8s/src/resources/prometheus/`.
+- Cluster monitoring is provided by the community `kube-prometheus-stack` Helm chart; manifests and values live in `k8s/src/resources/monitoring/`.
 - Shared helpers live under `_shared/` (for example, `echo.sh` for logging utilities). Prefer reusing these helpers instead of redefining log utilities.
 
 ## Bash & scripting conventions

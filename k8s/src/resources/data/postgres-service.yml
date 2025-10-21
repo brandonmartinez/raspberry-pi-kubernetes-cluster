@@ -17,7 +17,7 @@ metadata:
   name: postgres-tcp
 spec:
   ports:
-    - name: 5432-udp
+    - name: postgres-tcp
       port: 5432
       targetPort: 5432
       protocol: TCP

@@ -4,6 +4,13 @@ kind: Kustomization
 
 namespace: monitoring
 
+secretGenerator:
+  - name: monitoring-secret
+    envs:
+      - .env.secret.temp
+    options:
+      disableNameSuffixHash: true
+
 resources:
   - prefix-middleware.yml
   - ingress.yml

@@ -12,6 +12,9 @@ configMapGenerator:
   - name: data-configmap
     envs:
       - .env
+  - name: postgres-config
+    files:
+      - postgresql.conf
 
 secretGenerator:
   - name: data-secret

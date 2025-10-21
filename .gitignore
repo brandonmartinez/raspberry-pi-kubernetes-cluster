@@ -1,9 +1,9 @@
 *.DS_Store
 kubeconfig.yml
-compiled.yml
+compiled*.yml
 /.env
 /.tmp
 k8s/src/kustomization.yml
 k8s/src/**/*.temp
-k8s/src/resources/prometheus/grafana-dashboards/*.yml
-k8s/src/resources/prometheus/grafana-dashboards/*.tmp
+k8s/src/resources/monitoring/grafana-dashboards/*.yml
+k8s/src/resources/monitoring/grafana-dashboards/*.tmp
