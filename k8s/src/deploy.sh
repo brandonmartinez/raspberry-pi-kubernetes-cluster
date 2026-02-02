@@ -258,6 +258,10 @@ EOF
         echo "- resources/chrony" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_CHANGEDETECTION" = true ] ; then
+        echo "- resources/changedetection" >> kustomization.yml
+    fi
+
     if [ "$DEPLOY_MINECRAFT" = true ] ; then
         echo "- resources/minecraft" >> kustomization.yml
     fi

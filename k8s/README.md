@@ -15,6 +15,12 @@ address to sync to the cluster's time.
 
 [Kubernetes Manifests](https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster/tree/main/src/k8s/bases/chrony)
 
+### ChangeDetection.io
+
+[ChangeDetection.io](https://github.com/dgtlmoon/changedetection.io) monitors web pages for changes and sends alerts when updates are detected.
+
+[Kubernetes Manifests](src/resources/changedetection)
+
 ### Deepstack
 
 [Deepstack](https://deepstack.cc) is a deep learning object detection server,

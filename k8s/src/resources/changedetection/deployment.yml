@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: changedetection
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: changedetection
+          image: dgtlmoon/changedetection.io:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: changedetection-configmap
+          ports:
+            - name: 5000-tcp
+              containerPort: 5000
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "150m"
+          volumeMounts:
+            - name: changedetection-data
+              mountPath: /datastore
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+      volumes:
+        - name: changedetection-data
+          persistentVolumeClaim:
+            claimName: changedetection-pvc
