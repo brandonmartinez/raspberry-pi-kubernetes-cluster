@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shlink-shortener-pdb
+  labels:
+    app: shlink
+    component: shortener
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: shlink
+      component: shortener

@@ -23,9 +23,8 @@ spec:
               app: shlink
               component: shortener
           maxSkew: 1
-          minDomains: 2
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: shlink
           image: shlinkio/shlink:stable
@@ -44,6 +43,28 @@ spec:
             requests:
               memory: "100Mi"
               cpu: "0.25"
+          startupProbe:
+            httpGet:
+              path: /rest/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /rest/health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /rest/health
+              port: 8080
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -82,3 +103,25 @@ spec:
             requests:
               memory: "100Mi"
               cpu: "0.25"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 5

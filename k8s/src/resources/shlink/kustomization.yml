@@ -24,3 +24,4 @@ resources:
   - horizontalpodautoscaler.yml
   - service.yml
   - ingress.yml
+  - pdb.yml

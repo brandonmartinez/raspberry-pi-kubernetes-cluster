@@ -31,3 +31,4 @@ resources:
   - postgres-statefulset.yml
   - postgres-pvc.yml
   - pgbouncer-deployment.yml
+  - pdb.yml
