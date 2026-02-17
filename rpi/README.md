@@ -57,7 +57,7 @@ cd ~
 
 ## Run Installation Scripts
 
-Scripts in the `src/rpi` folder are meant to be executed in order. Most scripts
+Scripts in the `rpi/src` folder are meant to be executed in order. Most scripts
 require a reboot in-between, thus the need for separate files. Scripts must be
 executed with `sudo`.
 
@@ -65,7 +65,7 @@ Time to start executing our scripts.
 
 ```sh
 # Configuring Hostname and Expanding File System
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./001.sh YourPreferredHostNameForThePi YourPreferredPasswordForThePiUserAccount
+cd src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./001.sh YourPreferredHostNameForThePi YourPreferredPasswordForThePiUserAccount
 # Reboots Pi
 ```
 
@@ -73,7 +73,7 @@ Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 
 ```sh
 # Update OS Packages and Install Docker
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./002.sh
+cd src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./002.sh
 # Reboots Pi
 ```
 
@@ -81,7 +81,7 @@ Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 
 ```sh
 # Finish Docker Config and Install Compose; Create NFS Mount Paths; Setup Boot Options
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./003.sh
+cd src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./003.sh
 # Reboots Pi
 ```
 
@@ -91,7 +91,7 @@ Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 
 ```sh
 # For Master Node/Cluster - Install NFS Server and k3s:
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004.sh
+cd src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./004.sh
 # Copy the output from the last script, it will be needed for worker nodes
 ```
 
@@ -102,7 +102,7 @@ Reconnect to the RPi with `ssh pi@X.X.X.X`, replacing with your IP address.
 ```sh
 # For Worker Nodes - Install NFS client, add mount entry, and mount share; install k3s worker node
 # X.X.X.X is the IP Address of your master, followed by the token from k3s:
-cd src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./004.sh X.X.X.X "REPLACE WITH TOKEN FROM CLUSTER MASTER"
+cd src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./004.sh X.X.X.X "REPLACE WITH TOKEN FROM CLUSTER MASTER"
 ```
 
 ### Deploy Network Services (from Primary Cluster Node)
@@ -112,7 +112,7 @@ master. This will deploy a handful of services to the newly setup Kubernetes
 (k3s) cluster.
 
 ```sh
-cd ~/src/raspberry-pi-kubernetes-cluster/src/rpi/; sudo ./005.sh
+cd ~/src/raspberry-pi-kubernetes-cluster/rpi/src/; sudo ./005.sh
 ```
 
 ## Network Setup

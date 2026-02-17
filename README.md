@@ -1,83 +1,71 @@
 # raspberry-pi-kubernetes-cluster
 
-The purpose of this project is to provision a kubernetes cluster on a set of
-Raspberry Pi 4B devices. The project is divided into two parts:
+A production-grade home lab Kubernetes cluster running on Raspberry Pi 4B
+devices using [k3s](https://k3s.io). The cluster hosts home network
+infrastructure (DNS, NTP, monitoring) and public-facing services (URL shortener,
+uptime monitoring) with TLS, high availability, and automated deployment.
 
-- `rpi`: scripts to configure the Raspberry Pi's to be cluster-ready. These
-  scripts are meant to be executed on each Raspberry Pi in the cluster, and
-  generally will only be run one time at initial cluster setup. As of today,
-  there is not an "upgrade" path when changes are made, so it's recommended to
-  verify what's changed between releases and re-run the appropriate scripts or
-  sections of scripts.
-- `k8s`: Kubernetes manifests to deploy services to the cluster. These are
-  updated semi-regularly, and can be applied to the cluster at any time.
+The project is divided into two parts:
 
-Each of these parts are described in more detail in their respective subfolders
-via README files.
+- **`rpi/`** — One-time provisioning scripts that prepare a fresh Raspberry Pi
+  OS install as a k3s master or worker node. Run in order with `sudo` on each
+  device; see [`rpi/README.md`](rpi/README.md) for step-by-step instructions.
+- **`k8s/`** — Kubernetes manifests and Helm values that define all cluster
+  services. Deployed via `k8s/src/deploy.sh` (or `deploy-from-local.sh` from a
+  workstation). See [`k8s/README.md`](k8s/README.md) for the full service
+  catalog.
 
 ## Prerequisites
 
 - At least two
-  [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)'s,
-  ideally 4 or 8 GB models. It's recommended to get the 8 GB model if you plan
-  to run additional services beyond what's included in this repo.
-- [Raspberry Pi OS - 64 Bit](https://downloads.raspberrypi.org/raspios_lite_arm64/images/)
-  freshly cloned to a Micro SD Card
-- Static IP Reservations for All RPi's in the Cluster (suggested to be MAC
-  Address-based via your DHCP server or router)
-- An [ssh key](https://www.ssh.com/academy/ssh/keygen) to simplify login to
-  RPi's (this repo is assuming RSA keys with no password)
-- [A userconf file on the boot partition to set default password](https://www.raspberrypi.com/news/raspberry-pi-bullseye-update-april-2022/) -
-  see the "Headless Setup" section, or see below for non-Linux OS's
-- [ssh file on the boot partition](https://www.raspberrypi.com/documentation/computers/configuration.html#ssh-or-ssh-txt)
-  to enable remote access on first boot (e.g., `touch /Volumes/boot/ssh` on
-  macOS)
-- Recommended: a domain name you control (otherwise, .home.arpa will work)
-
-> :warning: **Note:** If you don't have access to a version of `openssl` with
-> the `-6` option (such as on macOS), you can use the following command to
-> generate the default `pi` username with `raspberry` as the password (though,
-> it's recommended to generate a proper username password pair):
->
-> ```sh
-> echo 'pi:$6$i9XSzPaTyjaCnnKe$fwuKZKF9CYR/vJKVLVusR.NoHQxrj2XSVPK/g7N46RzSaB/9oNmxMXIC3uLIEGV.qg8MYmuJIFAL4ymF4YLeP.' > /Volumes/boot/userconf
-> ```
+  [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)'s
+  (8 GB models recommended)
+- [Raspberry Pi OS (64-bit, Lite)](https://www.raspberrypi.com/software/operating-systems/)
+  written to a Micro SD card
+- Static IP reservations for all nodes (MAC-based via DHCP/router)
+- An [SSH key](https://www.ssh.com/academy/ssh/keygen) for passwordless login
+- SSH enabled on first boot (`touch /Volumes/bootfs/ssh` on macOS, or enable via
+  Raspberry Pi Imager)
+- Recommended: a domain name you control (otherwise `.home.arpa` works)
 
 ## Getting started
 
-1. Clone the repository onto each Raspberry Pi host (for example,
-   `~/src/raspberry-pi-kubernetes-cluster`).
-2. Copy the sample environment file and tailor it to your network:
+1. Clone the repository onto each Raspberry Pi:
 
-```sh
-cd ~/src/raspberry-pi-kubernetes-cluster
-cp .env.sample .env
-```
+   ```sh
+   mkdir -p ~/src && cd ~/src
+   git clone https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+   cd raspberry-pi-kubernetes-cluster
+   ```
 
-The `.env` file powers both the provisioning scripts under `rpi/src` and the
-Kubernetes deployments under `k8s/src`. Keep secrets out of source control and
-document any required variables in `.env.sample`. 3. For every node, run the
-numbered scripts in `rpi/src` with `sudo`, rebooting when prompted. Script
-`004.sh` installs k3s; run it without arguments on the master and with
-`PRIMARY_IP` and `TOKEN` on workers. Detailed steps live in
-[`rpi/README.md`](rpi/README.md). 4. After the cluster is ready, deploy the core
-services:
+2. Copy the sample environment file and customize it for your network:
 
-- On the master node: run `sudo ./005.sh` from
-  `~/src/raspberry-pi-kubernetes-cluster/rpi/src`.
-- From a workstation: run `./deploy-from-local.sh` inside
-  `~/src/raspberry-pi-kubernetes-cluster/k8s/src` to fetch the live kubeconfig
-  and call `k8s/src/deploy.sh`.
+   ```sh
+   cp .env.sample .env
+   nano .env
+   ```
 
-`k8s/src/deploy.sh` assembles a temporary `kustomization.yml`, renders manifests
-with `kubectl kustomize | envsubst`, and applies them to the cluster. To keep
-literal `$` characters in YAML or Helm values, escape them as `${DOLLAR}` so
-they survive `envsubst`.
+   The `.env` file powers both the provisioning scripts (`rpi/src/`) and the
+   Kubernetes deployments (`k8s/src/`). Keep real secrets out of source control
+   and document any new variables in `.env.sample`.
 
-Refer to [`k8s/README.md`](k8s/README.md) for service details and namespace
-layout, and use `_shared/echo.sh` helpers when extending Bash scripts.
+3. On every node, run the numbered scripts in `rpi/src/` with `sudo`, rebooting
+   when prompted. Script `004.sh` installs k3s — run it without arguments on the
+   master and with `PRIMARY_IP` and `TOKEN` arguments on workers. See
+   [`rpi/README.md`](rpi/README.md) for detailed steps.
+
+4. After the cluster is ready, deploy services:
+   - **From the master node:**
+     `cd ~/src/raspberry-pi-kubernetes-cluster/rpi/src/ && sudo ./005.sh`
+   - **From a workstation:** `cd k8s/src && ./deploy-from-local.sh` (fetches the
+     live kubeconfig via SCP and runs `deploy.sh`)
+
+   `deploy.sh` assembles a temporary `kustomization.yml`, renders manifests with
+   `kubectl kustomize | envsubst`, and applies them. Literal `$` characters in
+   YAML are preserved by writing `${DOLLAR}` in source files.
 
 ## Resources
 
+- [k3s documentation](https://docs.k3s.io)
 - [k3s.rocks](https://k3s.rocks)
 - [kube-prometheus-stack upgrades](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/UPGRADE.md)
