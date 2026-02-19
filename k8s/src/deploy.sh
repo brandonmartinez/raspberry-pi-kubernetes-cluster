@@ -243,10 +243,6 @@ EOF
         echo "- resources/nebulasync" >> kustomization.yml
     fi
 
-    if [ "$DEPLOY_HOMEBRIDGE" = true ] ; then
-        echo "- resources/homebridge" >> kustomization.yml
-    fi
-
     # Note: DEPLOY_DATA (PostgreSQL) is deployed earlier in the script
     # before Prometheus to satisfy Grafana's database dependency
 

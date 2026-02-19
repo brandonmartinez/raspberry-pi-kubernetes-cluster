@@ -43,11 +43,6 @@ evicts pods to help rebalance cluster workloads based on policy.
 
 [Helm Values](src/resources/descheduler/helm-values.yml)
 
-### Homebridge
-
-[Homebridge](https://homebridge.io) brings HomeKit support to non-HomeKit smart
-devices.
-
 [Kubernetes Manifests](src/resources/homebridge)
 
 ### kube-system addons
