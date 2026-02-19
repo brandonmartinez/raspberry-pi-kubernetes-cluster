@@ -37,17 +37,23 @@ spec:
             - mountPath: /opt/unbound/etc/unbound/unbound.conf
               name: unbound-config-files
               subPath: unbound.conf
-          livenessProbe:
+          startupProbe:
             tcpSocket:
               port: 53
-            initialDelaySeconds: 30
+            failureThreshold: 30
             periodSeconds: 10
-            failureThreshold: 3
+            timeoutSeconds: 5
           readinessProbe:
             tcpSocket:
               port: 53
-            initialDelaySeconds: 25
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 53
+            periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
       volumes:
         - name: unbound-config-files

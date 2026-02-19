@@ -21,3 +21,4 @@ resources:
   - service.yml
   - ingress.yml
   - backup-cronjob.yml
+  - pdb.yml

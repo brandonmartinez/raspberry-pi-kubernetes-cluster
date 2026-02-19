@@ -4,6 +4,8 @@ metadata:
   name: changedetection
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   template:
     spec:
       containers:
@@ -26,20 +28,25 @@ spec:
           volumeMounts:
             - name: changedetection-data
               mountPath: /datastore
-          livenessProbe:
+          startupProbe:
             httpGet:
               path: /
               port: 5000
-            initialDelaySeconds: 60
-            periodSeconds: 30
+            failureThreshold: 30
+            periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /
               port: 5000
-            initialDelaySeconds: 30
             periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 5
       volumes:

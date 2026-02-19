@@ -6,6 +6,8 @@ metadata:
     app: portainer
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: portainer
@@ -33,16 +35,27 @@ spec:
               containerPort: 9443
             - name: svc-8000-edge
               containerPort: 8000
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: 9443
-          #     scheme: HTTPS
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: 9443
-          #     scheme: HTTPS
+          startupProbe:
+            httpGet:
+              path: /
+              port: 9000
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             limits:
               memory: "200Mi"

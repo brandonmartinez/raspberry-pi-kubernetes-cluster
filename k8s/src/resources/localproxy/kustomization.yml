@@ -13,8 +13,8 @@ resources:
   - config.yml
   - deployment.yml
   - service.yml
-  - ingress-cr10.yml
   - ingress-ender3.yml
   - ingress-nas.yml
   - ingress-scrypted.yml
   - ingress-homebridge.yml
+  - pdb.yml

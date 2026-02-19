@@ -3,9 +3,15 @@ kind: Deployment
 metadata:
   name: localproxy-nginx-deployment
 spec:
-  replicas: 1
+  replicas: 2
   template:
     spec:
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels: {}
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: nginx
           image: nginx:latest
@@ -21,6 +27,27 @@ spec:
             requests:
               memory: "200Mi"
               cpu: "150m"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
       volumes:
         - name: nginx-config
           configMap:

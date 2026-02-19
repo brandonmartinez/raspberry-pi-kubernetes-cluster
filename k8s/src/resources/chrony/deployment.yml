@@ -6,6 +6,12 @@ spec:
   replicas: 2
   template:
     spec:
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels: {}
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: chrony
           image: cturra/ntp
@@ -23,3 +29,28 @@ spec:
             requests:
               memory: "50Mi"
               cpu: "50m"
+          # chronyc tracking exits 0 when NTP is synced/running
+          startupProbe:
+            exec:
+              command:
+                - chronyc
+                - tracking
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - chronyc
+                - tracking
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - chronyc
+                - tracking
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
