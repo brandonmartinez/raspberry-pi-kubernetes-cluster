@@ -28,24 +28,3 @@ spec:
             requests:
               memory: "16Mi"
               cpu: "5m"
-          # nebula-sync is a background sync process with no ports;
-          # use exec probe to verify the process is alive
-          startupProbe:
-            exec:
-              command:
-                - pgrep
-                - -f
-                - nebula-sync
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
-          livenessProbe:
-            exec:
-              command:
-                - pgrep
-                - -f
-                - nebula-sync
-            periodSeconds: 60
-            timeoutSeconds: 5
-            failureThreshold: 3

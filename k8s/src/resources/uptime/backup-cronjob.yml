@@ -15,6 +15,13 @@ spec:
             - name: sqlite-backup
               image: public.ecr.aws/docker/library/alpine:3.20
               imagePullPolicy: IfNotPresent
+              resources:
+                requests:
+                  cpu: "5m"
+                  memory: "16Mi"
+                limits:
+                  cpu: "50m"
+                  memory: "64Mi"
               command:
                 - /bin/sh
                 - -c
