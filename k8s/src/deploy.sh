@@ -57,15 +57,20 @@ function deploy_kustomize() {
     DESCRIPTION=${3:-"resources"}
 
     log "Processing .env.secret files in ${DESCRIPTION}"
-    find "${RESOURCE_PATH}" -name ".env.secret" 2>/dev/null | while read -r secret_file; do
+    while IFS= read -r secret_file; do
         envsubst < "$secret_file" > "${secret_file}.temp"
-    done
+    done < <(find "${RESOURCE_PATH}" -name ".env.secret" 2>/dev/null)
 
     log "Deploying ${DESCRIPTION} via kustomize"
     # The sed substitution handles triple-quoted strings that may appear in manifests
     # The envsubst allows environment variable substitution in manifests
     kubectl kustomize "${RESOURCE_PATH}" | envsubst | sed "s/'''/'/g" > "${OUTPUT_FILE}"
     kubectl apply -f "${OUTPUT_FILE}"
+    
+    log "Cleaning up temporary .env.secret.temp files"
+    while IFS= read -r temp_file; do
+        rm -f "$temp_file"
+    done < <(find "${RESOURCE_PATH}" -name ".env.secret.temp" 2>/dev/null)
 }
 
 function deploy() {
@@ -103,7 +108,7 @@ data:
             "nodePathMap":[
             {
                 "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
-                "paths":["$MOUNT_USB_MOUNT_PATH/local-path"]
+                "paths":["${MOUNT_USB_MOUNT_PATH}/local-path"]
             }
             ]
         }
@@ -193,7 +198,7 @@ EOF
             # Convert the JSON to YAML
             sed -e 's/\$/\${DOLLAR}/g' -e 's/^/    /' "$file" > "$tmp_file"
             cat "$tmp_file" >> "$yml_file"
-            rm -f $tmp_file
+            rm -f "$tmp_file"
         done
     fi
 
@@ -219,7 +224,6 @@ EOF
 
     if [ "$DEPLOY_SECURITY" = true ] ; then
         echo "- resources/security" >> kustomization.yml
-        echo "- resources/longhorn" >> kustomization.yml
     fi
 
     if [ "$DEPLOY_LOCALPROXY" = true ] ; then
