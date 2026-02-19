@@ -129,7 +129,7 @@ grafana:
     database:
       # Use PostgreSQL for better concurrency and reliability
       type: postgres
-      host: 10.43.100.50:5432
+      host: postgres-direct.data.svc.cluster.local:5432
       name: grafana
       # IMPORTANT: Do not set 'user' and 'password' here directly
       # The Helm chart validation (assertNoLeakedSecrets) prevents hardcoded sensitive values
@@ -160,12 +160,20 @@ grafana:
     limits:
       memory: 768Mi
       cpu: 500m
-  # Improved liveness and readiness probes for Raspberry Pi
+  # Startup probe gives Grafana time to initialize grafana-apiserver on slow RPi
+  startupProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 30
+  # Liveness and readiness only fire after startup probe passes
   livenessProbe:
     httpGet:
       path: /api/health
       port: 3000
-    initialDelaySeconds: 120
     timeoutSeconds: 30
     periodSeconds: 30
     failureThreshold: 5
@@ -173,7 +181,6 @@ grafana:
     httpGet:
       path: /api/health
       port: 3000
-    initialDelaySeconds: 30
     timeoutSeconds: 10
     periodSeconds: 10
     failureThreshold: 10
