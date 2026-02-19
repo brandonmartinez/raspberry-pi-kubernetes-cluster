@@ -25,11 +25,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "128Mi"
-              cpu: "500m"
-            requests:
               memory: "64Mi"
-              cpu: "150m"
+              cpu: "50m"
+            requests:
+              memory: "32Mi"
+              cpu: "5m"
           volumeMounts:
             - mountPath: /opt/unbound/etc/unbound/a-records.conf
               name: unbound-config-files

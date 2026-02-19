@@ -1,2 +1,29 @@
 crds:
   enabled: true
+
+# Resource requests/limits for cert-manager components
+resources:
+  requests:
+    cpu: 5m
+    memory: 48Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 48Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 24Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi

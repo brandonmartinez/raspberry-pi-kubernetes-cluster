@@ -56,11 +56,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              memory: "1536Mi"  # Increased for better performance
-              cpu: "1.5"
+              memory: "256Mi"
+              cpu: "500m"
             requests:
-              memory: "768Mi"  # Increased baseline
-              cpu: "0.5"  # More CPU for queries
+              memory: "96Mi"
+              cpu: "100m"
           livenessProbe:
             exec:
               command:

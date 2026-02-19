@@ -12,6 +12,33 @@ defaultSettings:
   engineReplicaTimeout: "16"
   guaranteedEngineManagerCPU: 200m
   guaranteedReplicaManagerCPU: 200m
+
+longhornManager:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+longhornDriver:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+longhornUI:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 8Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
   reclaimPolicy: Retain
   storageMinimalAvailablePercentage: "15"
   storageOverProvisioningPercentage: "200"

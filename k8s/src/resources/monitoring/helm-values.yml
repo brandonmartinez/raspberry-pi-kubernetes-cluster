@@ -4,11 +4,11 @@ prometheusOperator:
   # Resources for the operator
   resources:
     requests:
-      memory: 192Mi
-      cpu: 75m
+      memory: 48Mi
+      cpu: 10m
     limits:
-      memory: 384Mi
-      cpu: 300m
+      memory: 192Mi
+      cpu: 150m
   # Relabeling job name for operator metrics
   serviceMonitor:
     relabelings:
@@ -29,11 +29,11 @@ alertmanager:
     # Resources configuration
     resources:
       requests:
-        memory: 128Mi
-        cpu: 50m
+        memory: 48Mi
+        cpu: 5m
       limits:
-        memory: 256Mi
-        cpu: 250m
+        memory: 128Mi
+        cpu: 100m
     # PVC configuration
     storage:
       volumeClaimTemplate:
@@ -82,11 +82,11 @@ prometheus:
     # Resources request and limits
     resources:
       requests:
-        memory: 768Mi
-        cpu: 300m
+        memory: 512Mi
+        cpu: 50m
       limits:
-        memory: 2Gi
-        cpu: 1500m
+        memory: 1536Mi
+        cpu: 500m
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -218,11 +218,11 @@ grafana:
       # Resource limits for sidecar
       resources:
         requests:
-          memory: 64Mi
-          cpu: 25m
+          memory: 24Mi
+          cpu: 5m
         limits:
-          memory: 128Mi
-          cpu: 100m
+          memory: 64Mi
+          cpu: 50m
 # Disabling monitoring of K8s services.
 # Monitoring of K3S components will be configured out of monitoring
 kubelet:
@@ -261,22 +261,24 @@ nodeExporter:
   enabled: true
   resources:
     requests:
-      memory: 48Mi
-      cpu: 30m
+      memory: 24Mi
+      cpu: 5m
     limits:
-      memory: 96Mi
-      cpu: 100m
+      memory: 48Mi
+      cpu: 50m
 
 # Kube State Metrics configuration
 kube-state-metrics:
   resources:
     requests:
-      memory: 96Mi
-      cpu: 75m
+      memory: 80Mi
+      cpu: 5m
     limits:
-      memory: 192Mi
-      cpu: 250m
+      memory: 128Mi
+      cpu: 100m
 
 crds:
+  # CRDs are updated externally by update_helm_crds in deploy.sh
+  # before helm upgrade runs, which is more reliable than the in-chart job
   upgradeJob:
-    enabled: true
+    enabled: false

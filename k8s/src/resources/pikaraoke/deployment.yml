@@ -30,8 +30,30 @@ spec:
               containerPort: 5555
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "256Mi"
+              cpu: "50m"
             requests:
-              memory: "300Mi"
-              cpu: "500m"
+              memory: "80Mi"
+              cpu: "5m"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 5555
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5555
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5555
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5

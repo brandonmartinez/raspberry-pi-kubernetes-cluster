@@ -31,6 +31,26 @@ spec:
             requests:
               memory: "1500Mi"
               cpu: "250m"
+          # Bedrock server takes a long time to start
+          startupProbe:
+            tcpSocket:
+              port: 19120
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 19120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 19120
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
           volumeMounts:
             - mountPath: /minecraft
               name: minecraft-pvc

@@ -101,10 +101,10 @@ deschedulerPolicy:
 # Resource limits and requests
 resources:
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 25m
+    memory: 64Mi
   limits:
-    cpu: 500m
+    cpu: 250m
     memory: 256Mi
 
 # Node selector for scheduling the descheduler

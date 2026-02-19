@@ -51,6 +51,52 @@ function deploy_helm() {
     fi
 }
 
+# Updates CRDs from a Helm chart before install/upgrade.
+# Helm does not update CRDs after initial install, so this function
+# pulls the chart, extracts CRDs, and applies them with server-side apply.
+# Usage: update_helm_crds <repo_alias> <chart> [chart_version]
+function update_helm_crds() {
+    local CHART=$1
+    local CHART_VERSION=${2:-""}
+    local TMPDIR
+
+    TMPDIR=$(mktemp -d)
+    trap "rm -rf ${TMPDIR}" RETURN
+
+    local VERSION_FLAG=""
+    if [[ -n "${CHART_VERSION}" ]]; then
+        VERSION_FLAG="--version ${CHART_VERSION}"
+    fi
+
+    log "Updating CRDs for ${CHART}"
+    helm pull "${CHART}" --untar --untardir "${TMPDIR}" ${VERSION_FLAG}
+
+    local CHART_NAME
+    CHART_NAME=$(basename "${CHART}")
+    local CRD_DIR="${TMPDIR}/${CHART_NAME}/crds"
+
+    # Some charts put CRDs in templates/ with crd annotations instead
+    if [[ ! -d "${CRD_DIR}" ]] || [[ -z "$(ls -A "${CRD_DIR}" 2>/dev/null)" ]]; then
+        # Try charts/*/crds for umbrella charts (e.g., kube-prometheus-stack)
+        CRD_DIR=$(find "${TMPDIR}" -type d -name "crds" | head -1)
+    fi
+
+    if [[ -n "${CRD_DIR}" ]] && [[ -d "${CRD_DIR}" ]]; then
+        local CRD_COUNT
+        # Apply only files containing CustomResourceDefinition, recursively
+        CRD_COUNT=0
+        while IFS= read -r -d '' crd_file; do
+            if grep -q 'CustomResourceDefinition' "${crd_file}" 2>/dev/null; then
+                kubectl apply --server-side --force-conflicts -f "${crd_file}"
+                CRD_COUNT=$((CRD_COUNT + 1))
+            fi
+        done < <(find "${CRD_DIR}" \( -name '*.yml' -o -name '*.yaml' \) -print0)
+        log "Applied ${CRD_COUNT} CRDs for ${CHART}"
+    else
+        log "No CRDs directory found for ${CHART}; skipping CRD update"
+    fi
+}
+
 function deploy_kustomize() {
     RESOURCE_PATH=$1
     OUTPUT_FILE=$2
@@ -141,6 +187,7 @@ EOF
         ##################################################
         section "Installing Cert Manager Stack"
         ##################################################
+        update_helm_crds "jetstack/cert-manager"
         deploy_helm "jetstack" "https://charts.jetstack.io" \
         "cert-manager" "jetstack/cert-manager" \
         "resources/cert-manager/helm-values.yml" \
@@ -171,6 +218,7 @@ EOF
         log "Some resources must be deployed before Prometheus stack"
         deploy_kustomize "resources/monitoring" "compiled-monitoring.yml" "monitoring namespace"
 
+        update_helm_crds "prometheus-community/kube-prometheus-stack" "${PROMETHEUS_CHART_VERSION}"
         deploy_helm "prometheus-community" "https://prometheus-community.github.io/helm-charts" \
         "monitoring" "prometheus-community/kube-prometheus-stack" \
         "resources/monitoring/helm-values.yml" \

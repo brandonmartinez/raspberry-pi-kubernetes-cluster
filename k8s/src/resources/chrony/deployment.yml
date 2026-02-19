@@ -6,6 +6,14 @@ spec:
   replicas: 2
   template:
     spec:
+      # Allow scheduling on control plane node to better utilize cluster resources
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       topologySpreadConstraints:
         - labelSelector:
             matchLabels: {}
@@ -24,11 +32,11 @@ spec:
               protocol: UDP
           resources:
             limits:
-              memory: "50Mi"
-              cpu: "50m"
+              memory: "16Mi"
+              cpu: "25m"
             requests:
-              memory: "50Mi"
-              cpu: "50m"
+              memory: "4Mi"
+              cpu: "5m"
           # chronyc tracking exits 0 when NTP is synced/running
           startupProbe:
             exec:

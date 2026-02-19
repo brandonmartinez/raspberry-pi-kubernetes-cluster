@@ -72,11 +72,11 @@ spec:
 
           resources:
             requests:
+              memory: 16Mi
+              cpu: 10m
+            limits:
               memory: 64Mi
               cpu: 50m
-            limits:
-              memory: 128Mi
-              cpu: 200m
 
           volumeMounts:
             - name: pgbouncer-config
