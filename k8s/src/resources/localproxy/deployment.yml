@@ -29,21 +29,21 @@ spec:
               cpu: "150m"
           startupProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 80
             failureThreshold: 30
             periodSeconds: 10
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 80
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 80
             periodSeconds: 30
             timeoutSeconds: 5

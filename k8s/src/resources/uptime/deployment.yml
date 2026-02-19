@@ -12,8 +12,6 @@ spec:
       labels:
         app: uptime
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
         kubernetes.io/hostname: ${UPTIME_NODE}
       volumes:

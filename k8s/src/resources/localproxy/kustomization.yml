@@ -8,9 +8,13 @@ labels:
       app: localproxy
     includeSelectors: true
 
+configMapGenerator:
+  - name: localproxy-nginx-config
+    files:
+      - default.conf
+
 resources:
   - namespace.yml
-  - config.yml
   - deployment.yml
   - service.yml
   - ingress-ender3.yml
