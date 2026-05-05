@@ -326,6 +326,10 @@ EOF
         echo "- resources/uptime" >> kustomization.yml
     fi
 
+    if [ "$DEPLOY_MEALPLANNER" = true ] ; then
+        echo "- resources/meal-planner" >> kustomization.yml
+    fi
+
     deploy_kustomize "." "compiled.yml" "service stacks"
 
     ##################################################
