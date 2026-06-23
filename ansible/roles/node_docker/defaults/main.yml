@@ -1,0 +1,14 @@
+---
+node_docker_apply: true
+manage_homebridge: true
+manage_watchtower: false
+homebridge_compose_dir: /opt/homebridge
+homebridge_data_dir: /home/pi/homebridge
+homebridge_image: homebridge/homebridge:latest
+homebridge_container_name: homebridge
+homebridge_config_ui_port: "8581"
+homebridge_tz: "{{ cluster_timezone | default('America/Detroit') }}"
+homebridge_puid: "{{ admin_puid | default('1000') }}"
+homebridge_pgid: "{{ admin_pgid | default('1000') }}"
+watchtower_image: containrrr/watchtower:latest
+watchtower_interval: "3600"

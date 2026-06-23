@@ -1,0 +1,38 @@
+# External Secrets Operator chart values (kube-prometheus-friendly, ARM/Pi sized).
+# Chart: external-secrets/external-secrets. Version is pinned in
+# clusters/rpi/platform-apps.yml (freeze to the live release on adoption).
+#
+# onepasswordSDK provider requires a recent ESO (>= 0.11). Confirm the installed
+# version supports `provider.onepasswordSDK` before relying on it.
+
+installCRDs: true
+replicaCount: 1
+
+# Keep the footprint small on Pi 4B nodes.
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 192Mi
+
+webhook:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+certController:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

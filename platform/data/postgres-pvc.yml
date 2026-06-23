@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn  # Explicit Longhorn storage class
+  resources:
+    requests:
+      storage: 15Gi  # Increased for growth (Grafana, Keycloak, Shlink, etc.)

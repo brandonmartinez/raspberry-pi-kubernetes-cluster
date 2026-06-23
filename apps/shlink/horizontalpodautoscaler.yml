@@ -1,0 +1,15 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shlink-shortener-hpa
+  labels:
+    app: shlink
+    component: shortener
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shlink-shortener
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60

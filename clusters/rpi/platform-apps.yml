@@ -1,0 +1,249 @@
+---
+# Platform Applications, ordered by argocd.argoproj.io/sync-wave.
+#
+# ADOPTION SAFETY (read docs/runbooks/bootstrap.md before first sync):
+#   * No `automated` block anywhere → every sync is manual until promoted.
+#   * Helm chart versions are FROZEN to the live cluster. Values marked
+#     REPLACE-WITH-LIVE must be filled from `helm list -A` / `helm get values`
+#     (captured by scripts/backup.sh) BEFORE syncing that Application.
+#   * Never `helm uninstall` an adopted release. Keep release name == metadata
+#     name and the namespace below identical to what is live today.
+#   * ServerSideApply avoids "metadata.annotations too long" on big CRDs/charts.
+#
+# Promotion to automated sync/prune is per-Application and gated — see
+# docs/gitops.md (Promotion gates).
+
+##############################################################################
+# Wave -2: External Secrets Operator controller (must exist before any
+#          ExternalSecret-consuming workload).
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://charts.external-secrets.io
+      chart: external-secrets
+      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n external-secrets
+      helm:
+        valueFiles:
+          - $values/platform/external-secrets/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+##############################################################################
+# Wave -1: ClusterSecretStore (1Password), cert-manager, Longhorn.
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/external-secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n cert-manager
+      helm:
+        valueFiles:
+          - $values/platform/cert-manager/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://charts.longhorn.io
+      chart: longhorn
+      targetRevision: "1.10.0" # from .env LONGHORN_CHART_VERSION — confirm with helm list -n longhorn-system
+      helm:
+        valueFiles:
+          - $values/platform/longhorn/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  # Longhorn is the storage layer. selfHeal/prune stay OFF until a restore test
+  # passes. See docs/runbooks/disaster-recovery.md.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+##############################################################################
+# Wave 0: security (middlewares + ClusterIssuer + basic-auth), shared DB,
+#         descheduler.
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: security
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/security
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: security
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: data
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/data
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: data
+  # Shared PostgreSQL. StatefulSet selectors/PVCs are immutable — never let Argo
+  # recreate them. pg_dump + Longhorn snapshot before first sync.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: descheduler
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/descheduler
+      chart: descheduler
+      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n kube-system
+      helm:
+        valueFiles:
+          - $values/platform/descheduler/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+---
+##############################################################################
+# Wave 1: monitoring (kube-prometheus-stack chart) + its config (dashboards,
+#         ServiceMonitors, PrometheusRules, ingress).
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # .env PROMETHEUS_CHART_VERSION / helm list -n monitoring
+      helm:
+        valueFiles:
+          - $values/platform/monitoring/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true

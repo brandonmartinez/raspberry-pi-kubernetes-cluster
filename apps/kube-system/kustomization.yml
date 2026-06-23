@@ -1,0 +1,13 @@
+# TODO verify platform-vs-app: kube-system metrics service is app-like cluster support, not a platform component.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kube-system
+
+labels:
+  - pairs:
+      app: kube-system
+    includeSelectors: true
+
+resources:
+  - metrics-service.yml

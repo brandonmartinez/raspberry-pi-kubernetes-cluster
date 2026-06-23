@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# POSTGRESQL ADOPTION WARNING — shared stateful database.
+# Take a pg_dump and Longhorn snapshot before any sync. Verify PVC name,
+# StorageClass, reclaim policy, StatefulSet selector, and volume claims are unchanged.
+namespace: data
+
+labels:
+  - pairs:
+      app: data
+    includeSelectors: true
+
+configMapGenerator:
+  - name: data-configmap
+    envs:
+      - .env
+  - name: postgres-config
+    files:
+      - postgresql.conf
+  - name: pgbouncer-config
+    files:
+      - pgbouncer-config.ini
+
+resources:
+  - namespace.yml
+  - externalsecret.yml
+  - postgres-init.yml
+  - postgres-service.yml
+  - postgres-statefulset.yml
+  - postgres-pvc.yml
+  - pgbouncer-deployment.yml
+  - pdb.yml

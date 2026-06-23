@@ -1,0 +1,84 @@
+---
+- name: Inspect clusterfs path
+  ansible.builtin.stat:
+    path: "{{ clusterfs_path }}"
+  register: storage_clusterfs_stat
+
+- name: Report storage adoption state
+  ansible.builtin.debug:
+    msg:
+      - "clusterfs exists: {{ storage_clusterfs_stat.stat.exists }}"
+      - "USB mount desired: {{ mount_usb | bool }} at {{ mount_usb_mount_path }}"
+      - "USB fstab/mount changes apply: {{ storage_apply | bool }}"
+
+- name: Install iSCSI packages for Longhorn
+  ansible.builtin.apt:
+    name: open-iscsi
+    state: present
+  when:
+    - storage_apply | bool
+    - storage_install_iscsi | bool
+
+- name: Enable and start iSCSI service
+  ansible.builtin.systemd:
+    name: iscsid
+    enabled: true
+    state: started
+  when:
+    - storage_apply | bool
+    - storage_install_iscsi | bool
+
+- name: Create shared clusterfs directory
+  ansible.builtin.file:
+    path: "{{ clusterfs_path }}"
+    state: directory
+    owner: "{{ storage_clusterfs_owner }}"
+    group: "{{ storage_clusterfs_group }}"
+    mode: "{{ storage_clusterfs_mode }}"
+  when: storage_apply | bool
+
+- name: Create USB mountpoint
+  ansible.builtin.file:
+    path: "{{ mount_usb_mount_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - storage_apply | bool
+    - mount_usb | bool
+
+- name: Create USB partition when explicitly formatting
+  community.general.parted:
+    device: "{{ mount_usb_drive_path }}"
+    label: gpt
+    number: 1
+    name: data
+    part_type: primary
+    state: present
+    fs_type: "{{ mount_usb_fstype }}"
+  when:
+    - storage_apply | bool
+    - mount_usb | bool
+    - mount_usb_drive_format | bool
+
+- name: Format USB partition when explicitly requested
+  community.general.filesystem:
+    dev: "{{ mount_usb_drive_partition }}"
+    fstype: "{{ mount_usb_fstype }}"
+    force: true
+  when:
+    - storage_apply | bool
+    - mount_usb | bool
+    - mount_usb_drive_format | bool
+
+- name: Mount USB disk via fstab
+  ansible.posix.mount:
+    path: "{{ mount_usb_mount_path }}"
+    src: "{{ mount_usb_drive_partition }}"
+    fstype: "{{ mount_usb_fstype }}"
+    opts: "{{ mount_usb_opts }}"
+    state: mounted
+  when:
+    - storage_apply | bool
+    - mount_usb | bool

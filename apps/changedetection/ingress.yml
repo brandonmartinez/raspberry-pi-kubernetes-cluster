@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: changedetection-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: changedetection.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: changedetection-svc
+                port:
+                  name: 80-tcp
+  tls:
+    - secretName: changedetection-tls
+      hosts:
+        - changedetection.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX

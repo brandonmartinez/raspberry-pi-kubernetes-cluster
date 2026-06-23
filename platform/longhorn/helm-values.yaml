@@ -1,0 +1,76 @@
+# LONGHORN ADOPTION WARNING — LIVE STORAGE LAYER
+# Do NOT change defaultDataPath, defaultReplicaCount, backup target, or StorageClass during adoption.
+# CRDs are chart-delivered for now and must never be pruned.
+# Freeze chart version to live (platform-apps.yml currently pins 1.10.0; confirm with helm list -n longhorn-system).
+# Do not upgrade while adopting the live release.
+defaultSettings:
+  autoDeletePodWhenVolumeDetachedUnexpectedly: true
+  backupstorePollInterval: 300
+  backupTarget: nfs://longhorn-test-nfs-svc.default:/opt/backupstore/ # cluster-specific: LONGHORN_BACKUPTARGET
+  concurrentAutomaticEngineUpgradePerNodeLimit: "1"
+  # Serialize rebuilds per node. The Pi USB/SD disks are the bottleneck; allowing
+  # 2 concurrent rebuilds per node creates an I/O storm after a mass reschedule
+  # (e.g. power outage) that starves latency-sensitive pods like pihole FTL.
+  concurrentReplicaRebuildPerNodeLimit: "1"
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: "/media/data/longhorn" # cluster-specific: MOUNT_USB_MOUNT_PATH
+  # disabled (not best-effort): best-effort makes Longhorn continuously rebuild a
+  # node-local replica whenever a pod is scheduled away from its replica. On slow
+  # Pi disks this rebuild I/O wedges the workload (observed: pihole FTL stuck in
+  # D-state, DNS UDP recv-queue backing up). Cross-node reads on a small LAN are
+  # cheap, so locality is not worth the rebuild churn.
+  defaultDataLocality: disabled
+  defaultReplicaCount: "3" # cluster-specific: LONGHORN_REPLICACOUNT
+  disableSchedulingOnCordonedNode: true
+  # 30s (max allowed), up from the 16s we ran before: on contended Pi disks a
+  # replica can be slow-but-alive mid-rebuild. A short timeout marks it failed and
+  # triggers yet another rebuild, feeding the I/O storm. The Longhorn-permitted
+  # range is 8-30s; use the max to tolerate slow rebuilds without flapping.
+  engineReplicaTimeout: "30"
+  guaranteedEngineManagerCPU: 200m
+  guaranteedReplicaManagerCPU: 200m
+  # 120s, up from the 30s default: large snapshot chains (e.g. prometheus) take
+  # longer than 30s to sync over the LAN to a rebuilding replica on slow Pi disks.
+  # Too low a timeout aborts the file sync and restarts the rebuild from scratch.
+  replicaFileSyncHttpClientTimeout: "120"
+  # disabled (Longhorn's own default): best-effort proactively creates/moves
+  # replicas to "balance" nodes, which respawns replicas faster than they can be
+  # trimmed and amplifies rebuild I/O. Keep manual control of replica placement.
+  replicaAutoBalance: disabled
+
+longhornManager:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+longhornDriver:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+longhornUI:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 8Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
+  reclaimPolicy: Retain
+  storageMinimalAvailablePercentage: "15"
+  storageOverProvisioningPercentage: "200"
+  storageReservedPercentageForDefaultDisk: "25"
+
+persistence:
+  # Match defaultSettings.defaultDataLocality above: the longhorn StorageClass
+  # should not request best-effort locality for new PVCs.
+  defaultDataLocality: disabled
+  reclaimPolicy: Retain

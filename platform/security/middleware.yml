@@ -1,0 +1,36 @@
+# Verify the live Traefik CRD group before first sync; legacy uses traefik.containo.us/v1alpha1 and this keeps it unchanged.
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: basicauth
+spec:
+  basicAuth:
+    secret: basicauth-user
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: maxbody
+spec:
+  buffering:
+    maxRequestBodyBytes: 36700160
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: wss
+spec:
+  headers:
+    customRequestHeaders:
+      Connection: keep-alive, Upgrade
+      Upgrade: WebSocket

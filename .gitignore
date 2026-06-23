@@ -7,3 +7,5 @@ k8s/src/kustomization.yml
 k8s/src/**/*.temp
 k8s/src/resources/monitoring/grafana-dashboards/*.yml
 k8s/src/resources/monitoring/grafana-dashboards/*.tmp
+_backups/
+docker/.env

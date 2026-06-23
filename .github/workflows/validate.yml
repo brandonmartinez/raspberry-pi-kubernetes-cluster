@@ -1,0 +1,50 @@
+name: Validate GitOps manifests
+
+on:
+  pull_request:
+    paths:
+      - "platform/**"
+      - "apps/**"
+      - "clusters/**"
+      - "bootstrap/**"
+      - "scripts/**"
+      - ".github/workflows/validate.yml"
+  push:
+    paths:
+      - "platform/**"
+      - "apps/**"
+      - "clusters/**"
+      - "bootstrap/**"
+      - "scripts/**"
+      - ".github/workflows/validate.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      # Verify tool versions before bumping.
+      KUSTOMIZE_VERSION: v5.7.1
+      HELM_VERSION: v3.18.4
+      KUBECONFORM_VERSION: v0.6.7
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" | tar xz kustomize
+          sudo mv kustomize /usr/local/bin/kustomize
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+
+      - name: Validate
+        run: scripts/validate.sh

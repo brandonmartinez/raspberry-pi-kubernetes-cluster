@@ -1,0 +1,49 @@
+---
+# AppProjects scope what the GitOps apps may deploy. Homelab-permissive but
+# explicit, so a misconfigured Application can't target a foreign cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Shared platform stack (secrets, storage, certs, db, monitoring)
+  sourceRepos:
+    - https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    - https://charts.jetstack.io
+    - https://charts.longhorn.io
+    - https://charts.external-secrets.io
+    - https://prometheus-community.github.io/helm-charts
+    - https://kubernetes-sigs.github.io/descheduler
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Per-workload application stacks
+  sourceRepos:
+    - https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

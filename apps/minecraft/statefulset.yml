@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minecraft
+spec:
+  serviceName: "minecraft"
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+        - name: minecraft
+          image: 05jchambers/legendary-bedrock-container:latest
+          tty: true
+          stdin: true
+          envFrom:
+            - configMapRef:
+                name: minecraft-configmap
+          ports:
+            - name: svc-19120-udp
+              containerPort: 19120
+              protocol: UDP
+            - name: svc-19120-tcp
+              containerPort: 19120
+              protocol: TCP
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "1500m"
+            requests:
+              memory: "1500Mi"
+              cpu: "250m"
+          # Bedrock server takes a long time to start
+          startupProbe:
+            tcpSocket:
+              port: 19120
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 19120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 19120
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - mountPath: /minecraft
+              name: minecraft-pvc
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ipv4Only
+                operator: DoesNotExist
+  volumeClaimTemplates:
+    - metadata:
+        name: minecraft-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi

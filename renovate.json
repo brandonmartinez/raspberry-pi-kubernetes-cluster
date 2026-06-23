@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "timezone": "America/New_York",
+  "schedule": ["before 6am on monday"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "labels": ["dependencies"],
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^apps/.+\\.ya?ml$/",
+      "/^platform/.+\\.ya?ml$/"
+    ]
+  },
+  "argocd": {
+    "managerFilePatterns": ["/^clusters/.+\\.ya?ml$/"]
+  },
+  "helm-values": {
+    "managerFilePatterns": ["/^platform/.+/helm-values\\.ya?ml$/"]
+  },
+  "docker-compose": {
+    "managerFilePatterns": ["/^docker/.+\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "description": "Group non-major image/chart bumps to cut homelab PR noise.",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "non-major updates"
+    },
+    {
+      "description": "Pause auto-PRs for stateful/critical components — bump these by hand using the runbooks.",
+      "matchPackageNames": [
+        "/postgres/",
+        "/pgbouncer/",
+        "/pihole/",
+        "/longhorn/"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Floating tags we deliberately track (do not try to pin).",
+      "matchCurrentValue": "/^(latest|stable)$/",
+      "enabled": false
+    }
+  ]
+}

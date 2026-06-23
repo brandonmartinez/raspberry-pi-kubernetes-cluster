@@ -1,0 +1,20 @@
+# Minimal ArgoCD (argo/argo-cd chart) values for a single-cluster Pi homelab.
+# Used ONLY if you opt into self-management (see README.md). Keep this aligned
+# with what bootstrap/00-argocd.sh installs so Helm adoption is a no-op diff.
+
+# Non-HA: one replica of each component (Pi 4B resource budget).
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+server:
+  replicas: 1
+  # Traefik terminates TLS; run argocd-server insecure behind the ingress.
+  extraArgs:
+    - --insecure
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1
+dex:
+  enabled: false

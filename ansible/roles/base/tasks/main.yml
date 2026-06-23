@@ -1,0 +1,133 @@
+---
+- name: Inspect current hostname
+  ansible.builtin.command: hostname
+  register: base_current_hostname
+  changed_when: false
+  check_mode: false
+
+- name: Report hostname drift
+  ansible.builtin.debug:
+    msg: "hostname current={{ base_current_hostname.stdout }} desired={{ base_hostname }}"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ base_hostname }}"
+  when:
+    - base_apply | bool
+    - base_manage_hostname | bool
+
+- name: Ensure hostname in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+'
+    line: "127.0.1.1\t{{ base_hostname }}"
+  when:
+    - base_apply | bool
+    - base_manage_hostname | bool
+
+- name: Update admin password from Vault-provided hash
+  ansible.builtin.user:
+    name: "{{ base_admin_user }}"
+    password: "{{ base_admin_password_hash }}"
+  no_log: true
+  when:
+    - base_apply | bool
+    - base_manage_admin_password | bool
+
+- name: Expand Raspberry Pi root filesystem when requested
+  ansible.builtin.shell: raspi-config nonint do_expand_rootfs && touch {{ base_expand_rootfs_marker | quote }}
+  args:
+    creates: "{{ base_expand_rootfs_marker }}"
+  notify: report reboot required
+  when:
+    - base_apply | bool
+    - base_expand_rootfs | bool
+
+- name: Configure NetworkManager global DNS
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/90-homelab-dns.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible. Replaces legacy /etc/dhcpcd.conf DNS edits.
+      [global-dns-domain-*]
+      servers={{ base_dns_servers | join(',') }}
+  notify: restart networkmanager
+  when: base_apply | bool
+
+- name: Refresh apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: full
+    cache_valid_time: 3600
+  when:
+    - base_apply | bool
+    - base_upgrade_packages | bool
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+  when: base_apply | bool
+
+- name: Install Docker Engine and Compose plugin packages
+  ansible.builtin.apt:
+    name: "{{ base_docker_packages }}"
+    state: present
+  when:
+    - base_apply | bool
+    - base_install_docker | bool
+
+- name: Ensure Docker service is enabled and running
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+  when:
+    - base_apply | bool
+    - base_install_docker | bool
+
+- name: Add admin user to docker group
+  ansible.builtin.user:
+    name: "{{ base_admin_user }}"
+    groups: docker
+    append: true
+  when:
+    - base_apply | bool
+    - base_install_docker | bool
+    - base_add_admin_to_docker_group | bool
+
+- name: Remove avahi-daemon to avoid Homebridge conflicts
+  ansible.builtin.apt:
+    name: avahi-daemon
+    state: absent
+    purge: true
+  when:
+    - base_apply | bool
+    - base_remove_avahi | bool
+
+- name: Check boot cmdline for cgroup options
+  ansible.builtin.slurp:
+    path: "{{ base_cgroup_cmdline_path }}"
+  register: base_cmdline
+  changed_when: false
+  check_mode: false
+  failed_when: false
+
+- name: Report missing cgroup options
+  ansible.builtin.debug:
+    msg: "missing boot options={{ base_cgroup_options | reject('in', (base_cmdline.content | default('') | b64decode)) | list }}"
+  when: base_cmdline.content is defined
+
+- name: Ensure cgroup boot option is present
+  ansible.builtin.lineinfile:
+    path: "{{ base_cgroup_cmdline_path }}"
+    regexp: "^(?!.*\\b{{ item | regex_escape }}\\b)(.*)$"
+    line: "\\1 {{ item }}"
+    backrefs: true
+  loop: "{{ base_cgroup_options }}"
+  notify: report reboot required
+  when:
+    - base_apply | bool
+    - base_cmdline.content is defined

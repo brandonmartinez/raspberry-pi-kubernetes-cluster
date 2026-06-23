@@ -1,0 +1,71 @@
+---
+# READ-MOSTLY live-node adoption. Default behavior gathers facts and reports
+# drift only. It is safe to start with:
+#   ansible-playbook adopt.yml --check --diff
+# Reboots on live nodes require manual cordon/drain plus Pi-hole DNS and
+# Longhorn storage health checks. Set -e allow_disruptive=true only after that
+# planning; even then this playbook does not reboot automatically.
+- name: Adopt and inspect existing Raspberry Pi k3s nodes
+  hosts: k3s_servers:k3s_agents
+  become: true
+  serial: 1
+  vars:
+    allow_disruptive: false
+  pre_tasks:
+    - name: Show adoption mode
+      ansible.builtin.debug:
+        msg: >-
+          Adoption is read-mostly. Disruptive convergence is
+          {{ 'enabled' if (allow_disruptive | bool) else 'disabled' }}.
+
+    - name: Check existing k3s server service
+      ansible.builtin.stat:
+        path: /etc/systemd/system/k3s.service
+      register: adopt_k3s_server_service
+
+    - name: Check existing k3s agent service
+      ansible.builtin.stat:
+        path: /etc/systemd/system/k3s-agent.service
+      register: adopt_k3s_agent_service
+
+    - name: Check boot cmdline file
+      ansible.builtin.stat:
+        path: /boot/cmdline.txt
+      register: adopt_cmdline_file
+
+    - name: Report live-node state
+      ansible.builtin.debug:
+        msg:
+          - "k3s server service exists: {{ adopt_k3s_server_service.stat.exists }}"
+          - "k3s agent service exists: {{ adopt_k3s_agent_service.stat.exists }}"
+          - "boot cmdline exists: {{ adopt_cmdline_file.stat.exists }}"
+          - "fstab/USB, DNS, boot, and k3s changes are gated by allow_disruptive."
+  roles:
+    - role: base
+      vars:
+        base_apply: "{{ allow_disruptive | bool }}"
+    - role: storage
+      vars:
+        storage_apply: "{{ allow_disruptive | bool }}"
+
+- name: Guarded k3s server adoption
+  hosts: k3s_servers
+  become: true
+  serial: 1
+  vars:
+    allow_disruptive: false
+  roles:
+    - role: k3s_server
+      vars:
+        k3s_apply: "{{ allow_disruptive | bool }}"
+
+- name: Guarded k3s agent adoption
+  hosts: k3s_agents
+  become: true
+  serial: 1
+  vars:
+    allow_disruptive: false
+  roles:
+    - role: k3s_agent
+      vars:
+        k3s_apply: "{{ allow_disruptive | bool }}"

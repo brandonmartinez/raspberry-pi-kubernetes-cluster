@@ -2,6 +2,18 @@
 
 set -e
 
+##############################################################################
+# DEPRECATED — retained as a BREAK-GLASS fallback only.
+#
+# The cluster is being migrated to GitOps (ArgoCD). The supported deploy paths
+# are now:
+#   * ArgoCD (default)            — see docs/gitops.md
+#   * scripts/apply.sh <dir>      — break-glass push for a single kustomize app
+#
+# Do not extend this script for new services. It will be removed once the
+# ArgoCD cutover is complete (see docs/runbooks/bootstrap.md).
+##############################################################################
+
 set -o allexport
 source ../../.env
 source ../../_shared/echo.sh

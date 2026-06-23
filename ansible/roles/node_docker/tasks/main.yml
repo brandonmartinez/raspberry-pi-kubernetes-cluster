@@ -1,0 +1,49 @@
+---
+- name: Report node Docker service intent
+  ansible.builtin.debug:
+    msg:
+      - "manage_homebridge={{ manage_homebridge | bool }}"
+      - "manage_watchtower={{ manage_watchtower | bool }} (disabled by default; removal planned after GitOps image pinning)"
+      - "compose changes apply={{ node_docker_apply | bool }}"
+
+- name: Create Homebridge compose directory
+  ansible.builtin.file:
+    path: "{{ homebridge_compose_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - node_docker_apply | bool
+    - manage_homebridge | bool
+
+- name: Create Homebridge data directory
+  ansible.builtin.file:
+    path: "{{ homebridge_data_dir }}"
+    state: directory
+    owner: "{{ homebridge_puid }}"
+    group: "{{ homebridge_pgid }}"
+    mode: "0755"
+  when:
+    - node_docker_apply | bool
+    - manage_homebridge | bool
+
+- name: Render Homebridge docker compose file
+  ansible.builtin.template:
+    src: homebridge-compose.yml.j2
+    dest: "{{ homebridge_compose_dir }}/compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - node_docker_apply | bool
+    - manage_homebridge | bool
+
+- name: Apply Homebridge docker compose project
+  community.docker.docker_compose_v2:
+    project_src: "{{ homebridge_compose_dir }}"
+    state: present
+    pull: missing
+  when:
+    - node_docker_apply | bool
+    - manage_homebridge | bool

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nebulasync
+
+labels:
+  - pairs:
+      app: nebulasync
+    includeSelectors: true
+
+configMapGenerator:
+  - name: nebulasync-configmap
+    envs:
+      - .env
+
+resources:
+  - externalsecret.yml
+  - deployment.yml

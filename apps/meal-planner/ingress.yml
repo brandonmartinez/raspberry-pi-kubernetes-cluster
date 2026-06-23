@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meal-planner-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: meals.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: meal-planner-svc
+                port:
+                  name: 80-tcp
+  tls:
+    - secretName: meal-planner-tls
+      hosts:
+        - meals.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX

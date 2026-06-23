@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portainer-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: portainer-tls
+      hosts:
+        - portainer.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+  rules:
+    - host: portainer.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: portainer-ui-svc
+                port:
+                  name: 9000-tcp

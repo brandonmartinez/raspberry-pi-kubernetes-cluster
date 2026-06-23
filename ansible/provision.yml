@@ -1,0 +1,29 @@
+---
+# Fresh-node provisioning. This playbook may change boot, DNS, fstab, Docker,
+# and k3s state, but it never reboots automatically. Reboot manually after
+# reviewing handler output.
+- name: Prepare Raspberry Pi k3s nodes
+  hosts: k3s_servers:k3s_agents
+  become: true
+  roles:
+    - role: base
+    - role: storage
+
+- name: Install guarded k3s servers
+  hosts: k3s_servers
+  become: true
+  roles:
+    - role: k3s_server
+
+- name: Install guarded k3s agents
+  hosts: k3s_agents
+  become: true
+  roles:
+    - role: k3s_agent
+
+- name: Manage node-local Docker services
+  hosts: k3s_servers:k3s_agents
+  become: true
+  roles:
+    - role: node_docker
+      when: run_node_docker | default(false) | bool

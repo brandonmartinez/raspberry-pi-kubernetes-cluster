@@ -1,0 +1,16 @@
+---
+k3s_apply: true
+k3s_channel: stable
+k3s_service_file: /etc/systemd/system/k3s.service
+k3s_write_kubeconfig_mode: "644"
+k3s_common_kubelet_args:
+  - node-ip=0.0.0.0
+k3s_common_kube_proxy_args:
+  - metrics-bind-address=0.0.0.0
+k3s_server_controller_manager_args:
+  - bind-address=0.0.0.0
+k3s_server_scheduler_args:
+  - bind-address=0.0.0.0
+k3s_prefer_bundled_bin: true
+k3s_install_helm: true
+k3s_helm_path: /usr/local/bin/helm

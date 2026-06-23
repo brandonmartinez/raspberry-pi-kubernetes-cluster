@@ -1,0 +1,32 @@
+---
+# OPT-IN ArgoCD self-management. NOT referenced by root.yml — apply by hand as
+# the FINAL bootstrap step once everything else is healthy:
+#   kubectl apply -f clusters/rpi/argocd-selfmanage.yml
+# See platform/argocd/README.md for the version-matching requirement and the
+# bootstrap/00-argocd.sh recovery path. Do NOT enable prune/selfHeal here.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: platform
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      # Set to the chart version whose appVersion == the installed ArgoCD
+      # (bootstrap default v3.1.7). Adoption REQUIRES a match — see README.md.
+      targetRevision: "0.0.0-REPLACE-WITH-LIVE"
+      helm:
+        valueFiles:
+          - $values/platform/argocd/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
