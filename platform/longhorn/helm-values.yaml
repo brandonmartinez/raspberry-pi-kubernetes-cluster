@@ -6,7 +6,7 @@
 defaultSettings:
   autoDeletePodWhenVolumeDetachedUnexpectedly: true
   backupstorePollInterval: 300
-  backupTarget: nfs://longhorn-test-nfs-svc.default:/opt/backupstore/ # cluster-specific: LONGHORN_BACKUPTARGET
+  backupTarget: nfs://192.168.52.100:/rpi/longhorn/ # cluster-specific: LONGHORN_BACKUPTARGET
   concurrentAutomaticEngineUpgradePerNodeLimit: "1"
   # Serialize rebuilds per node. The Pi USB/SD disks are the bottleneck; allowing
   # 2 concurrent rebuilds per node creates an I/O storm after a mass reschedule
