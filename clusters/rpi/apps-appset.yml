@@ -15,7 +15,9 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-        revision: main
+        # Trial: scan the gitops-overhaul branch (apps/* doesn't exist on main yet).
+        # Revert to main when the branch merges.
+        revision: gitops-overhaul
         directories:
           - path: apps/*
           # keycloak was never wired into the legacy deploy.sh and currently has
