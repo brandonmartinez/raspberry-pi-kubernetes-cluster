@@ -4,6 +4,24 @@ ArgoCD is installed **imperatively** by `bootstrap/00-argocd.sh` (pinned upstrea
 install manifest, `ARGOCD_VERSION`, default `v3.1.7`). That script remains the
 source of truth for installing/upgrading ArgoCD itself.
 
+## Web UI
+
+`bootstrap/00-argocd.sh` also exposes the ArgoCD web UI at
+`https://gitops.<NETWORK_HOSTNAME_SUFFIX>` (e.g. `gitops.themartinez.cloud`):
+
+- `ingress.yml` (applied via `kubectl apply -k platform/argocd`) follows the
+  portainer/pihole convention — ArgoCD has its own `admin` login, so the ingress
+  only enforces HTTPS (`security-redirect-https`), no basic-auth. The host suffix
+  is resolved by the `cluster-config` component, and TLS is issued by cert-manager
+  (`letsencrypt-prod`).
+- `argocd-server` is run with `--insecure` (set via `argocd-cmd-params-cm`) so
+  Traefik terminates TLS and talks plain HTTP to the service. The bootstrap
+  re-applies this each run because re-applying the upstream manifest resets it.
+- Admin password: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d`.
+- Fallback if the ingress is down: `kubectl -n argocd port-forward svc/argocd-server 8080:443`.
+
+## Self-management (opt-in, do LAST)
+
 Letting ArgoCD manage itself ("self-management") is **optional** and should only
 be enabled once the rest of the platform + apps are healthy under GitOps. It is
 intentionally **not** wired into `clusters/rpi/root.yml`, so it is never synced
