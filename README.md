@@ -6,7 +6,7 @@ Production homelab Kubernetes on Raspberry Pi 4B nodes, running k3s for home-net
 
 | Path | Role |
 | --- | --- |
-| `ansible/` | Node provisioning and adoption automation; replaces the legacy numbered `rpi/src/*.sh` flow. |
+| `ansible/` | Node provisioning and adoption automation (`provision.yml`, `adopt.yml`, `bootstrap-node.sh`). |
 | `platform/` | Shared GitOps platform stack: cert-manager, longhorn, security, data, monitoring, descheduler. |
 | `apps/` | Leaf workloads; one app per folder, discovered by the ArgoCD ApplicationSet. |
 | `clusters/` | Per-cluster ArgoCD control plane (`clusters/rpi/root.yml` app-of-apps). |
@@ -17,7 +17,6 @@ Production homelab Kubernetes on Raspberry Pi 4B nodes, running k3s for home-net
 | `docker/` | Standalone Docker Compose services not yet in k3s/GitOps (secrets via `docker/.env`). |
 | `.github/workflows/` | CI: runs `scripts/validate.sh` (kustomize build, helm template, secret scan, prune-policy guard) on PRs. |
 | `renovate.json` | Automated dependency-update PRs for images, Helm charts, and Actions (replaces Watchtower; stateful components gated). |
-| `rpi/` | Legacy Raspberry Pi shell provisioning scripts; retained for reference, being retired in favor of `ansible/`. |
 
 ## Deployment model
 

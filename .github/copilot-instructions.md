@@ -27,12 +27,11 @@ workstation script (the cluster never pulls secrets at runtime).
 | **Kustomize components** | `components/cluster-config/` | Reusable cluster values (hostname suffix, ACME email) fanned into apps via Kustomize replacements. |
 | **Bootstrap** | `bootstrap/` | One-time, push-based control-plane install (`00-argocd.sh`). Not GitOps-managed. |
 | **Secrets** | `secrets/` | Committed Kubernetes Secret templates whose values are 1Password `op://` references. Pushed by `scripts/sync-secrets.sh`. |
-| **Provisioning** | `ansible/` | Node provisioning/adoption (replaces `rpi/`). `provision.yml` (fresh nodes) and `adopt.yml` (read-mostly live convergence). |
+| **Provisioning** | `ansible/` | Node provisioning/adoption. `provision.yml` (fresh nodes), `adopt.yml` (read-mostly live convergence), `bootstrap-node.sh` (node-local entrypoint). |
 | **Scripts** | `scripts/` | `validate.sh` (local CI), `sync-secrets.sh` (1Password push), `apply.sh` (break-glass kustomize apply), `backup.sh` (read-only capture), `seed-1password.sh`. |
 | **Docs** | `docs/` | Architecture, gitops, secrets, provisioning, variable-inventory, and `runbooks/`. |
 | **Docker** | `docker/` | Standalone Docker Compose for services not in k3s (e.g., scrypted). |
 | **Shared utilities** | `_shared/echo.sh` | Logging helpers (`section`, `log`) sourced by every script. |
-| **Legacy provisioning** | `rpi/` | Old ordered Bash provisioning scripts. **Retired and being removed** once the Ansible replacement is validated — do not extend. |
 
 > The old `k8s/src` Kustomize + `envsubst` + `deploy.sh` pipeline has been
 > **removed**. The `${DOLLAR}`/`envsubst`/`DEPLOY_*`-toggle conventions are gone.
@@ -142,8 +141,7 @@ scenario). Keep both paths available and documented in
 
 ## Provisioning (Ansible)
 
-Read `docs/provisioning.md`. Provisioning is `ansible/`; legacy `rpi/src/*.sh`
-is retired context only.
+Read `docs/provisioning.md`. Provisioning is `ansible/`.
 
 - `provision.yml`: fresh-node setup (always applies). `adopt.yml`:
   **read-mostly** convergence for live nodes — every role is gated by an

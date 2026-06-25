@@ -4,7 +4,7 @@ This is a live production homelab k3s cluster on Raspberry Pi 4B ARM64 nodes. It
 
 ## Topology
 
-- k3s control plane: one master node, tainted `NoSchedule` by the legacy `rpi/src/005.sh` flow.
+- k3s control plane: one master node, tainted `NoSchedule` so workloads run on the agents.
 - Workers: Raspberry Pi 4B nodes run most workloads.
 - Ingress: k3s Traefik handles HTTP(S) ingress.
 - Storage: Longhorn provides replicated block storage on Pi-attached storage.
