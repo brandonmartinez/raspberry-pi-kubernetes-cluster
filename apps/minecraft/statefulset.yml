@@ -77,7 +77,11 @@ spec:
               - key: ipv4Only
                 operator: DoesNotExist
   volumeClaimTemplates:
-    - metadata:
+    # apiVersion/kind are explicit because the API server injects them into the
+    # live StatefulSet's VCT; omitting them causes a perpetual ArgoCD OutOfSync.
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: minecraft-pvc
       spec:
         accessModes:
