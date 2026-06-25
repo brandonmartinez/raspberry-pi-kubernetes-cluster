@@ -4,7 +4,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: your@emailaddress.com # cluster-specific: ADMIN_EMAIL
+    email: admin@themartinez.cloud
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod
