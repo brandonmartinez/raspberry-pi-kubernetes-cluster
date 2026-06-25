@@ -21,6 +21,6 @@ externalDatabase:
 ingress:
   enabled: true
   ingressClassName: nginx
-  hostname: keycloak.home.arpa # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+  hostname: keycloak.themartinez.cloud # cluster-specific: NETWORK_HOSTNAME_SUFFIX
   tls: false                # Or true + cert-manager config
   path: /

@@ -3,9 +3,9 @@
 # manually cordon/drain and account for Pi-hole DNS availability and Longhorn
 # replica/storage health.
 
-network_hostname_suffix: home.arpa # cluster-specific
+network_hostname_suffix: themartinez.cloud # cluster-specific
 cluster_primary_hostname: rpi001 # cluster-specific
-cluster_primary_address: 192.168.1.100 # cluster-specific placeholder from .env.sample
+cluster_primary_address: 192.168.52.110 # cluster-specific
 cluster_timezone: America/Detroit # cluster-specific
 
 admin_user: pi # cluster-specific

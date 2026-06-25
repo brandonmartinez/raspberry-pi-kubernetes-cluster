@@ -25,10 +25,10 @@ configMapGenerator:
     options:
       disableNameSuffixHash: true
     literals:
-      - hostname_suffix=home.arpa
+      - hostname_suffix=themartinez.cloud
       # Phase 2 (MetalLB) only — unused while on klipper servicelb. See header.
       - lan_lb_ip=192.168.52.100
-      - acme_email=admin@home.arpa
+      - acme_email=admin@themartinez.cloud
       - tz=America/Detroit
       - puid=1000
       - pgid=1000

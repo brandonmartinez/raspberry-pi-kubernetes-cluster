@@ -25,7 +25,7 @@ prometheusOperator:
 alertmanager:
   alertmanagerSpec:
     # Subpath /alertmanager configuration
-    externalUrl: http://monitoring.home.arpa/alertmanager/ # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    externalUrl: http://monitoring.themartinez.cloud/alertmanager/ # cluster-specific: NETWORK_HOSTNAME_SUFFIX
     routePrefix: /
     # Resources configuration
     resources:
@@ -74,7 +74,7 @@ prometheus:
           timeoutSeconds: 10
           periodSeconds: 5
     # Subpath /prometheus configuration
-    externalUrl: http://monitoring.home.arpa/prometheus/ # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    externalUrl: http://monitoring.themartinez.cloud/prometheus/ # cluster-specific: NETWORK_HOSTNAME_SUFFIX
     routePrefix: /
     # Data retention configuration
     retention: 21d
@@ -118,7 +118,7 @@ grafana:
   # Configuring /grafana subpath
   grafana.ini:
     server:
-      domain: monitoring.home.arpa # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+      domain: monitoring.themartinez.cloud # cluster-specific: NETWORK_HOSTNAME_SUFFIX
       root_url: "%(protocol)s://%(domain)s/grafana/"
       serve_from_sub_path: true
     database:
