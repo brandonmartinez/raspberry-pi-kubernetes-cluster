@@ -281,7 +281,7 @@ kube-state-metrics:
       cpu: 100m
 
 crds:
-  # CRDs are updated externally by update_helm_crds in deploy.sh
-  # before helm upgrade runs, which is more reliable than the in-chart job
+  # CRDs for kube-prometheus-stack are managed out-of-band (server-side apply,
+  # never auto-pruned) rather than by the in-chart upgrade job.
   upgradeJob:
     enabled: false

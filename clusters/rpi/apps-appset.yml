@@ -20,9 +20,9 @@ spec:
         revision: gitops-overhaul
         directories:
           - path: apps/*
-          # keycloak was never wired into the legacy deploy.sh and currently has
-          # no workload (Helm-values-only). Excluded until it is given a real
-          # source (Helm multi-source like the platform apps). See
+          # keycloak was never wired into the legacy deploy pipeline and
+          # currently has no workload (Helm-values-only). Excluded until it is
+          # given a real source (Helm multi-source like the platform apps). See
           # apps/keycloak/kustomization.yml.
           - path: apps/keycloak
             exclude: true

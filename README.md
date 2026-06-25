@@ -17,8 +17,7 @@ Production homelab Kubernetes on Raspberry Pi 4B nodes, running k3s for home-net
 | `docker/` | Standalone Docker Compose services not yet in k3s/GitOps (secrets via `docker/.env`). |
 | `.github/workflows/` | CI: runs `scripts/validate.sh` (kustomize build, helm template, secret scan, prune-policy guard) on PRs. |
 | `renovate.json` | Automated dependency-update PRs for images, Helm charts, and Actions (replaces Watchtower; stateful components gated). |
-| `rpi/` | Legacy Raspberry Pi shell provisioning scripts; retained for reference, being retired. |
-| `k8s/` | Legacy Kustomize/Helm deployment pipeline; `k8s/src/deploy.sh` is being retired. |
+| `rpi/` | Legacy Raspberry Pi shell provisioning scripts; retained for reference, being retired in favor of `ansible/`. |
 
 ## Deployment model
 
@@ -47,5 +46,3 @@ ArgoCD starts observed-only: no automated sync is committed initially. See [docs
 - Break-glass operations: [docs/runbooks/break-glass.md](docs/runbooks/break-glass.md)
 - Pi-hole migration: [docs/runbooks/pihole-migration.md](docs/runbooks/pihole-migration.md)
 - Disaster recovery: [docs/runbooks/disaster-recovery.md](docs/runbooks/disaster-recovery.md)
-
-Do not use `k8s/src/deploy.sh` for new GitOps-managed changes except as legacy context.

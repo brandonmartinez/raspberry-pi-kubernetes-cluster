@@ -25,7 +25,7 @@ Provisioning is moving from manual `rpi/src/00X.sh` scripts to Ansible. The lega
 - `002.sh`: temporary public DNS, OS upgrade, Docker install.
 - `003.sh`: Docker group/Compose, DNS utilities, `/clusterfs`, iSCSI, boot cgroups, avahi removal.
 - `004.sh`: NFS client plus k3s server or worker install; Helm on the server.
-- `005.sh`: master taints/labels, Longhorn directory, legacy `k8s/src/deploy.sh`, Docker watchtower/homebridge.
+- `005.sh`: master taints/labels, Longhorn directory, the legacy deploy pipeline, Docker watchtower/homebridge.
 
 These scripts are retired by Ansible; do not extend them for new cluster state.
 

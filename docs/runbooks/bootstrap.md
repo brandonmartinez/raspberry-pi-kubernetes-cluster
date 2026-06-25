@@ -20,11 +20,6 @@ kubectl -n data exec statefulset/postgres -- pg_dumpall -U <postgres-user> > pos
 # Helm values for every adopted release.
 helm list -A
 helm get values <release> -n <namespace> --all > helm-values-<release>.yaml
-
-# Legacy rendered manifests.
-cp k8s/src/compiled.yml compiled.snapshot.yml
-cp k8s/src/compiled-data.yml compiled-data.snapshot.yml
-cp k8s/src/compiled-monitoring.yml compiled-monitoring.snapshot.yml
 ```
 
 Store backup artifacts somewhere durable, not only on the cluster.

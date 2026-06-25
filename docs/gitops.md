@@ -1,8 +1,8 @@
 # GitOps model (ArgoCD)
 
-How this cluster is deployed and how to change it. The legacy
-`k8s/src/deploy.sh` (imperative Helm + `kubectl kustomize | envsubst`) is
-replaced by **ArgoCD** reconciling this Git repo.
+How this cluster is deployed and how to change it. The cluster was previously
+deployed by an imperative Helm + `kubectl kustomize | envsubst` pipeline; it is
+now reconciled from this Git repo by **ArgoCD**.
 
 ## Layout
 
@@ -90,9 +90,10 @@ committed `.env` (works under `kustomize build`); secrets are pushed from
 1Password by `scripts/sync-secrets.sh` (not part of the kustomization); the
 `secretGenerator` is removed.
 
-**1. Copy manifests** from `k8s/src/resources/shlink/` into `apps/shlink/`
-(namespace, deployment, service, ingress, hpa, pdb) **unchanged**, except
-ingress hosts (step 4).
+**1. Model the manifests** on an existing converted app (e.g. `apps/shlink/`):
+namespace, deployment, service, ingress, hpa, pdb. Ingress hosts come from the
+`cluster-config` component (step 4), so author them with the suffix annotations
+rather than hardcoded hostnames.
 
 **2. `apps/shlink/kustomization.yml`** — keep the configMap, drop the secret
 generator, and pull in the `cluster-config` component (for host/IP fan-out,

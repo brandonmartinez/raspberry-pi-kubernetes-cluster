@@ -1,7 +1,0 @@
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: maxbody
-spec:
-  buffering:
-    maxRequestBodyBytes: 36700160
