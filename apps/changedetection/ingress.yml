@@ -3,12 +3,14 @@ kind: Ingress
 metadata:
   name: changedetection-ingress
   annotations:
+    cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: changedetection.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: changedetection.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -21,4 +23,4 @@ spec:
   tls:
     - secretName: changedetection-tls
       hosts:
-        - changedetection.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+        - changedetection.SUFFIX

@@ -34,7 +34,7 @@ flowchart TB
 
 ## Platform vs apps
 
-- `platform/` is shared cluster infrastructure: External Secrets Operator, cert-manager, Longhorn, security/Traefik middleware, PostgreSQL, monitoring, and descheduler.
+- `platform/` is shared cluster infrastructure: cert-manager, Longhorn, security/Traefik middleware, PostgreSQL, monitoring, and descheduler. Secrets are pushed from 1Password by `scripts/sync-secrets.sh` (see [secrets.md](secrets.md)), not managed by an in-cluster operator.
 - `apps/` contains leaf workloads with minimal blast radius.
 - `clusters/rpi/` wires both through ArgoCD: `root.yml` renders `platform-apps.yml` and `apps-appset.yml`.
 
@@ -46,7 +46,7 @@ The sync-wave order and promotion gates are in [gitops.md](gitops.md); this page
 2. The request reaches the home ingress endpoint and Traefik.
 3. Traefik matches an `Ingress`, terminates TLS using a cert-manager-managed Secret, and forwards to a Kubernetes `Service`.
 4. The Service selects a Pod.
-5. The Pod reads config from ConfigMaps and secrets rendered by ESO; stateful dependencies use PostgreSQL or Longhorn-backed volumes.
+5. The Pod reads config from ConfigMaps and Secrets; non-secret config comes from the `cluster-config` component, and secret values are pushed into etcd from 1Password by `scripts/sync-secrets.sh`. Stateful dependencies use PostgreSQL or Longhorn-backed volumes.
 
 ```mermaid
 sequenceDiagram

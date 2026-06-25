@@ -3,12 +3,14 @@ kind: Ingress
 metadata:
   name: meal-planner-ingress
   annotations:
+    cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: meals.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: meals.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -21,4 +23,4 @@ spec:
   tls:
     - secretName: meal-planner-tls
       hosts:
-        - meals.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+        - meals.SUFFIX

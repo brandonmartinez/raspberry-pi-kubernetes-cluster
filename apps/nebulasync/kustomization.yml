@@ -14,5 +14,4 @@ configMapGenerator:
       - .env
 
 resources:
-  - externalsecret.yml
   - deployment.yml

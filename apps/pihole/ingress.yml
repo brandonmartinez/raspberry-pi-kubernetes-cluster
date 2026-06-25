@@ -2,10 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: pihole.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: pihole.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -27,10 +29,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-0-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: pihole-0.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: pihole-0.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -52,10 +56,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-1-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: pihole-1.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: pihole-1.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -77,10 +83,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-2-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: pihole-2.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: pihole-2.SUFFIX
       http:
         paths:
           - pathType: Prefix

@@ -3,13 +3,15 @@ kind: Ingress
 metadata:
   name: localproxy-scrypted-ingress
   annotations:
+    cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/websocket: "true"
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: scrypted.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: scrypted.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -22,4 +24,4 @@ spec:
   tls:
     - secretName: scrypted-tls
       hosts:
-        - scrypted.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+        - scrypted.SUFFIX

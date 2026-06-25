@@ -14,7 +14,6 @@ spec:
     - https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
     - https://charts.jetstack.io
     - https://charts.longhorn.io
-    - https://charts.external-secrets.io
     - https://prometheus-community.github.io/helm-charts
     - https://kubernetes-sigs.github.io/descheduler
   destinations:

@@ -73,7 +73,6 @@ PY
 
 helm_component() {
   case "$1" in
-    external-secrets) echo "external-secrets|https://charts.external-secrets.io|external-secrets/external-secrets|${ESO_CHART_VERSION:-0.18.2}|external-secrets" ;;
     cert-manager) echo "jetstack|https://charts.jetstack.io|jetstack/cert-manager|${CERT_MANAGER_CHART_VERSION:-}|cert-manager" ;;
     longhorn) echo "longhorn|https://charts.longhorn.io|longhorn/longhorn|${LONGHORN_CHART_VERSION:-1.10.0}|longhorn-system" ;;
     descheduler) echo "descheduler|https://kubernetes-sigs.github.io/descheduler|descheduler/descheduler|${DESCHEDULER_CHART_VERSION:-}|kube-system" ;;
@@ -158,8 +157,7 @@ allowed_line_bits = (
     'remoteRef:', 'secretKey:', 'serviceAccountSecretRef:', 'secretStoreRef',
     'secretName:', 'existingSecret:', 'envFromSecret:', 'bearerTokenFile:', 'passwordKey:',
     'secret:',
-    'name: onepassword-token', 'key: token', '--from-literal=',
-    'OP_SERVICE_ACCOUNT_TOKEN', 'possible plaintext secret',
+    'possible plaintext secret',
 )
 allowed_key_suffixes = (
     'namespace', 'secretname', 'existingsecret', 'envfromsecret',

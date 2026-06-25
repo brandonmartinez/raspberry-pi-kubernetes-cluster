@@ -55,7 +55,6 @@ configMapGenerator:
         grafana_dashboard: "true"
 
 resources:
-  - externalsecret.yml
   - prefix-middleware.yml
   - ingress.yml
   - service-monitor.yml

@@ -42,7 +42,7 @@ kubectl -n <namespace> logs <pod> --all-containers --tail=100
 
 ## Forbidden during adoption
 
-- Do not run `helm uninstall` on adopted releases such as cert-manager, Longhorn, monitoring, descheduler, or ESO.
+- Do not run `helm uninstall` on adopted releases such as cert-manager, Longhorn, monitoring, or descheduler.
 - Do not enable prune/self-heal for CRDs, Longhorn, PostgreSQL, or Pi-hole without the relevant runbook gate.
 - Do not recreate StatefulSets, PVCs, or immutable selectors to make Argo diffs disappear.
 - Do not run legacy `k8s/src/deploy.sh` over a GitOps-managed app unless you are intentionally rolling back to the legacy path.

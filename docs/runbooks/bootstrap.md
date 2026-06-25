@@ -1,6 +1,6 @@
 # Runbook: cluster bootstrap
 
-Goal: introduce ArgoCD and ESO without tearing down the live cluster. Everything is additive until a workload is explicitly cut over.
+Goal: introduce ArgoCD without tearing down the live cluster. Everything is additive until a workload is explicitly cut over. Secrets are pushed from 1Password out-of-band (see [../secrets.md](../secrets.md)), not managed by ArgoCD.
 
 ## 0. Do not start unless
 
@@ -44,25 +44,25 @@ bootstrap/00-argocd.sh
 
 ArgoCD is not self-managed yet. Keep it imperative until all child apps are visible and safe.
 
-## 4. Seed secret zero
+## 4. Push secrets from 1Password
+
+Make sure `op` is signed in and `kubectl` targets the cluster, then push the
+Secrets the workloads consume:
 
 ```sh
-bootstrap/10-secret-zero.sh
+scripts/sync-secrets.sh --dry-run     # confirm every op:// reference resolves
+scripts/sync-secrets.sh               # create namespaces + apply all Secrets
 ```
 
-This creates `external-secrets/onepassword-token`. It is the only Kubernetes secret outside 1Password.
-
-## 5. Install ESO and ClusterSecretStore
-
-```sh
-bootstrap/20-eso.sh
-```
+This writes durable Kubernetes Secrets into etcd. Nothing in the cluster
+authenticates to 1Password — there is no secret zero and no External Secrets
+Operator. The shared `postgres-app` Secret is fanned into every namespace
+labeled `postgres-client=true`; re-run after new client namespaces appear.
 
 Confirm:
 
 ```sh
-kubectl -n external-secrets get pods
-kubectl get clustersecretstore onepassword
+kubectl get secret -A | grep -E 'shlink-secret|postgres-app|monitoring-secret'
 ```
 
 ## 6. Apply AppProjects and root app
@@ -74,20 +74,18 @@ kubectl apply -f clusters/rpi/root.yml
 
 Sync only the root enough for child Applications/ApplicationSet to appear. Do not enable automated sync.
 
-## 7. Sync ExternalSecrets first
+## 7. Confirm secrets exist before syncing workloads
 
-For each app/platform component with secrets:
-
-1. Sync only the `ExternalSecret` resource, or sync the app wave that contains only ESO prerequisites.
-2. Wait for `Ready=True`.
-3. Confirm the target Kubernetes Secret exists with the expected keys.
+Workloads reference fixed Secret names (e.g. `shlink-secret`, `postgres-app`).
+Those Secrets were pushed in step 4. Confirm the ones a wave needs exist before
+syncing it:
 
 ```sh
-kubectl get externalsecrets -A
 kubectl get secret -n <namespace> <target-secret>
 ```
 
-Do not sync workloads that reference fixed ESO Secret names until those Secrets exist.
+If a Secret is missing, re-run `scripts/sync-secrets.sh <app>` rather than
+syncing the workload against a missing Secret.
 
 ## 8. Sync platform by wave
 
@@ -95,11 +93,10 @@ Follow [../gitops.md](../gitops.md) for the wave table; do not duplicate or skip
 
 High-level order:
 
-1. `external-secrets`
-2. `external-secrets-config`, `cert-manager`, `longhorn`
-3. `security`, `data`, `descheduler`
-4. `monitoring`, `monitoring-config`
-5. apps
+1. `cert-manager`, `longhorn`
+2. `security`, `data`, `descheduler`
+3. `monitoring`, `monitoring-config`
+4. apps
 
 Use manual sync, prune off, self-heal off.
 

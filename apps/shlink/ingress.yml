@@ -30,10 +30,12 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: security-basicauth@kubernetescrd,security-redirect-https@kubernetescrd
+    cluster-config/suffix-host: "true"  # cluster-config replaces the SUFFIX segment
+    cluster-config/suffix-tls: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: shlink.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: shlink.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -46,4 +48,4 @@ spec:
   tls:
     - secretName: shlink-web-tls
       hosts:
-        - shlink.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+        - shlink.SUFFIX

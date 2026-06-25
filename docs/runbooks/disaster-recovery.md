@@ -21,18 +21,17 @@ This order rebuilds from significant cluster loss while preserving DNS and data 
    ```
 2. Install/restore k3s control plane and join workers.
 3. Install ArgoCD imperatively with `bootstrap/00-argocd.sh`.
-4. Seed secret zero with `bootstrap/10-secret-zero.sh`.
-5. Install ESO and the `onepassword` ClusterSecretStore with `bootstrap/20-eso.sh`.
-6. Restore Longhorn backup target access.
-7. Restore required Longhorn volumes before workloads mount them.
-8. Apply `clusters/rpi/projects.yml` and `clusters/rpi/root.yml`.
-9. Sync platform prerequisites: external-secrets, cert-manager, Longhorn.
-10. Sync `platform/data` enough to create PostgreSQL.
-11. Restore PostgreSQL from `pg_dump`.
-12. Sync remaining platform apps: security, descheduler, monitoring.
-13. Sync leaf apps one at a time.
-14. Restore/migrate Pi-hole last, following [pihole-migration.md](pihole-migration.md).
-15. Add ArgoCD self-management last.
+4. Push secrets from 1Password with `scripts/sync-secrets.sh` (creates namespaces and applies all Secrets; nothing in the cluster authenticates to 1Password).
+5. Restore Longhorn backup target access.
+6. Restore required Longhorn volumes before workloads mount them.
+7. Apply `clusters/rpi/projects.yml` and `clusters/rpi/root.yml`.
+8. Sync platform prerequisites: cert-manager, Longhorn.
+9. Sync `platform/data` enough to create PostgreSQL.
+10. Restore PostgreSQL from `pg_dump`.
+11. Sync remaining platform apps: security, descheduler, monitoring.
+12. Sync leaf apps one at a time.
+13. Restore/migrate Pi-hole last, following [pihole-migration.md](pihole-migration.md).
+14. Add ArgoCD self-management last.
 
 ## PostgreSQL restore sketch
 

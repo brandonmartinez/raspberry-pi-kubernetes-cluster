@@ -12,8 +12,10 @@ clusters/rpi/         ArgoCD control plane for this cluster
   root.yml            app-of-apps root (renders the two files below)
   platform-apps.yml   explicit, sync-wave-ordered platform Applications
   apps-appset.yml     ApplicationSet: one Application per apps/<dir>
-platform/<component>/ shared stack (ESO, cert-manager, longhorn, security,
+platform/<component>/ shared stack (cert-manager, longhorn, security,
                       data, monitoring, descheduler)
+components/           shared Kustomize components (cluster-config: non-secret
+                      hostname/IP/TZ fan-out, opted into by apps)
 apps/<app>/           one workload per folder (kustomize base)
 ```
 
@@ -26,11 +28,14 @@ Applied via `argocd.argoproj.io/sync-wave` on each Application:
 
 | Wave | Components | Why |
 | --- | --- | --- |
-| -2 | external-secrets (controller) | ExternalSecrets can't resolve without it |
-| -1 | external-secrets-config (ClusterSecretStore), cert-manager, longhorn | stores/issuers/storage before consumers |
+| -1 | cert-manager, longhorn | issuers/storage before consumers |
 | 0  | security (middlewares, ClusterIssuer, basic-auth), data (PostgreSQL), descheduler | shared services |
 | 1  | monitoring (kube-prometheus-stack) + monitoring-config | depends on data + ServiceMonitors |
 | 2  | apps/* (ApplicationSet) | leaf workloads |
+
+> Secrets are **not** in this table. They are pushed from 1Password by
+> `scripts/sync-secrets.sh` before the workloads that consume them, and are not
+> reconciled by ArgoCD. See [secrets.md](secrets.md).
 
 ## Helm Applications (multi-source pattern)
 
@@ -61,7 +66,7 @@ syncPolicy** — every first sync is manual and observed. See
 `docs/runbooks/bootstrap.md`.
 
 Forbidden during adoption:
-- `helm uninstall <release>` on cert-manager/longhorn/monitoring/descheduler/ESO
+- `helm uninstall <release>` on cert-manager/longhorn/monitoring/descheduler
   — it deletes live resources. Keep `release name == Application metadata.name`
   and the same namespace.
 - Enabling `prune`/`selfHeal` on CRDs, Longhorn, PostgreSQL (`data`), or Pi-hole
@@ -81,7 +86,8 @@ Forbidden during adoption:
 ## Adding / converting an app — worked recipe (shlink)
 
 Each `apps/<app>/` is a plain Kustomize base. Non-secret config stays in the
-committed `.env` (works under `kustomize build`); secrets come from ESO; the
+committed `.env` (works under `kustomize build`); secrets are pushed from
+1Password by `scripts/sync-secrets.sh` (not part of the kustomization); the
 `secretGenerator` is removed.
 
 **1. Copy manifests** from `k8s/src/resources/shlink/` into `apps/shlink/`
@@ -89,7 +95,8 @@ committed `.env` (works under `kustomize build`); secrets come from ESO; the
 ingress hosts (step 4).
 
 **2. `apps/shlink/kustomization.yml`** — keep the configMap, drop the secret
-generator, add the ExternalSecret:
+generator, and pull in the `cluster-config` component (for host/IP fan-out,
+step 4). The Secret is **not** a resource here — it is pushed out-of-band:
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -98,12 +105,13 @@ namespace: shlink
 labels:
   - pairs: { app: shlink }
     includeSelectors: true
+components:
+  - ../../components/cluster-config   # NEW — non-secret cluster values
 configMapGenerator:
   - name: shlink-configmap
     envs: [.env]            # non-secret config — unchanged
 resources:
   - namespace.yml
-  - externalsecret.yml      # NEW (replaces secretGenerator)
   - deployment.yml
   - horizontalpodautoscaler.yml
   - service.yml
@@ -111,57 +119,94 @@ resources:
   - pdb.yml
 ```
 
-**3. `apps/shlink/externalsecret.yml`** — fixed Secret name = the base name the
-deployment already references (`shlink-secret`), so no workload edits. Synced
-before the workload via sync-wave; `Retain` so deleting it never deletes a live
-Secret:
+**3. `secrets/templates/shlink.yaml`** — a committed Kubernetes Secret manifest
+whose values are 1Password references. Fixed Secret name = the name the
+deployment already references (`shlink-secret`), so no workload edits. Name the
+1Password **fields** to match the Secret keys the app consumes:
 
 ```yaml
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
+apiVersion: v1
+kind: Secret
 metadata:
   name: shlink-secret
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"   # before the Deployment
-spec:
-  refreshInterval: 1h
-  secretStoreRef: { name: onepassword, kind: ClusterSecretStore }
-  target:
-    name: shlink-secret
-    creationPolicy: Owner
-    deletionPolicy: Retain
-  data:
-    - secretKey: DB_PASSWORD
-      remoteRef: { key: "postgres/password" }       # <item>/<field> in 1Password
-    - secretKey: SHLINK_SERVER_API_KEY
-      remoteRef: { key: "shlink/api-key" }
+  namespace: shlink
+type: Opaque
+stringData:
+  SHLINK_SERVER_API_KEY: "{{ op://$OP_VAULT/shlink/SHLINK_SERVER_API_KEY }}"
+  GEOLITE_LICENSE_KEY: "{{ op://$OP_VAULT/shlink/GEOLITE_LICENSE_KEY }}"
 ```
 
-**4. Ingress hosts → literals.** Kustomize cannot interpolate a substring, so
-replace `${NETWORK_HOSTNAME_SUFFIX}` / `$SHLINK_DEFAULT_DOMAIN` with the real
-value and mark it:
+Push it with `scripts/sync-secrets.sh shlink` before syncing the workload.
+
+The **shared PostgreSQL password is not listed here** — it is fanned in as the
+`postgres-app` Secret by `scripts/sync-secrets.sh` (`secrets/postgres-app.tpl.yaml`).
+Label the namespace `postgres-client: "true"` and map it in the workload:
 
 ```yaml
-# cluster-specific: NETWORK_HOSTNAME_SUFFIX
-- host: shlink.home.arpa
-# cluster-specific: SHLINK_DEFAULT_DOMAIN
-- host: bmtn.us
+env:
+  - name: DB_PASSWORD
+    valueFrom: { secretKeyRef: { name: postgres-app, key: password } }
 ```
 
-(`home.arpa` is the `.env.sample` default — replace with your real suffix.)
+See [secrets.md](secrets.md) for the item model, shared-secret fan-out, and
+outage resilience.
+
+**4. Ingress hosts / LAN IPs → `cluster-config`.** Don't hardcode the suffix in
+every file. Write the host as `<prefix>.SUFFIX` and annotate the Ingress; the
+component replaces the suffix segment at build time from one source. Public,
+non-suffixed hosts (e.g. `bmtn.us`) are simply left un-annotated:
+
+```yaml
+metadata:
+  annotations:
+    cluster-config/suffix-host: "true"   # opt in to suffix replacement
+spec:
+  rules:
+    - host: shlink.SUFFIX                 # -> shlink.<hostname_suffix>
+  tls:
+    - hosts: [shlink.SUFFIX]
+      secretName: shlink-web-tls
+---
+# public host needs no annotation and is left untouched
+spec:
+  rules:
+    - host: bmtn.us
+```
+
+For a LoadBalancer Service, set `spec.loadBalancerIP: LAN_LB_IP` and annotate it
+`cluster-config/lan-lb-ip: "true"`. Change the suffix or LAN IP once in
+`components/cluster-config/kustomization.yml` and every opted-in resource updates.
 
 **5. The legacy live Secret is hash-suffixed** (`shlink-secret-abc123`). The new
-deployment references the fixed `shlink-secret`. ESO must create it **first** —
-the sync-wave above guarantees order within the app; on first cutover, sync the
-ExternalSecret and confirm the Secret exists before syncing the workload. See
-`docs/secrets.md`.
+deployment references the fixed `shlink-secret`. Push it **first** with
+`scripts/sync-secrets.sh shlink` and confirm the Secret exists before syncing
+the workload. See `docs/secrets.md`.
+
+## Non-secret fan-out (cluster-config)
+
+Non-secret, cluster-specific values do **not** belong in 1Password. They live in
+one Kustomize component, `components/cluster-config`, which apps opt into with
+`components: [../../components/cluster-config]`. Change a value once; every
+opted-in resource updates on the next build.
+
+| Value | Key | How an app opts in |
+| --- | --- | --- |
+| Hostname suffix | `hostname_suffix` | host `<prefix>.SUFFIX` + Ingress annotation `cluster-config/suffix-host: "true"` |
+| LAN LoadBalancer IP | `lan_lb_ip` | `spec.loadBalancerIP: LAN_LB_IP` + Service annotation `cluster-config/lan-lb-ip: "true"` |
+| ACME email, TZ, PUID/PGID | `acme_email`, `tz`, `puid`, `pgid` | reference in the relevant field/Env and add a replacement target |
+
+The component replaces the second dotted segment of annotated Ingress hosts, so a
+single-prefix placeholder (`shlink.SUFFIX`) becomes `shlink.<hostname_suffix>`.
+Public hosts (e.g. `bmtn.us`) are left un-annotated and untouched. A
+`cluster-config` ConfigMap is emitted into each opting-in namespace as a
+byproduct (harmless; handy for debugging).
 
 ## Break-glass / push deploy
 
 GitOps is the default, but you can still push (the Pi-hole diagnosis scenario):
 
 - `scripts/apply.sh apps/<app>` → `kustomize build | kubectl apply -f -`
-  (no envsubst needed now — literals + ESO).
+  (no envsubst needed now — literals + pushed Secrets).
 - or `argocd app sync <app>` for a one-off reconcile.
 
 Document any manual change and reconcile Git promptly so Argo doesn't revert it

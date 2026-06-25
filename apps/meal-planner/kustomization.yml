@@ -8,6 +8,9 @@ labels:
       app: meal-planner
     includeSelectors: true
 
+components:
+  - ../../components/cluster-config
+
 configMapGenerator:
   - name: meal-planner-configmap
     envs:
@@ -15,7 +18,6 @@ configMapGenerator:
 
 resources:
   - namespace.yml
-  - externalsecret.yml
   - deployment.yml
   - horizontalpodautoscaler.yml
   - service.yml

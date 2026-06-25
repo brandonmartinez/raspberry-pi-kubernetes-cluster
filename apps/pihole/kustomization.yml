@@ -9,13 +9,15 @@ labels:
       app: pihole
     includeSelectors: true
 
+components:
+  - ../../components/cluster-config
+
 configMapGenerator:
   - name: pihole-configmap
     envs:
       - .env
 
 resources:
-  - externalsecret.yml
   - statefulset.yml
   - service.yml
   - headless-service.yml

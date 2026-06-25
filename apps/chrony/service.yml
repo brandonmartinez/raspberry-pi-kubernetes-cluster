@@ -15,6 +15,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: chrony-ntp-udp
+  annotations:
+    cluster-config/lan-lb-ip: "true"
 spec:
   ports:
     - name: 123-udp
@@ -23,4 +25,4 @@ spec:
       protocol: UDP
   externalTrafficPolicy: Local
   type: LoadBalancer
-  loadBalancerIP: 192.168.1.100  # cluster-specific: CLUSTER_HOSTNETWORKINGIPADDRESS
+  loadBalancerIP: LAN_LB_IP

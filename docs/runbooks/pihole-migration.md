@@ -8,13 +8,13 @@ Pi-hole is the home network DNS path and must be migrated last. The safe goal is
 - Point the operator host and nodes at public or router DNS during the migration.
 - Confirm name resolution works with Pi-hole bypassed.
 - Lower DHCP/DNS cache risk where possible (verify router behavior).
-- Confirm the current Pi-hole admin password is available through ESO or a manual fallback Secret.
+- Confirm the current Pi-hole admin password is available in 1Password (item `pihole`, field `FTLCONF_webserver_api_password`) or as a manual fallback Secret.
 
 ## Prepare ArgoCD
 
 - Keep auto-sync and self-heal disabled for Pi-hole.
 - Ensure prune is disabled.
-- Sync the Pi-hole ExternalSecret first and wait for the target Secret.
+- Push the Pi-hole Secret first with `scripts/sync-secrets.sh pihole` and confirm `pihole-secret` exists before syncing the workload.
 - Confirm the Service keeps the intended LoadBalancer IP.
 
 ## Migrate one change at a time

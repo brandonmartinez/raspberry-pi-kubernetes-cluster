@@ -1,6 +1,6 @@
 auth:
   adminUser: admin
-  adminPassword: ""  # moved to keycloak-secret via ExternalSecret
+  adminPassword: ""  # provided by keycloak-secret, pushed from 1Password (scripts/sync-secrets.sh)
 replicaCount: 1
 service:
   type: ClusterIP
@@ -11,10 +11,12 @@ postgresql:
 externalDatabase:
   host: 10.43.100.50
   user: rpi # cluster-specific: POSTGRES_USER
-  password: 
   database: keycloak
-  existingSecret: ""
   port: 5432
+  # Shared PostgreSQL password pushed into this namespace as postgres-app
+  # (namespace labeled postgres-client=true). See docs/secrets.md.
+  existingSecret: postgres-app
+  existingSecretPasswordKey: password
 
 ingress:
   enabled: true

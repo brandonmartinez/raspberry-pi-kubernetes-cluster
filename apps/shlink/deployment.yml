@@ -33,6 +33,12 @@ spec:
                 name: shlink-configmap
             - secretRef:
                 name: shlink-secret
+          env:
+            - name: DB_PASSWORD  # shared PostgreSQL password, pushed into this namespace as postgres-app by scripts/sync-secrets.sh
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-app
+                  key: password
           ports:
             - name: 8080-tcp
               containerPort: 8080

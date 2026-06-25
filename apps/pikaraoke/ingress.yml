@@ -3,10 +3,11 @@ kind: Ingress
 metadata:
   name: pikaraoke-ingress
   annotations:
+    cluster-config/suffix-host: "true"
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: karaoke.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: karaoke.SUFFIX
       http:
         paths:
           - pathType: Prefix

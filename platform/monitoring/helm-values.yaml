@@ -135,9 +135,9 @@ grafana:
       max_open_conn: 10
       max_idle_conn: 2
       conn_max_lifetime: 14400
-  # Inject database credentials from ESO-managed Secret.
+  # Inject database credentials from the pushed monitoring-secret.
   envFromSecret: monitoring-secret
-  # Admin user/password are also sourced from the same ESO-managed Secret.
+  # Admin user/password are also sourced from the same pushed Secret.
   admin:
     existingSecret: monitoring-secret
     userKey: admin-user

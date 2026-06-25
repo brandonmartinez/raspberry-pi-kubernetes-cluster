@@ -16,4 +16,3 @@ labels:
 
 resources:
   - namespace.yml
-  - externalsecret.yml

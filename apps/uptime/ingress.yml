@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: uptime-ingress
   annotations:
+    cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/websocket: "true"
     traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
@@ -11,7 +13,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: uptime.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: uptime.SUFFIX
       http:
         paths:
           - pathType: Prefix
@@ -24,4 +26,4 @@ spec:
   tls:
     - secretName: uptime-tls
       hosts:
-        - uptime.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+        - uptime.SUFFIX

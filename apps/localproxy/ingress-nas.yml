@@ -3,11 +3,12 @@ kind: Ingress
 metadata:
   name: localproxy-nas-ingress
   annotations:
-      traefik.ingress.kubernetes.io/websocket: "true"
+    cluster-config/suffix-host: "true"
+    traefik.ingress.kubernetes.io/websocket: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: nas.home.arpa  # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+    - host: nas.SUFFIX
       http:
         paths:
           - pathType: Prefix

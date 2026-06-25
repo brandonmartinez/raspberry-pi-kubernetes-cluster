@@ -14,59 +14,13 @@
 # docs/gitops.md (Promotion gates).
 
 ##############################################################################
-# Wave -2: External Secrets Operator controller (must exist before any
-#          ExternalSecret-consuming workload).
+# Wave -1: cert-manager, Longhorn.
+#
+# Secrets are NOT managed by Argo. They are pushed out-of-band from 1Password by
+# scripts/sync-secrets.sh (see docs/secrets.md), so there is no External Secrets
+# Operator Application here. Run sync-secrets.sh after namespaces exist and
+# before the workloads that consume those Secrets.
 ##############################################################################
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: external-secrets
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "-2"
-spec:
-  project: platform
-  sources:
-    - repoURL: https://charts.external-secrets.io
-      chart: external-secrets
-      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n external-secrets
-      helm:
-        valueFiles:
-          - $values/platform/external-secrets/helm-values.yaml
-    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: main
-      ref: values
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: external-secrets
-  syncPolicy:
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
----
-##############################################################################
-# Wave -1: ClusterSecretStore (1Password), cert-manager, Longhorn.
-##############################################################################
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: external-secrets-config
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
-spec:
-  project: platform
-  source:
-    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-    targetRevision: main
-    path: platform/external-secrets
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: external-secrets
-  syncPolicy:
-    syncOptions:
-      - ServerSideApply=true
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

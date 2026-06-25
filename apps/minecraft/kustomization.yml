@@ -8,6 +8,9 @@ labels:
       app: minecraft
     includeSelectors: true
 
+components:
+  - ../../components/cluster-config
+
 configMapGenerator:
   - name: minecraft-configmap
     envs:

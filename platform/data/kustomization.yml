@@ -11,6 +11,9 @@ labels:
       app: data
     includeSelectors: true
 
+components:
+  - ../../components/cluster-config
+
 configMapGenerator:
   - name: data-configmap
     envs:
@@ -24,7 +27,6 @@ configMapGenerator:
 
 resources:
   - namespace.yml
-  - externalsecret.yml
   - postgres-init.yml
   - postgres-service.yml
   - postgres-statefulset.yml

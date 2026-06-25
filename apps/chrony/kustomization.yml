@@ -8,6 +8,9 @@ labels:
       app: chrony
     includeSelectors: true
 
+components:
+  - ../../components/cluster-config
+
 configMapGenerator:
   - name: chrony-configmap
     envs:

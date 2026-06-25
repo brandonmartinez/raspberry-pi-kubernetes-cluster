@@ -10,6 +10,5 @@ labels:
 
 resources:
   - namespace.yml
-  - externalsecret.yml
   - middleware.yml
   - clusterissuer.yml
