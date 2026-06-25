@@ -152,7 +152,7 @@ assign_re = re.compile(r'''(?ix)
     \s*[:=]\s*
     (?P<value>.+?)\s*$
 ''')
-allowed_value_bits = ('${', '$(', '$', '{{', 'op://', 'REPLACE', '#Your', 'your', '<', '>', 'changeme', 'changeit', 'example', 'placeholder')
+allowed_value_bits = ('${', '$(', '$', '{{', 'op://', 'REPLACE', '#Your', 'your', '<', '>', 'changeme', 'changeit', 'example', 'placeholder', 'jsonpath')
 allowed_line_bits = (
     'remoteRef:', 'secretKey:', 'serviceAccountSecretRef:', 'secretStoreRef',
     'secretName:', 'existingSecret:', 'envFromSecret:', 'bearerTokenFile:', 'passwordKey:',

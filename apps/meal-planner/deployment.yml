@@ -3,7 +3,8 @@ kind: Deployment
 metadata:
   name: meal-planner
 spec:
-  replicas: 2
+  # replicas owned by meal-planner-hpa; ArgoCD ignores /spec/replicas
+  # (RespectIgnoreDifferences) so it never fights the autoscaler.
   selector:
     matchLabels: {}
   template:

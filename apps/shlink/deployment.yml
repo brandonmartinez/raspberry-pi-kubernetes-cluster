@@ -6,7 +6,8 @@ metadata:
     app: shlink
     component: shortener
 spec:
-  replicas: 1
+  # replicas owned by shlink-shortener-hpa; ArgoCD ignores /spec/replicas
+  # (RespectIgnoreDifferences) so it never fights the autoscaler.
   selector:
     matchLabels:
       app: shlink

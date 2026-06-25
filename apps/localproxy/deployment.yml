@@ -3,7 +3,8 @@ kind: Deployment
 metadata:
   name: localproxy-nginx-deployment
 spec:
-  replicas: 2
+  # replicas owned by localproxy-hpa; ArgoCD ignores /spec/replicas
+  # (RespectIgnoreDifferences) so it never fights the autoscaler.
   template:
     spec:
       topologySpreadConstraints:
