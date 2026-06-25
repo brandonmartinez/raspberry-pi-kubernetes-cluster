@@ -16,7 +16,7 @@ spec:
   project: platform
   source:
     repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-    targetRevision: main
+    targetRevision: gitops-overhaul
     path: clusters/rpi
     directory:
       recurse: false

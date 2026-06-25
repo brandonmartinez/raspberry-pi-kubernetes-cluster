@@ -21,7 +21,7 @@ spec:
         valueFiles:
           - $values/platform/argocd/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: main
+      targetRevision: gitops-overhaul
       ref: values
   destination:
     server: https://kubernetes.default.svc
