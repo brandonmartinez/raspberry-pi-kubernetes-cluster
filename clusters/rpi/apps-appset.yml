@@ -15,9 +15,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-        # Trial: scan the gitops-overhaul branch (apps/* doesn't exist on main yet).
-        # Revert to main when the branch merges.
-        revision: gitops-overhaul
+        revision: main
         directories:
           - path: apps/*
           # keycloak was never wired into the legacy deploy pipeline and
@@ -35,7 +33,7 @@ spec:
       project: apps
       source:
         repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-        targetRevision: gitops-overhaul
+        targetRevision: main
         path: "{{.path.path}}"
       destination:
         server: https://kubernetes.default.svc

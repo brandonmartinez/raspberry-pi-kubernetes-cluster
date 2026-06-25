@@ -62,12 +62,12 @@ Read `docs/gitops.md` for the full model. Essentials:
   `spec.syncPolicy.syncOptions` — pass `ServerSideApply=true` explicitly when
   hand-running an operation on CRD-heavy apps (kube-prometheus-stack, etc.).
 
-### Branch-trial convention (current state)
+### Self-repo Argo refs
 
-Work is on the **`gitops-overhaul`** branch. All self-repo Argo refs
-(`targetRevision`, the appset generator `revision`, `argocd-selfmanage.yml`)
-point at `gitops-overhaul` for the trial. **At merge, revert every
-`gitops-overhaul` → `main`** across `clusters/rpi/*.yml`.
+All self-repo Argo refs (`targetRevision`, the appset generator `revision`,
+`argocd-selfmanage.yml`) track **`main`**. Keep them on `main`; only point a
+ref at a feature branch for a temporary trial, and flip it back to `main`
+before merging.
 
 ## How a platform stack is structured
 

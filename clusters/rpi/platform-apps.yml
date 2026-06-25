@@ -38,7 +38,7 @@ spec:
         valueFiles:
           - $values/platform/cert-manager/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: gitops-overhaul
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -65,7 +65,7 @@ spec:
         valueFiles:
           - $values/platform/longhorn/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: gitops-overhaul
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -92,7 +92,7 @@ spec:
   project: platform
   source:
     repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-    targetRevision: gitops-overhaul
+    targetRevision: main
     path: platform/security
   destination:
     server: https://kubernetes.default.svc
@@ -113,7 +113,7 @@ spec:
   project: platform
   source:
     repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-    targetRevision: gitops-overhaul
+    targetRevision: main
     path: platform/data
   destination:
     server: https://kubernetes.default.svc
@@ -142,7 +142,7 @@ spec:
         valueFiles:
           - $values/platform/descheduler/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: gitops-overhaul
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -172,7 +172,7 @@ spec:
         valueFiles:
           - $values/platform/monitoring/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-      targetRevision: gitops-overhaul
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -193,7 +193,7 @@ spec:
   project: platform
   source:
     repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
-    targetRevision: gitops-overhaul
+    targetRevision: main
     path: platform/monitoring
   destination:
     server: https://kubernetes.default.svc
