@@ -31,14 +31,18 @@ spec:
             requests:
               memory: "1500Mi"
               cpu: "250m"
-          # Bedrock server takes a long time to start
+          # The legendary-bedrock-container auto-downloads + installs the latest
+          # Bedrock server on every boot, then loads/migrates the ~6.7GB world.
+          # On a Pi this routinely exceeds 5+ minutes; a tight startup budget
+          # kills the container mid-migration and causes a restart loop. Give it
+          # a very generous budget (60 + 80*15 = 1260s ≈ 21 min).
           startupProbe:
             tcpSocket:
               port: 19120
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 60
+            periodSeconds: 15
             timeoutSeconds: 5
-            failureThreshold: 30
+            failureThreshold: 80
           readinessProbe:
             tcpSocket:
               port: 19120
@@ -69,4 +73,6 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 5Gi
+            # Matches the existing Longhorn world volume (PV pvc-8f7eda35, 10Gi,
+            # ~6.7GB of world data). Was 5Gi, which is smaller than the live data.
+            storage: 10Gi
