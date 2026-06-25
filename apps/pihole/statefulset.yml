@@ -89,7 +89,11 @@ spec:
               path: /admin/login
               port: svc-ui
   volumeClaimTemplates:
-    - metadata:
+    # apiVersion/kind are pinned to match the values the API server injects into
+    # the live StatefulSet, preventing a perpetual ArgoCD OutOfSync diff.
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: pihole-pvc
       spec:
         accessModes:
