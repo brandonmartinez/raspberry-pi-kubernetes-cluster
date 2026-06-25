@@ -12,6 +12,7 @@ spec:
   description: Shared platform stack (secrets, storage, certs, db, monitoring)
   sourceRepos:
     - https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    - https://argoproj.github.io/argo-helm
     - https://charts.jetstack.io
     - https://charts.longhorn.io
     - https://prometheus-community.github.io/helm-charts
