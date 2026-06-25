@@ -1,0 +1,26 @@
+auth:
+  adminUser: admin
+  adminPassword: ""  # provided by keycloak-secret, pushed from 1Password (scripts/sync-secrets.sh)
+replicaCount: 1
+service:
+  type: ClusterIP
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: 10.43.100.50
+  user: rpi # cluster-specific: POSTGRES_USER
+  database: keycloak
+  port: 5432
+  # Shared PostgreSQL password pushed into this namespace as postgres-app
+  # (namespace labeled postgres-client=true). See docs/secrets.md.
+  existingSecret: postgres-app
+  existingSecretPasswordKey: password
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: keycloak.themartinez.cloud # cluster-specific: NETWORK_HOSTNAME_SUFFIX
+  tls: false                # Or true + cert-manager config
+  path: /

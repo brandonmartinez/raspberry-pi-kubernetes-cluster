@@ -1,0 +1,61 @@
+# ArgoCD (argo/argo-cd chart 8.5.7, appVersion v3.1.7) values for this Pi homelab.
+# These values describe the LIVE install so `helm upgrade --install --take-ownership`
+# adopts the existing raw-manifest deployment as a near no-op. See README.md for the
+# migration story and the break-glass recovery path (bootstrap/00-argocd.sh).
+
+# --- Non-HA: one replica of each component (Pi 4B resource budget) ---
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+server:
+  replicas: 1
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1
+# Dex is unused (no SSO); the raw install's argocd-dex-server is orphaned at
+# migration and can be deleted manually afterwards.
+dex:
+  enabled: false
+
+# Pin redis to the exact live image so adoption does not bump the cache version
+# or change the registry host (live runs public.ecr.aws/.../redis:7.2.7-alpine).
+redis:
+  image:
+    repository: public.ecr.aws/docker/library/redis
+    tag: 7.2.7-alpine
+
+# The argocd-redis auth secret already exists (provisioned by the original raw
+# install) and is correct. Disable the chart's redis-secret-init hook Job: its
+# `argocd admin redis-initial-password` process does not exit cleanly here and
+# would block (and time out) every helm operation. The secret is provided
+# externally, exactly the "alternative method" this flag is intended for.
+redisSecretInit:
+  enabled: false
+
+# --- CRDs are NOT managed by Helm ---
+# They were installed by the raw manifest and hold the 22 Application CRs in etcd.
+# Never let Helm own/prune them, or a chart removal would cascade-delete every app.
+crds:
+  install: false
+
+configs:
+  # Preserve the existing argocd-secret untouched. It holds the admin bcrypt
+  # password, passwordMtime, and server.secretkey (the JWT signing key —
+  # regenerating it invalidates every session). Helm must not recreate it.
+  secret:
+    createSecret: false
+
+  # Traefik terminates TLS; argocd-server runs insecure behind the ingress.
+  params:
+    server.insecure: true
+
+  # Public UI URL (used for links/notifications). Matches the live argocd-cm.
+  cm:
+    url: https://gitops.themartinez.cloud
+    # Preserve the pre-migration resource tracking label. ArgoCD's built-in
+    # default is app.kubernetes.io/instance, which every adopted resource already
+    # carries; the chart otherwise overrides this to argocd.argoproj.io/instance,
+    # which would make every Helm-rendered resource show OutOfSync on the label.
+    application.instanceLabelKey: app.kubernetes.io/instance

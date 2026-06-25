@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meal-planner
+spec:
+  # replicas owned by meal-planner-hpa; ArgoCD ignores /spec/replicas
+  # (RespectIgnoreDifferences) so it never fights the autoscaler.
+  selector:
+    matchLabels: {}
+  template:
+    metadata:
+      labels: {}
+    spec:
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: meal-planner
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+      containers:
+        - name: meal-planner
+          image: ghcr.io/brandonmartinez/meal-planner:latest
+          envFrom:
+            - configMapRef:
+                name: meal-planner-configmap
+            - secretRef:
+                name: meal-planner-secret
+          ports:
+            - name: http
+              containerPort: 3001
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5

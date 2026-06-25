@@ -1,0 +1,31 @@
+---
+# Root "app-of-apps". Bootstrap applies this once (manual sync). It renders the
+# platform Applications and the apps ApplicationSet, but does NOT enable
+# automated sync on them — first sync of every child is manual/observed-only.
+#
+# directory.include is restricted so the root never tries to manage projects.yml
+# (applied imperatively by bootstrap) or itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: clusters/rpi
+    directory:
+      recurse: false
+      include: "{platform-apps.yml,apps-appset.yml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  # No automated syncPolicy on purpose: the root app is synced by hand during
+  # bootstrap so each child Application appears in an unsynced state for review.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minecraft
+spec:
+  serviceName: "minecraft"
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+        - name: minecraft
+          image: 05jchambers/legendary-bedrock-container:latest
+          tty: true
+          stdin: true
+          envFrom:
+            - configMapRef:
+                name: minecraft-configmap
+          ports:
+            - name: svc-19120-udp
+              containerPort: 19120
+              protocol: UDP
+            - name: svc-19120-tcp
+              containerPort: 19120
+              protocol: TCP
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "1500m"
+            requests:
+              memory: "1500Mi"
+              cpu: "250m"
+          # The legendary-bedrock-container auto-downloads + installs the latest
+          # Bedrock server on every boot, then loads/migrates the ~6.7GB world.
+          # The server is x86_64 run under qemu emulation on ARM, so boot is slow
+          # (5-8 min). Give startup a very generous budget (60 + 80*15 = 1260s).
+          # Bedrock is UDP-ONLY (no TCP listener on 19120), so tcpSocket/httpGet
+          # probes can never succeed; use an exec probe that confirms the server
+          # is bound on UDP 19120.
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 80
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - mountPath: /minecraft
+              name: minecraft-pvc
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ipv4Only
+                operator: DoesNotExist
+  volumeClaimTemplates:
+    # apiVersion/kind are explicit because the API server injects them into the
+    # live StatefulSet's VCT; omitting them causes a perpetual ArgoCD OutOfSync.
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: minecraft-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            # Matches the existing Longhorn world volume (PV pvc-8f7eda35, 10Gi,
+            # ~6.7GB of world data). Was 5Gi, which is smaller than the live data.
+            storage: 10Gi

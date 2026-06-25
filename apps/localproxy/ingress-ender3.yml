@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: localproxy-ender3-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
+    traefik.ingress.kubernetes.io/websocket-timeout: "600s"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ender3.SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: localproxy-svc
+                port:
+                  number: 80

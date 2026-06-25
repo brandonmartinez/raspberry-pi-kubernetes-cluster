@@ -1,0 +1,57 @@
+---
+# ApplicationSet: one Argo Application per directory under apps/.
+# Adding a service = add an apps/<name>/ folder with a kustomization.yml. No
+# edits here. Like the platform apps, there is NO automated syncPolicy, so a
+# newly generated Application appears OutOfSync and is synced by hand the first
+# time (observed-only gate). Promote to automated per docs/gitops.md.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+        revision: main
+        directories:
+          - path: apps/*
+          # keycloak was never wired into the legacy deploy pipeline and
+          # currently has no workload (Helm-values-only). Excluded until it is
+          # given a real source (Helm multi-source like the platform apps). See
+          # apps/keycloak/kustomization.yml.
+          - path: apps/keycloak
+            exclude: true
+  template:
+    metadata:
+      name: "{{.path.basename}}"
+      labels:
+        app.kubernetes.io/managed-by: argocd
+    spec:
+      project: apps
+      source:
+        repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+        targetRevision: main
+        path: "{{.path.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        # Each app's kustomization.yml sets its own namespace; keep the folder
+        # name == namespace so this matches for cluster-scoped resources too.
+        namespace: "{{.path.basename}}"
+      # HPA-managed Deployments (shlink-shortener, uptime, localproxy,
+      # meal-planner, unbound) own their own replica count. Ignore /spec/replicas
+      # cluster-wide so ArgoCD never reports drift on, or reverts, an autoscaler
+      # decision. RespectIgnoreDifferences keeps sync itself from writing the
+      # field, so this is safe to leave on even after selfHeal is enabled.
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true

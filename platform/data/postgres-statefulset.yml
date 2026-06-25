@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: {}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels: {}
+    spec:
+      terminationGracePeriodSeconds: 60  # Allow more time for graceful shutdown
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+        - name: postgres-init
+          configMap:
+            name: postgres-init
+            defaultMode: 0755  # Make scripts executable
+        - name: shm  # Shared memory for PostgreSQL performance
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+      containers:
+        - name: postgres
+          image: postgres:17.4
+          # PostgreSQL startup args for performance
+          args:
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-config
+              mountPath: /etc/postgresql
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
+            - name: shm
+              mountPath: /dev/shm  # Shared memory for parallel queries and temp tables
+          envFrom:
+            - configMapRef:
+                name: data-configmap
+            - secretRef:
+                name: data-secret
+          ports:
+            - name: svc-5432-tcp
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "rpi"
+            initialDelaySeconds: 60  # More time for first startup with config
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "rpi"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
+          # Startup probe for initial config loading
+          startupProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "rpi"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 12  # Up to 2 minutes for first start

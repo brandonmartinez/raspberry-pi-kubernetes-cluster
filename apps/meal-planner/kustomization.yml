@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: meal-planner
+
+labels:
+  - pairs:
+      app: meal-planner
+    includeSelectors: true
+
+components:
+  - ../../components/cluster-config
+
+configMapGenerator:
+  - name: meal-planner-configmap
+    envs:
+      - .env
+
+resources:
+  - namespace.yml
+  - deployment.yml
+  - horizontalpodautoscaler.yml
+  - service.yml
+  - pdb.yml
+  - ingress.yml

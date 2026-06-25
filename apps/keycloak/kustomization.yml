@@ -1,0 +1,18 @@
+# NOT YET DEPLOYED. Legacy keycloak only had Helm values and was never wired
+# into the legacy deploy pipeline, so there is no workload here yet. This folder
+# is intentionally EXCLUDED from clusters/rpi/apps-appset.yml. To finish it,
+# deploy the keycloak Helm chart via a dedicated Application using the
+# multi-source pattern in docs/gitops.md (referencing helm-values.yml), set the
+# ingress to traefik (not nginx), then remove the exclude in apps-appset.yml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: keycloak
+
+labels:
+  - pairs:
+      app: keycloak
+    includeSelectors: true
+
+resources:
+  - namespace.yml

@@ -1,0 +1,14 @@
+# Extra ArgoCD resources layered on top of the imperative upstream install
+# (bootstrap/00-argocd.sh). Kept as a thin kustomization so the cluster-config
+# component resolves `gitops.SUFFIX` to the live hostname suffix, exactly like the
+# app ingresses. No envsubst tokens here, so `kubectl apply -k` is safe.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+components:
+  - ../../components/cluster-config
+
+resources:
+  - ingress.yml

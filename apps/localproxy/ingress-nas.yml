@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: localproxy-nas-ingress
+  annotations:
+    cluster-config/suffix-host: "true"
+    traefik.ingress.kubernetes.io/websocket: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: nas.SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: localproxy-svc
+                port:
+                  number: 80
+

@@ -1,0 +1,30 @@
+services:
+  homebridge:
+    image: {{ homebridge_image }}
+    container_name: {{ homebridge_container_name }}
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PGID: "{{ homebridge_pgid }}"
+      PUID: "{{ homebridge_puid }}"
+      HOMEBRIDGE_CONFIG_UI: "1"
+      HOMEBRIDGE_CONFIG_UI_PORT: "{{ homebridge_config_ui_port }}"
+      TZ: "{{ homebridge_tz }}"
+    volumes:
+      - {{ homebridge_data_dir }}:/homebridge
+{% if manage_watchtower | bool %}
+    labels:
+      - com.centurylinklabs.watchtower.scope=homebridge
+
+  # Temporary compatibility service. Remove once images are pinned and managed
+  # by the future GitOps image update workflow.
+  watchtower:
+    image: {{ watchtower_image }}
+    container_name: homebridge-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval {{ watchtower_interval }} --cleanup --scope homebridge
+    labels:
+      - com.centurylinklabs.watchtower.scope=homebridge
+{% endif %}

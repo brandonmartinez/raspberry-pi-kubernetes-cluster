@@ -1,0 +1,10 @@
+---
+k3s_apply: true
+k3s_channel: stable
+k3s_agent_service_file: /etc/systemd/system/k3s-agent.service
+k3s_server_url: "https://192.168.52.110:6443"
+k3s_token: ""
+k3s_common_kubelet_args:
+  - node-ip=0.0.0.0
+k3s_common_kube_proxy_args:
+  - metrics-bind-address=0.0.0.0

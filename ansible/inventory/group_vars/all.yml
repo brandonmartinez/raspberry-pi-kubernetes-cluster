@@ -1,0 +1,59 @@
+---
+# Reboots on live nodes are never automatic. Before rebooting a live node,
+# manually cordon/drain and account for Pi-hole DNS availability and Longhorn
+# replica/storage health.
+
+network_hostname_suffix: themartinez.cloud # cluster-specific
+cluster_primary_hostname: rpi001 # cluster-specific
+cluster_primary_address: 192.168.52.110 # cluster-specific
+cluster_timezone: America/Detroit # cluster-specific
+
+admin_user: pi # cluster-specific
+admin_puid: "1000" # cluster-specific
+admin_pgid: "1000" # cluster-specific
+
+# Store password hashes/tokens in Ansible Vault or pass them at runtime.
+admin_password_hash: "" # TODO secret: do not commit real password hashes
+k3s_token: "" # TODO secret: pass from Vault or -e for agent joins
+
+base_dns_servers:
+  - 8.8.8.8 # cluster-specific
+  - 8.8.4.4 # cluster-specific
+base_cgroup_options:
+  - cgroup_enable=cpuset
+  - cgroup_enable=memory
+  - cgroup_memory=1
+base_expand_rootfs: true
+base_upgrade_packages: true
+
+mount_usb: false # cluster-specific
+mount_usb_drive_path: /dev/sda # cluster-specific
+mount_usb_drive_partition: /dev/sda1 # cluster-specific
+mount_usb_drive_format: false # cluster-specific: destructive if true
+mount_usb_mount_path: /media/data # cluster-specific
+mount_usb_fstype: ext4
+mount_usb_opts: defaults,auto,users,rw,exec,nofail
+clusterfs_path: /clusterfs # cluster-specific
+
+k3s_channel: stable
+k3s_server_url: "https://{{ cluster_primary_address }}:6443" # cluster-specific
+k3s_write_kubeconfig_mode: "644"
+k3s_common_kubelet_args:
+  - node-ip=0.0.0.0
+k3s_common_kube_proxy_args:
+  - metrics-bind-address=0.0.0.0
+k3s_server_controller_manager_args:
+  - bind-address=0.0.0.0
+k3s_server_scheduler_args:
+  - bind-address=0.0.0.0
+k3s_prefer_bundled_bin: true
+k3s_install_helm: true
+
+manage_homebridge: true
+manage_watchtower: false # Watchtower will be removed after images are pinned and GitOps-managed.
+homebridge_compose_dir: /opt/homebridge
+homebridge_data_dir: "{{ (mount_usb | bool) | ternary(mount_usb_mount_path ~ '/homebridge', '/home/pi/homebridge') }}" # cluster-specific
+homebridge_image: homebridge/homebridge:latest
+homebridge_config_ui_port: "8581"
+watchtower_image: containrrr/watchtower:latest
+watchtower_interval: "3600"

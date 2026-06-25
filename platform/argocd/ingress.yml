@@ -1,0 +1,30 @@
+# ArgoCD web UI. Mirrors the portainer/pihole convention: the app provides its
+# own username/password login, so the ingress only enforces HTTPS (no basicauth).
+# argocd-server is run with --insecure (see bootstrap/00-argocd.sh) so Traefik
+# terminates TLS and talks plain HTTP to the service on port 80.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  annotations:
+    cluster-config/suffix-host: "true"  # cluster-config replaces the SUFFIX segment
+    cluster-config/suffix-tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: argocd-server-tls
+      hosts:
+        - gitops.SUFFIX
+  rules:
+    - host: gitops.SUFFIX
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80

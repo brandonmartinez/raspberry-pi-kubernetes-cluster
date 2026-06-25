@@ -1,0 +1,35 @@
+---
+- name: Check for existing k3s server service
+  ansible.builtin.stat:
+    path: "{{ k3s_service_file }}"
+  register: k3s_server_service
+
+- name: Report k3s server adoption guard
+  ansible.builtin.debug:
+    msg: >-
+      k3s server service exists={{ k3s_server_service.stat.exists }};
+      install will {{ 'be skipped' if k3s_server_service.stat.exists or not (k3s_apply | bool) else 'run' }}.
+
+- name: Install k3s server with legacy-compatible flags
+  ansible.builtin.shell: >-
+    curl -sfL https://get.k3s.io |
+    INSTALL_K3S_CHANNEL={{ k3s_channel | quote }} sh -s -
+    --write-kubeconfig-mode {{ k3s_write_kubeconfig_mode | quote }}
+    {% for arg in k3s_common_kubelet_args %} --kubelet-arg={{ arg | quote }}{% endfor %}
+    {% for arg in k3s_server_controller_manager_args %} --kube-controller-manager-arg {{ arg | quote }}{% endfor %}
+    {% for arg in k3s_common_kube_proxy_args %} --kube-proxy-arg {{ arg | quote }}{% endfor %}
+    {% for arg in k3s_server_scheduler_args %} --kube-scheduler-arg {{ arg | quote }}{% endfor %}
+    {% if k3s_prefer_bundled_bin | bool %} --prefer-bundled-bin{% endif %}
+  args:
+    creates: "{{ k3s_service_file }}"
+  when:
+    - k3s_apply | bool
+    - not k3s_server_service.stat.exists
+
+- name: Install Helm for server-side administration
+  ansible.builtin.shell: curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    creates: "{{ k3s_helm_path }}"
+  when:
+    - k3s_apply | bool
+    - k3s_install_helm | bool

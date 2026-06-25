@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: uptime
+
+labels:
+  - pairs:
+      app: uptime
+    includeSelectors: true
+
+components:
+  - ../../components/cluster-config
+
+configMapGenerator:
+  - name: uptime-configmap
+    envs:
+      - .env
+
+resources:
+  - namespace.yml
+  - deployment.yml
+  - horizontalpodautoscaler.yml
+  - service.yml
+  - pdb.yml
+  - pvc-local.yml
+  - pvc-backup.yml
+  - ingress.yml
+  - backup-cronjob.yml

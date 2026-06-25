@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Single source of truth for non-secret, cluster-specific values.
+# Apps opt in with `components: [../../components/cluster-config]`.
+#
+# Fan-out mechanisms:
+#   * Ingress hosts: write the host as `<prefix>.SUFFIX` and annotate the
+#     Ingress with `cluster-config/suffix-host: "true"` (replaces the suffix in
+#     spec.rules[].host). If the Ingress also has a TLS block, additionally add
+#     `cluster-config/suffix-tls: "true"` (replaces it in spec.tls[].hosts[]).
+#     Two annotations are used because Kustomize errors if it targets a
+#     spec.tls field on an Ingress that has no TLS block.
+#   * LoadBalancer IP (Phase 2 / MetalLB only): with k3s klipper servicelb,
+#     LoadBalancer Services must NOT set spec.loadBalancerIP — klipper advertises
+#     the node IPs and the UDM-Pro points at those. The lan_lb_ip value below is
+#     retained for Phase 2, when MetalLB introduces a single VIP; at that point a
+#     replacement will re-enable the `cluster-config/lan-lb-ip` annotation.
+#   * Public (non-suffixed) hosts like bmtn.us are simply left un-annotated.
+#
+# Change a value here once; every opted-in resource updates on the next build.
+
+configMapGenerator:
+  - name: cluster-config
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - hostname_suffix=themartinez.cloud
+      # Phase 2 (MetalLB) only — unused while on klipper servicelb. See header.
+      - lan_lb_ip=192.168.52.100
+      - acme_email=admin@themartinez.cloud
+      - tz=America/Detroit
+      - puid=1000
+      - pgid=1000
+
+replacements:
+  # Ingress host suffix in spec.rules[].host, opt-in via annotation.
+  - source:
+      kind: ConfigMap
+      name: cluster-config
+      fieldPath: data.hostname_suffix
+    targets:
+      - select:
+          kind: Ingress
+          annotationSelector: cluster-config/suffix-host=true
+        fieldPaths:
+          - spec.rules.*.host
+        options:
+          delimiter: "."
+          index: 1
+  # Ingress host suffix in spec.tls[].hosts[], opt-in via a SEPARATE annotation
+  # (only Ingresses that actually have a TLS block).
+  - source:
+      kind: ConfigMap
+      name: cluster-config
+      fieldPath: data.hostname_suffix
+    targets:
+      - select:
+          kind: Ingress
+          annotationSelector: cluster-config/suffix-tls=true
+        fieldPaths:
+          - spec.tls.*.hosts.*
+        options:
+          delimiter: "."
+          index: 1
+  # NOTE: the LoadBalancer-IP replacement is intentionally omitted in Phase 1.
+  # While on klipper servicelb no Service sets spec.loadBalancerIP. It will be
+  # reintroduced in Phase 2 with MetalLB (single VIP via cluster-config lan_lb_ip).
