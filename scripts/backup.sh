@@ -16,7 +16,9 @@ while IFS=$'\t' read -r namespace release; do
   safe="${namespace}__${release}"
   log "Capturing helm values for ${namespace}/${release}"
   helm get values "${release}" --namespace "${namespace}" --all > "${BACKUP_DIR}/helm-values/${safe}.yaml"
-done < <(helm list -A -o json | python3 -c 'import json,sys; [print(f"{r.get(\"namespace\",\"\")}\t{r.get(\"name\",\"\")}") for r in json.load(sys.stdin)]')
+done < <(helm list -A -o json | python3 -c "import json,sys
+for r in json.load(sys.stdin):
+    print(r.get('namespace','') + '\t' + r.get('name',''))")
 
 section "Capturing Kubernetes inventory"
 kubectl get all -A -o wide > "${BACKUP_DIR}/kubectl-get-all.txt"
