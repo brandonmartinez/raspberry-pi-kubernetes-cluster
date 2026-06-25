@@ -13,7 +13,7 @@ defaultSettings:
   # (e.g. power outage) that starves latency-sensitive pods like pihole FTL.
   concurrentReplicaRebuildPerNodeLimit: "1"
   createDefaultDiskLabeledNodes: true
-  defaultDataPath: "/media/data/longhorn" # cluster-specific: MOUNT_USB_MOUNT_PATH
+  defaultDataPath: "/media/data_ext/longhorn" # live cluster path (Longhorn Node disks + default-data-path Setting)
   # disabled (not best-effort): best-effort makes Longhorn continuously rebuild a
   # node-local replica whenever a pod is scheduled away from its replica. On slow
   # Pi disks this rebuild I/O wedges the workload (observed: pihole FTL stuck in
