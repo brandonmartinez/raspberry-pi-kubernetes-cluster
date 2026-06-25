@@ -37,6 +37,12 @@ defaultSettings:
   # replicas to "balance" nodes, which respawns replicas faster than they can be
   # trimmed and amplifies rebuild I/O. Keep manual control of replica placement.
   replicaAutoBalance: disabled
+  # Scheduling/space guardrails. These are real defaultSettings keys (they were
+  # previously mis-nested under longhornUI, where the chart silently ignored
+  # them). Values match the live cluster, so adopting is a no-op.
+  storageMinimalAvailablePercentage: "15"
+  storageOverProvisioningPercentage: "200"
+  storageReservedPercentageForDefaultDisk: "25"
 
 longhornManager:
   resources:
@@ -64,10 +70,6 @@ longhornUI:
     limits:
       cpu: 50m
       memory: 32Mi
-  reclaimPolicy: Retain
-  storageMinimalAvailablePercentage: "15"
-  storageOverProvisioningPercentage: "200"
-  storageReservedPercentageForDefaultDisk: "25"
 
 persistence:
   # Match defaultSettings.defaultDataLocality above: the longhorn StorageClass

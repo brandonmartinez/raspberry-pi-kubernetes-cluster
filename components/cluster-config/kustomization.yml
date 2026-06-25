@@ -11,8 +11,11 @@ kind: Component
 #     `cluster-config/suffix-tls: "true"` (replaces it in spec.tls[].hosts[]).
 #     Two annotations are used because Kustomize errors if it targets a
 #     spec.tls field on an Ingress that has no TLS block.
-#   * LoadBalancer IP: set `spec.loadBalancerIP: LAN_LB_IP` on the Service and
-#     annotate it `cluster-config/lan-lb-ip: "true"`.
+#   * LoadBalancer IP (Phase 2 / MetalLB only): with k3s klipper servicelb,
+#     LoadBalancer Services must NOT set spec.loadBalancerIP — klipper advertises
+#     the node IPs and the UDM-Pro points at those. The lan_lb_ip value below is
+#     retained for Phase 2, when MetalLB introduces a single VIP; at that point a
+#     replacement will re-enable the `cluster-config/lan-lb-ip` annotation.
 #   * Public (non-suffixed) hosts like bmtn.us are simply left un-annotated.
 #
 # Change a value here once; every opted-in resource updates on the next build.
@@ -23,7 +26,8 @@ configMapGenerator:
       disableNameSuffixHash: true
     literals:
       - hostname_suffix=home.arpa
-      - lan_lb_ip=192.168.1.100
+      # Phase 2 (MetalLB) only — unused while on klipper servicelb. See header.
+      - lan_lb_ip=192.168.52.100
       - acme_email=admin@home.arpa
       - tz=America/Detroit
       - puid=1000
@@ -59,14 +63,6 @@ replacements:
         options:
           delimiter: "."
           index: 1
-  # LoadBalancer IP, opt-in via annotation.
-  - source:
-      kind: ConfigMap
-      name: cluster-config
-      fieldPath: data.lan_lb_ip
-    targets:
-      - select:
-          kind: Service
-          annotationSelector: cluster-config/lan-lb-ip=true
-        fieldPaths:
-          - spec.loadBalancerIP
+  # NOTE: the LoadBalancer-IP replacement is intentionally omitted in Phase 1.
+  # While on klipper servicelb no Service sets spec.loadBalancerIP. It will be
+  # reintroduced in Phase 2 with MetalLB (single VIP via cluster-config lan_lb_ip).

@@ -66,8 +66,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pihole-dns-udp
-  annotations:
-    cluster-config/lan-lb-ip: "true"
 spec:
   ports:
     - name: 53-udp
@@ -76,14 +74,18 @@ spec:
       protocol: UDP
   externalTrafficPolicy: Cluster
   type: LoadBalancer
-  loadBalancerIP: LAN_LB_IP
 ---
+# House DNS :53 endpoints. Phase 1 matches live exactly: k3s klipper servicelb
+# advertises all node IPs (no loadBalancerIP, externalTrafficPolicy: Cluster), and
+# the UDM-Pro points at those node IPs. Do NOT add loadBalancerIP here while on
+# klipper — it does not match the live network and klipper ignores/mishandles it.
+# Phase 2 (docs/runbooks + rollout-plan): introduce MetalLB with a single VIP,
+# switch to externalTrafficPolicy: Local, and set the VIP via cluster-config
+# lan_lb_ip. See the DNS architecture section of the rollout plan.
 apiVersion: v1
 kind: Service
 metadata:
   name: pihole-dns-tcp
-  annotations:
-    cluster-config/lan-lb-ip: "true"
 spec:
   ports:
     - name: 53-tcp
@@ -92,4 +94,3 @@ spec:
       protocol: TCP
   externalTrafficPolicy: Cluster
   type: LoadBalancer
-  loadBalancerIP: LAN_LB_IP

@@ -17,6 +17,62 @@ Pi-hole is the home network DNS path and must be migrated last. The safe goal is
 - Push the Pi-hole Secret first with `scripts/sync-secrets.sh pihole` and confirm `pihole-secret` exists before syncing the workload.
 - Confirm the Service keeps the intended LoadBalancer IP.
 
+## Unbound namespace cutover (do this BEFORE migrating Pi-hole)
+
+Unbound is Pi-hole's primary upstream resolver. Live, it runs in the `pihole`
+namespace as `Service/unbound-service` with the fixed `clusterIP: 10.43.100.20`
+(Pi-hole config: `FTLCONF_dns_upstreams=10.43.100.20#53;1.1.1.1#53`). The GitOps
+repo moves unbound to its own `unbound` namespace **but keeps the same fixed
+ClusterIP**. A ClusterIP is unique cluster-wide, so the new Service cannot bind
+`10.43.100.20` until the old one is deleted — syncing the unbound app blind will
+fail with `provided IP is already allocated`.
+
+Pi-hole's secondary upstream `1.1.1.1#53` carries DNS during the brief gap, so
+there is no full outage — but keep the pre-staged fallback (above) active anyway.
+
+Ordered cutover:
+
+1. **Stage the new namespace without the Service.** Sync the `unbound` app's
+   namespace, configmap, Deployment, HPA, and PDB, but NOT `service.yml` yet
+   (e.g. selective sync, or temporarily drop `service.yml` from the app and add
+   it back in step 4). Wait until the new Pods are Ready:
+   ```sh
+   kubectl -n unbound rollout status deploy/unbound
+   kubectl -n unbound get pods -o wide   # confirm spread across nodes
+   ```
+2. **Confirm Pi-hole still resolves via the secondary upstream** (it is now
+   answering from `1.1.1.1` because `10.43.100.20` still points at the old
+   service, which we are about to remove):
+   ```sh
+   dig @<pihole-loadbalancer-ip> example.com A +short
+   ```
+3. **Free the ClusterIP** by deleting the OLD service in the `pihole` namespace:
+   ```sh
+   kubectl -n pihole delete svc unbound-service
+   ```
+   `10.43.100.20` is now unallocated; Pi-hole continues on `1.1.1.1`.
+4. **Bind the new Service** in the `unbound` namespace (sync `service.yml`).
+   Because the Pods are already Ready, endpoints populate immediately:
+   ```sh
+   kubectl -n unbound get svc unbound-service -o wide   # CLUSTER-IP 10.43.100.20
+   kubectl -n unbound get endpoints unbound-service     # non-empty
+   ```
+5. **Verify unbound answers on the reclaimed IP** and that Pi-hole's primary
+   upstream is healthy again:
+   ```sh
+   kubectl -n pihole exec deploy/pihole -- dig @10.43.100.20 example.com A +short
+   ```
+6. **Clean up the old workload** only after the new one is verified: remove the
+   leftover unbound Deployment/HPA/PDB still running in the `pihole` namespace
+   (the delete in step 3 only removed the Service). nebulasync moves to its own
+   `nebulasync` namespace too; it has no fixed ClusterIP so it can be synced
+   normally, but scale down the old copy in `pihole` once the new one is healthy
+   to avoid two instances writing the same shared state.
+
+Only after unbound is stable in its own namespace should you proceed to the
+Pi-hole workload migration below. Pi-hole itself stays in the `pihole` namespace,
+so its `10.43.100.20` upstream reference does not change.
+
 ## Migrate one change at a time
 
 1. Apply/sync only the next smallest change.

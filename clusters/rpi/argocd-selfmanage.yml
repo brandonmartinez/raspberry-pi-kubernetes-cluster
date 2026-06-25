@@ -14,9 +14,9 @@ spec:
   sources:
     - repoURL: https://argoproj.github.io/argo-helm
       chart: argo-cd
-      # Set to the chart version whose appVersion == the installed ArgoCD
-      # (bootstrap default v3.1.7). Adoption REQUIRES a match — see README.md.
-      targetRevision: "0.0.0-REPLACE-WITH-LIVE"
+      # Chart whose appVersion == the installed ArgoCD (bootstrap default
+      # v3.1.7 -> argo-cd chart 8.5.7). Adoption REQUIRES a match — see README.md.
+      targetRevision: "8.5.7"
       helm:
         valueFiles:
           - $values/platform/argocd/helm-values.yaml

@@ -3,9 +3,9 @@
 #
 # ADOPTION SAFETY (read docs/runbooks/bootstrap.md before first sync):
 #   * No `automated` block anywhere → every sync is manual until promoted.
-#   * Helm chart versions are FROZEN to the live cluster. Values marked
-#     REPLACE-WITH-LIVE must be filled from `helm list -A` / `helm get values`
-#     (captured by scripts/backup.sh) BEFORE syncing that Application.
+#   * Helm chart versions are FROZEN to the live cluster (filled from
+#     `helm list -A` / `helm get values`, captured by scripts/backup.sh).
+#     Re-confirm against live before syncing if time has passed.
 #   * Never `helm uninstall` an adopted release. Keep release name == metadata
 #     name and the namespace below identical to what is live today.
 #   * ServerSideApply avoids "metadata.annotations too long" on big CRDs/charts.
@@ -33,7 +33,7 @@ spec:
   sources:
     - repoURL: https://charts.jetstack.io
       chart: cert-manager
-      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n cert-manager
+      targetRevision: "v1.19.3" # live: helm list -n cert-manager (chart cert-manager-v1.19.3)
       helm:
         valueFiles:
           - $values/platform/cert-manager/helm-values.yaml
@@ -137,7 +137,7 @@ spec:
   sources:
     - repoURL: https://kubernetes-sigs.github.io/descheduler
       chart: descheduler
-      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # helm list -n kube-system
+      targetRevision: "0.34.0" # live: helm list -n kube-system (chart descheduler-0.34.0)
       helm:
         valueFiles:
           - $values/platform/descheduler/helm-values.yaml
@@ -167,7 +167,7 @@ spec:
   sources:
     - repoURL: https://prometheus-community.github.io/helm-charts
       chart: kube-prometheus-stack
-      targetRevision: "0.0.0-REPLACE-WITH-LIVE" # .env PROMETHEUS_CHART_VERSION / helm list -n monitoring
+      targetRevision: "82.1.1" # live: helm list -n monitoring (chart kube-prometheus-stack-82.1.1)
       helm:
         valueFiles:
           - $values/platform/monitoring/helm-values.yaml
