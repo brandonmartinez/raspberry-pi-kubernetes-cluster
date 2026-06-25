@@ -33,25 +33,36 @@ spec:
               cpu: "250m"
           # The legendary-bedrock-container auto-downloads + installs the latest
           # Bedrock server on every boot, then loads/migrates the ~6.7GB world.
-          # On a Pi this routinely exceeds 5+ minutes; a tight startup budget
-          # kills the container mid-migration and causes a restart loop. Give it
-          # a very generous budget (60 + 80*15 = 1260s ≈ 21 min).
+          # The server is x86_64 run under qemu emulation on ARM, so boot is slow
+          # (5-8 min). Give startup a very generous budget (60 + 80*15 = 1260s).
+          # Bedrock is UDP-ONLY (no TCP listener on 19120), so tcpSocket/httpGet
+          # probes can never succeed; use an exec probe that confirms the server
+          # is bound on UDP 19120.
           startupProbe:
-            tcpSocket:
-              port: 19120
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 80
           readinessProbe:
-            tcpSocket:
-              port: 19120
-            periodSeconds: 10
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
+            periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
-            tcpSocket:
-              port: 19120
+            exec:
+              command:
+                - sh
+                - -c
+                - "netstat -uln | grep -q ':19120 '"
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 5
