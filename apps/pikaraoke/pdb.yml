@@ -1,0 +1,11 @@
+# pikaraoke uses a Recreate strategy with a single PVC mount, so only one replica
+# can run at a time. minAvailable: 1 prevents accidental eviction during node maintenance.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pikaraoke-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: pikaraoke

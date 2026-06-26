@@ -21,4 +21,5 @@ resources:
   - deployment.yml
   - service.yml
   - pvc.yml
+  - pdb.yml
   - ingress.yml

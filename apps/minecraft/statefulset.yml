@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: minecraft
-          image: 05jchambers/legendary-bedrock-container:latest
+          image: 05jchambers/legendary-bedrock-container@sha256:ad94757c141b1c31dab9201fe382f7cf46b4540eec08947bd349b30e59d04caf
           tty: true
           stdin: true
           envFrom:

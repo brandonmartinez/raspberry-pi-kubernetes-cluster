@@ -1,0 +1,5 @@
+---
+# rpi001 has a USB SSD at /media/data_ext hosting Homebridge and Scrypted.
+# Set explicitly rather than relying on the mount_usb ternary in group_vars/all.yml
+# to prevent silent data relocation if USB-mount management changes.
+homebridge_data_dir: /media/data_ext/homebridge

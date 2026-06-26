@@ -95,10 +95,57 @@ High-level order:
 
 Use manual sync, prune off, self-heal off.
 
+> **⚠ ServerSideApply required for CRD-heavy apps.** A manually triggered
+> sync operation in ArgoCD does **not** inherit `spec.syncPolicy.syncOptions`
+> from the Application spec. For CRD-heavy apps — particularly `cert-manager`
+> and `monitoring` (kube-prometheus-stack) — you must pass `ServerSideApply=true`
+> explicitly, or the sync will fail with annotation-too-long errors on large CRDs.
+>
+> Via CLI:
+>
+> ```sh
+> argocd app sync <app-name> --server-side-apply
+> ```
+>
+> Via ArgoCD UI: **Synchronize → SYNC OPTIONS → Server-Side Apply ✔**
+
 ## 9. Sync apps
 
 Sync one app at a time. Verify health, Service endpoints, Ingress, and logs before moving on. Pi-hole is last; use [pihole-migration.md](pihole-migration.md).
 
-## 10. Add ArgoCD self-management last
+## 10. Bring ArgoCD under self-management (final step)
 
-Only after platform and apps are stable should ArgoCD manage itself. Until then, preserve the imperative install as the recovery path.
+Only after platform and apps are stable should ArgoCD manage itself. Until
+then, preserve the imperative install from `bootstrap/00-argocd.sh` as the
+recovery path.
+
+Apply the self-management Application:
+
+```sh
+kubectl apply -f clusters/rpi/argocd-selfmanage.yml
+```
+
+This creates the `argocd` Application in the `argocd` namespace. The
+`targetRevision` in `argocd-selfmanage.yml` **must** match the currently
+running ArgoCD chart version (see `platform/argocd/README.md`).
+
+ArgoCD will immediately detect the new Application. Sync it manually —
+passing `ServerSideApply=true` explicitly, since a manual sync operation
+does not inherit `spec.syncPolicy.syncOptions`:
+
+```sh
+argocd app sync argocd --server-side-apply
+```
+
+Verify it reconciles cleanly:
+
+```sh
+argocd app get argocd
+```
+
+> Do **not** enable `prune` or `selfHeal` on this Application.
+> `argocd-selfmanage.yml` omits both intentionally — keep it that way.
+
+ArgoCD is now GitOps-managed. Future ArgoCD upgrades are performed by
+updating the chart `targetRevision` in `clusters/rpi/argocd-selfmanage.yml`
+and syncing.

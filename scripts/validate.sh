@@ -171,7 +171,7 @@ warning_paths = {
 for dirpath, dirnames, filenames in os.walk(root):
     rel_dir = os.path.relpath(dirpath, root)
     parts = set(rel_dir.split(os.sep))
-    if parts & {'.git', '_backups', 'node_modules', '.terraform'}:
+    if parts & {'.git', '_backups', 'node_modules', '.terraform', '.copilot', '.squad'}:
         dirnames[:] = []
         continue
     for name in filenames:

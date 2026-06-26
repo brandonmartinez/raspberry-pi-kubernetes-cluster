@@ -15,7 +15,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: nginx
-          image: nginx:latest
+          image: nginx:1.31.2
           ports:
             - containerPort: 80
           volumeMounts:

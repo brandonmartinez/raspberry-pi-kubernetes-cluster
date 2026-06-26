@@ -24,7 +24,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: pihole
-          image: pihole/pihole:latest
+          image: pihole/pihole:2025.08.0
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
