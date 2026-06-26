@@ -107,6 +107,24 @@
     - base_apply | bool
     - base_remove_avahi | bool
 
+- name: Stat Bookworm boot cmdline path (/boot/firmware/cmdline.txt)
+  ansible.builtin.stat:
+    path: /boot/firmware/cmdline.txt
+  register: _base_cmdline_bookworm
+  changed_when: false
+  check_mode: false
+
+- name: Stat Bullseye boot cmdline path (/boot/cmdline.txt)
+  ansible.builtin.stat:
+    path: /boot/cmdline.txt
+  register: _base_cmdline_bullseye
+  changed_when: false
+  check_mode: false
+
+- name: Resolve boot cmdline path (Bookworm vs Bullseye)
+  ansible.builtin.set_fact:
+    base_cgroup_cmdline_path: "{{ '/boot/firmware/cmdline.txt' if _base_cmdline_bookworm.stat.exists else '/boot/cmdline.txt' }}"
+
 - name: Check boot cmdline for cgroup options
   ansible.builtin.slurp:
     path: "{{ base_cgroup_cmdline_path }}"

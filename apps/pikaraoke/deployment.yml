@@ -12,7 +12,7 @@ spec:
             claimName: pikaraoke-pvc
       containers:
         - name: pikaraoke
-          image: vicwomg/pikaraoke:latest
+          image: vicwomg/pikaraoke:1.19.0
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

@@ -1,0 +1,13 @@
+# minecraft is a single-replica StatefulSet. The Bedrock server requires exclusive
+# write access to its world PVC (ReadWriteOnce), so horizontal scaling is not
+# supported. minAvailable: 1 prevents accidental eviction; the world loads slowly
+# (~5-8 min under qemu emulation) so disruptions are high-cost.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: minecraft-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: minecraft

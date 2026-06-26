@@ -16,7 +16,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: unbound
-          image: mvance/unbound-rpi:latest
+          image: mvance/unbound-rpi:1.22.0
           ports:
             - name: svc-53-udp
               containerPort: 53

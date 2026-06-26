@@ -18,6 +18,7 @@ configMapGenerator:
       - .env
 
 resources:
+  - namespace.yml
   - statefulset.yml
   - service.yml
   - headless-service.yml
