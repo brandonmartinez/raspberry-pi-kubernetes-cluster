@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dnsdist
+spec:
+  # 3 replicas spread one-per-node. With externalTrafficPolicy: Local, MetalLB
+  # only announces the VIP from a node that has a ready dnsdist pod, so spreading
+  # across nodes gives automatic VIP failover. (ArgoCD ignores /spec/replicas via
+  # the apps ApplicationSet, so this is the initial count only.)
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    spec:
+      # Allow scheduling on the control-plane node so dnsdist can spread across
+      # all four nodes (matches chrony, the other LAN-facing UDP service).
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels: {}
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+      containers:
+        - name: dnsdist
+          image: powerdns/dnsdist-19:1.9.12
+          # No command: override — the image entrypoint runs dnsdist under tini
+          # (proper SIGTERM forwarding for graceful drain on pod termination).
+          # We only append flags; -C loads the mounted config explicitly.
+          args:
+            - --supervised
+            - --disable-syslog
+            - -C
+            - /etc/dnsdist/dnsdist.conf
+          securityContext:
+            capabilities:
+              # Bind privileged port 53 without running as root.
+              add:
+                - NET_BIND_SERVICE
+          ports:
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/dnsdist
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          startupProbe:
+            tcpSocket:
+              port: dns-tcp
+            failureThreshold: 30
+            periodSeconds: 2
+            timeoutSeconds: 3
+          readinessProbe:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 5
+      volumes:
+        - name: config
+          configMap:
+            name: dnsdist-config

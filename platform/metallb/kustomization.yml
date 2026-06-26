@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: metallb-system
+# helm-values.yaml is intentionally NOT listed here — it is consumed by the
+# `metallb` Helm Application, not kustomize. Only the MetalLB CRs belong here
+# (applied by the `metallb-config` Application once the CRDs exist).
+resources:
+  - ipaddresspool.yml
+  - l2advertisement.yml

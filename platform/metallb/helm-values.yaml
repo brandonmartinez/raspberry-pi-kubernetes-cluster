@@ -1,0 +1,55 @@
+# MetalLB (Layer 2 mode) — provides the single, stable home-network DNS VIP
+# (192.168.52.53) that the UDM-Pro hands to DHCP clients.
+#
+# WHY THIS COEXISTS WITH k3s klipper servicelb (no `--disable servicelb`, no
+# k3s restart, zero outage):
+#   - `loadBalancerClass` below pins MetalLB to ONLY claim Services that set
+#     `spec.loadBalancerClass: metallb.io/layer2`.
+#   - k3s klipper (>= v1.24) IGNORES any Service that sets a loadBalancerClass.
+#   So MetalLB owns exactly the dnsdist VIP Service, while chrony / minecraft /
+#   the legacy pihole DNS Services stay on klipper (node IPs), untouched.
+#
+# The IPAddressPool + L2Advertisement CRs are applied by the separate
+# `metallb-config` Application (platform/metallb/{ipaddresspool,l2advertisement}.yml)
+# in a later sync wave, after these CRDs exist.
+
+# Pin MetalLB to a dedicated loadBalancerClass so it never fights klipper over
+# the unclassed LoadBalancer Services (chrony, minecraft, legacy pihole DNS).
+loadBalancerClass: metallb.io/layer2
+
+# CRDs are installed by the chart (IPAddressPool, L2Advertisement, etc.).
+crds:
+  enabled: true
+
+# Layer 2 only — no BGP, so the frr-k8s backend stays off.
+frrk8s:
+  enabled: false
+
+controller:
+  logLevel: info
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+speaker:
+  logLevel: info
+  # L2 mode: speaker uses ARP, not FRR/BGP.
+  frr:
+    enabled: false
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Metrics wiring into kube-prometheus-stack can be enabled later once validated;
+# the ServiceMonitor CRD lives in the monitoring stack.
+prometheus:
+  serviceMonitor:
+    enabled: false

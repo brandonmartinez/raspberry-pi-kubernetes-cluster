@@ -14,10 +14,14 @@ spec:
         - labelSelector:
             matchLabels:
               app: pihole
-          maxSkew: 2
-          minDomains: 3
+          # One Pi-hole per node (repo HA convention). ScheduleAnyway avoids
+          # Pending pods when a node is briefly unavailable; with 3 replicas on a
+          # 4-node cluster this lands one-per-node. (Was maxSkew:2 +
+          # minDomains:3 + DoNotSchedule, which allowed 2 pods on one node and
+          # could leave a pod Pending.)
+          maxSkew: 1
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: pihole
           image: pihole/pihole:latest

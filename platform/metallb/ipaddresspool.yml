@@ -1,0 +1,22 @@
+---
+# The home-network DNS VIP. The UDM-Pro hands this address to DHCP clients as
+# their DNS server; MetalLB (L2) keeps it answering from a node that has a ready
+# dnsdist endpoint.
+#
+# 192.168.52.53 is reserved for this VIP (NOT .100 — that is the NAS). Keep this
+# in sync with `lan_lb_ip` in components/cluster-config/kustomization.yml, which
+# documents the same address for the rest of the repo.
+#
+# autoAssign:false means MetalLB only hands out .53 to a Service that explicitly
+# requests it (the dnsdist Service annotates
+# metallb.universe.tf/loadBalancerIPs: 192.168.52.53), so no stray LoadBalancer
+# can ever grab the DNS address.
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: dns-vip
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.52.53/32
+  autoAssign: false

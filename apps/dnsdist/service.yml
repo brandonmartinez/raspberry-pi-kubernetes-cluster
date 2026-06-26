@@ -1,0 +1,31 @@
+# The DNS VIP. MetalLB (L2) assigns 192.168.52.53 and announces it from a node
+# that currently runs a ready dnsdist pod.
+#
+# loadBalancerClass: metallb.io/layer2 is what makes this additive and zero-
+# outage — k3s klipper (>= v1.24) ignores any Service that sets a
+# loadBalancerClass, and MetalLB is pinned to this class (see
+# platform/metallb/helm-values.yaml), so the two LB controllers never collide.
+# The unclassed klipper LB Services (chrony, minecraft, legacy pihole DNS) are
+# untouched.
+apiVersion: v1
+kind: Service
+metadata:
+  name: dnsdist
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.52.53"
+    metallb.universe.tf/address-pool: dns-vip
+spec:
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/layer2
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: SingleStack
+  selector: {}
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: dns-udp
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: dns-tcp
+      protocol: TCP

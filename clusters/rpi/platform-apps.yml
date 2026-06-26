@@ -77,6 +77,59 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
 ---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metallb
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://metallb.github.io/metallb
+      chart: metallb
+      targetRevision: "0.15.2" # pin conservative-recent; bump via Renovate
+      helm:
+        valueFiles:
+          - $values/platform/metallb/helm-values.yaml
+    - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: metallb-system
+  # L2 LoadBalancer for the DNS VIP. Coexists with klipper via loadBalancerClass
+  # (see platform/metallb/helm-values.yaml). selfHeal/prune OFF during Phase 2.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metallb-config
+  namespace: argocd
+  # Wave 0: one wave AFTER the chart so the IPAddressPool / L2Advertisement CRDs
+  # exist before these CRs are applied.
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/metallb
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: metallb-system
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+---
 ##############################################################################
 # Wave 0: security (middlewares + ClusterIssuer + basic-auth), shared DB,
 #         descheduler.

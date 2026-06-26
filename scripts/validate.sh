@@ -77,6 +77,7 @@ helm_component() {
     longhorn) echo "longhorn|https://charts.longhorn.io|longhorn/longhorn|${LONGHORN_CHART_VERSION:-1.10.0}|longhorn-system" ;;
     descheduler) echo "descheduler|https://kubernetes-sigs.github.io/descheduler|descheduler/descheduler|${DESCHEDULER_CHART_VERSION:-}|kube-system" ;;
     monitoring) echo "prometheus-community|https://prometheus-community.github.io/helm-charts|prometheus-community/kube-prometheus-stack|${PROMETHEUS_CHART_VERSION:-}|monitoring" ;;
+    metallb) echo "metallb|https://metallb.github.io/metallb|metallb/metallb|${METALLB_CHART_VERSION:-0.15.2}|metallb-system" ;;
     *) return 1 ;;
   esac
 }

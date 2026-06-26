@@ -1,0 +1,13 @@
+---
+# Announce the DNS VIP pool over Layer 2 (gratuitous ARP). MetalLB elects one
+# node as the leader for the address; with the dnsdist Service set to
+# externalTrafficPolicy: Local, the leader is always a node that currently runs
+# a ready dnsdist pod, and failover is automatic if that node goes away.
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: dns-vip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - dns-vip
