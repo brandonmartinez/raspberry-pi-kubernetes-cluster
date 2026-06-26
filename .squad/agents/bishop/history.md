@@ -12,3 +12,12 @@ Secrets are referenced, never committed. Values live in 1Password (a Family acco
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+
+## Session: Post-Refactor Review + GitHub Tracking (2026-06-26)
+
+Completed: Full sensitive-information sweep. Working tree clean; all `secrets/templates/*.yaml` use `op://` references (sound). **Critical findings:** Two real credential values were found in git history (already cleared from the working tree). Specific identifiers (variable names + commit SHAs) are kept out of tracked files and held only in untracked review notes; both must be rotated immediately (P1, issue #23); git-history scrub deferred to Brandon (P1, requires force-push). **Scanner bug:** validate.sh produces 13 false positives from `.copilot/` and `.squad/templates/` paths; fix: add to path-skip list (P2, issue #32).
+
+Output: `files/review/bishop-security.md`. Security decisions + rotation actions merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
+
+Continuity: Agent history updated. Credentials rotation required before next production push.

@@ -12,3 +12,23 @@ Just completed a big refactor: k3s app deployment moved from a scripted pipeline
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+
+## Session: Post-Refactor Review + GitHub Tracking (2026-06-26)
+
+Completed: Deep Longhorn, MetalLB, Pi-hole DNS stack review. Longhorn config is Pi-tuned; **gap:** no recurring backup/trim jobs (RPO = "never") — need daily-backup (02:00, 7-day retention) + weekly-trim (Sun 03:00). MetalLB layer2 + klipper coexistence correct; legacy pihole klipper LB services should be removed post-UDM-Pro DHCP confirmation. **Critical:** pin pihole and unbound-rpi to semver tags (v5/v6 incompatibility is silent failure); add Orbital Sync CronJob for pihole gravity sync; add TLS to pihole admin ingresses.
+
+Output: `files/review/dallas-services.md` (P1: 4, P2: 7, P3: 4). All findings merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
+
+Continuity: Agent history updated. Coordination point with Parker (storage) on Longhorn volume health gating for ansible adoption.
+
+
+## Session: Existing-Issue Triage Follow-On (2026-06-26)
+
+Existing-issue triage completed and results merged into decisions.md. Coordinator (previous phase) closed #3, #10, #19. Your assigned backlog queue: 5 issues now enriched and moved to Feature Backlog milestone #2:
+- **#11** pihole-exporter / Prometheus metrics (P3)
+- **#13** Unpoller / UDM-Pro metrics (P3)
+- **#15** UniFi API Browser (P3)
+- **#18** Diun image update notifications (P3)
+
+Coordination point: also owns `.env.sample` rewrite decision (decision #4, P1 — coordinate with Lambert). No sprint contention on Feature Backlog.

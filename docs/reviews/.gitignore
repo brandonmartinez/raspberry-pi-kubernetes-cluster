@@ -1,0 +1,7 @@
+# Internal review reports are intentionally NOT committed.
+# This is a public repo; detailed internal analysis ("how the cookie is made") —
+# architecture deep-dives, security posture, potential weak points — stays local.
+# Keep this directory tracked (via this file + README) but ignore the reports.
+*
+!.gitignore
+!README.md

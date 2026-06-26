@@ -63,13 +63,13 @@ password is the exception — it is fanned out by the same script into every
 
 ### ⚠ Committed secrets to rotate during migration
 
-- `.env.sample` line `UPTIME_PASSWORD=trumpet-hedgehog-iceberg1!` is a
-  **real‑looking credential committed to git**. Rotate it and move it to the
-  1Password `uptime` item; the sample should contain only a placeholder.
-- `docker/scrypted.yml` hardcodes
-  `SCRYPTED_WEBHOOK_UPDATE_AUTHORIZATION` / `WATCHTOWER_HTTP_API_TOKEN`
-  (`balance-propane-epitaph-denier`). Local‑only token, but it is in git —
-  rotate and parameterize.
+- `.env.sample` previously contained a **real‑looking credential** for the
+  `uptime` item, committed to git. Rotate it and ensure the sample holds only a
+  placeholder; the value belongs in the 1Password `uptime` item. (Specific value
+  redacted from this tracked doc — tracked privately as issue #23.)
+- `docker/scrypted.yml` previously hardcoded the Scrypted/Watchtower webhook
+  token (local‑only, but committed to git). Rotate and parameterize it via
+  `docker/.env`. (Specific value redacted from this tracked doc — issue #23.)
 
 ---
 

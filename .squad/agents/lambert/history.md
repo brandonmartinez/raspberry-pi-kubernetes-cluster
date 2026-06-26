@@ -12,3 +12,12 @@ Just completed a big refactor (scripts → Ansible for provisioning, scripted pi
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+
+## Session: Post-Refactor Review + GitHub Tracking (2026-06-26)
+
+Completed: Assembled committed review documents from ripley, parker, dallas, bishop + coordinator. Created `docs/reviews/2026-06-26-repo-and-apps-review.md` (consolidated findings + 45 follow-ups, P1: 10, P2: 21, P3: 14) and `docs/hardware-inventory.md` (learner-friendly reference). Applied security redaction: no credential names, specific env vars from historical leaks, commit SHAs, or public IPs; RFC1918 LAN IPs retained as appropriate for public homelab repo. Rai privacy audit: 🟢 GREEN.
+
+Output: Two committed docs + consolidated follow-up list. Review completion merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
+
+Continuity: Agent history updated. Docs delivery complete; ready for next session sprint on platform/app hardening.

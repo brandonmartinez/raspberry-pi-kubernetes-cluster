@@ -12,3 +12,21 @@ Just completed a big refactor: OS + package management moved from custom scripts
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+
+## Session: Post-Refactor Review + GitHub Tracking (2026-06-26)
+
+Completed: Hardware inventory extraction + ansible/infra review. Inventory ~70% from repo; gaps require Brandon (RAM, USB drive model/capacity, mount device, k3s/OS versions). Identified critical gap: live cluster Longhorn uses `/media/data_ext/longhorn` but ansible storage role still has `/media/data`. Documented as hard constraint: do NOT run `adopt.yml --allow_disruptive` for storage role until mount path is aligned and verified.
+
+Output: `files/review/parker-hardware-infra.md`. Storage role decision merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
+
+Continuity: Agent history updated. Coordination point with Dallas (Longhorn) and Lambert (docs) on infra alignment before adopt.yml promotion.
+
+
+## Session: Existing-Issue Triage Follow-On (2026-06-26)
+
+Existing-issue triage completed and results merged into decisions.md. Coordinator (previous phase) closed #3, #10, #19. Your assigned backlog queue: 2 issues now enriched and moved to Feature Backlog milestone #2:
+- **#16** Plex Media Server (P3)
+- **#17** Jamulus Server (P3)
+
+Coordination point: storage role path alignment (decision #3, P1) is a hard gate for `adopt.yml` promotion — validate with Brandon + Dallas before proceeding. Feature Backlog issues are post-hardening scope.
