@@ -30,6 +30,37 @@ Use this when Git already contains the desired state but the app is not automate
 5. Run `argocd app diff <app>` until Git and live state agree.
 6. Re-enable self-heal only after the diff is intentional and clean.
 
+## DNS resolver fallback
+
+The LAN's DNS path is a single MetalLB Layer-2 VIP by design:
+
+```text
+UDM-Pro DHCP --> 192.168.52.53 (DNS VIP) --> dnsdist (3 replicas, health-checked)
+            --> Pi-hole --> unbound (split-horizon for themartinez.cloud)
+```
+
+One VIP is intentional. Node failure is already covered by MetalLB L2 failover
+(~10s, the VIP migrates to a healthy node). A *second* cluster VIP would not add
+resilience: it shares fate with the same dnsdist -> Pi-hole -> unbound stack, and
+clients do not fail over cleanly between two resolvers (OS-dependent, timeout-based).
+The ingress VIP `192.168.52.80` (Traefik) has the same single-VIP + MetalLB-failover
+model across its 2 spread replicas.
+
+If the entire cluster DNS path is down (or you are debugging it and need the LAN to
+keep resolving), temporarily point the UDM-Pro's DHCP DNS at a public resolver:
+
+1. UDM-Pro -> Settings -> Networks -> (LAN) -> DHCP -> DNS Server -> set `1.1.1.1`
+   (and `8.8.8.8`). Clients pick it up on lease renewal; bounce a client's link to
+   force it.
+2. Trade-off while failed over: you lose **split-horizon** (`*.themartinez.cloud`
+   resolves to the public IP, not the LAN ingress VIP) and **Pi-hole ad-blocking**.
+3. Revert the DHCP DNS to `192.168.52.53` once dnsdist/Pi-hole/unbound are healthy,
+   and bounce a client to confirm internal names resolve to `192.168.52.80` again.
+
+Keep this a *temporary* break-glass step, not a standing secondary DNS entry — a
+permanent public secondary would silently bypass split-horizon and ad-blocking for
+any client that races it.
+
 ## Diagnosis checklist
 
 ```sh
