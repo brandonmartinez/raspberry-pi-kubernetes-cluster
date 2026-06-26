@@ -21,3 +21,8 @@ Completed: Full sensitive-information sweep. Working tree clean; all `secrets/te
 Output: `files/review/bishop-security.md`. Security decisions + rotation actions merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
 
 Continuity: Agent history updated. Credentials rotation required before next production push.
+
+
+## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
+
+**PR #55 merged.** Security findings documented. Credentials rotation P1 for next session. validator.sh false-positive fix (issue #32) completed; `.copilot/` and `.squad/` added to path-skip.

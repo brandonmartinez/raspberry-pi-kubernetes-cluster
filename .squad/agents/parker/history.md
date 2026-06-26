@@ -30,3 +30,8 @@ Existing-issue triage completed and results merged into decisions.md. Coordinato
 - **#17** Jamulus Server (P3)
 
 Coordination point: storage role path alignment (decision #3, P1) is a hard gate for `adopt.yml` promotion — validate with Brandon + Dallas before proceeding. Feature Backlog issues are post-hardening scope.
+
+
+## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
+
+**PR #55 merged.** Hardware inventory extraction complete (rpi001–rpi004 live specs captured). **Critical findings:** rpi003 thermal throttling (78.4 °C, active events) — requires heatsink/fan; rpi001 USB mount undocumented in Ansible. Storage role path-mismatch constraint documented (hard gate: must align `/media/data_ext` + validate before `adopt.yml --allow_disruptive`). Ansible roles OS-conditional cgroup path (Bullseye/Bookworm, issues #50, #51) deployed. Ready for next coordination gate.

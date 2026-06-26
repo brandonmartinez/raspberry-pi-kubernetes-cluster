@@ -31,3 +31,8 @@ Existing-issue triage completed and results merged into decisions.md. Coordinato
 - **#20** k3s system-upgrade-controller (P3)
 
 No sprint contention; all Feature Backlog issues are post-hardening scope. Ready for pickup when milestone #1 wind-down begins.
+
+
+## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
+
+**PR #55 merged.** Global GitOps review complete; sync-wave annotation applied to apps ApplicationSet (#25). Triage results recorded. Feature Backlog milestone created; 9 enriched issues promoted (#7, #11, #13–#18, #20). Next: .env.sample rewrite coordination + Traefik CRD verification (decisions #1, #4).
