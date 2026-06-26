@@ -44,3 +44,29 @@ spec:
   addresses:
     - 192.168.52.80/32
   autoAssign: false
+---
+# The Minecraft Bedrock VIP. A dedicated Layer-2 address so the game server is
+# reachable on ONE stable IP that follows the pod across reschedules, instead of
+# the k3s klipper node IP (which changed whenever minecraft-0 moved nodes and
+# silently broke the WAN port-forward).
+#
+# 192.168.52.81 is reserved for this VIP (mnemonic: .81 sits right beside the
+# ingress VIP .80). Keep .81 outside the UDM-Pro DHCP lease range so it is never
+# double-assigned. autoAssign:false means only the minecraft Services that
+# explicitly request it (metallb.universe.tf/loadBalancerIPs: 192.168.52.81) can
+# claim it; the two Services co-locate on the one address via
+# metallb.universe.tf/allow-shared-ip.
+#
+# Mirror locations (update together):
+#   - platform/metallb/ipaddresspool.yml (this pool)
+#   - platform/metallb/l2advertisement.yml (minecraft-vip advertisement)
+#   - apps/minecraft/service.yml (loadBalancerIPs on both Services)
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: minecraft-vip
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.52.81/32
+  autoAssign: false

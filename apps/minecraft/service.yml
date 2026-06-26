@@ -1,25 +1,64 @@
+# Minecraft Bedrock LAN/WAN VIP. A dedicated MetalLB Layer-2 address
+# (192.168.52.81) so the game server is reachable on ONE stable IP that follows
+# the pod across reschedules — instead of the k3s klipper node IP (which changed
+# whenever minecraft-0 moved nodes and silently broke the WAN port-forward).
+#
+# Two Services (UDP + TCP) share the single VIP via
+# metallb.universe.tf/allow-shared-ip: "minecraft". Bedrock is UDP/19132; the TCP
+# port is kept for parity with the previous setup. Both select the same pod, so
+# MetalLB announces .81 from whichever node runs minecraft-0, and
+# externalTrafficPolicy: Local preserves the real client source IP.
+#
+# loadBalancerClass: metallb.io/layer2 hands these to MetalLB and keeps k3s
+# klipper out (klipper ignores any Service that sets a loadBalancerClass) — the
+# same mechanism as the DNS (.53) and ingress (.80) VIPs.
+#
+# NOTE: loadBalancerClass is IMMUTABLE. Migrating the pre-existing klipper
+# Services onto MetalLB requires deleting and recreating them ONCE:
+#   kubectl delete svc minecraft-19132-tcp minecraft-19132-udp -n minecraft
+# then re-sync this app (Argo recreates them on .81). Brief reconnect only.
+#
+# WAN access: point the UniFi/Frontier port-forward (WAN 31588 -> 19132) at
+# 192.168.52.81 — NOT the ingress VIP .80 (that VIP only serves Traefik 80/443).
+#
+# VIP mirror locations (update together):
+#   - platform/metallb/ipaddresspool.yml (minecraft-vip pool)
+#   - platform/metallb/l2advertisement.yml (minecraft-vip advertisement)
+#   - this file (metallb.universe.tf/loadBalancerIPs on both Services)
 apiVersion: v1
 kind: Service
 metadata:
   name: minecraft-19132-udp
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.52.81"
+    metallb.universe.tf/address-pool: minecraft-vip
+    metallb.universe.tf/allow-shared-ip: "minecraft"
 spec:
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/layer2
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: SingleStack
   ports:
     - name: 19132-udp
       port: 19132
       targetPort: 19120
       protocol: UDP
-  externalTrafficPolicy: Local
-  type: LoadBalancer
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: minecraft-19132-tcp
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.52.81"
+    metallb.universe.tf/address-pool: minecraft-vip
+    metallb.universe.tf/allow-shared-ip: "minecraft"
 spec:
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/layer2
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: SingleStack
   ports:
     - name: 19132-tcp
       port: 19132
       targetPort: 19120
       protocol: TCP
-  externalTrafficPolicy: Local
-  type: LoadBalancer

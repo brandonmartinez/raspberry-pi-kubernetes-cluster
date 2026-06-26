@@ -20,7 +20,7 @@ kind: Component
 #       - components/cluster-config/kustomization.yml (lan_lb_ip, below)
 #       - platform/metallb/ipaddresspool.yml
 #       - apps/dnsdist/service.yml (metallb.universe.tf/loadBalancerIPs)
-#     The unclassed klipper LB Services (chrony, minecraft, legacy pihole DNS)
+#     The unclassed klipper LB Services (chrony, legacy pihole DNS)
 #     still advertise node IPs and are unaffected.
 #   * Ingress VIP (ingress_lb_ip): a second MetalLB Layer-2 VIP that fronts
 #     Traefik so internal *.themartinez.cloud names resolve to ONE always-live IP

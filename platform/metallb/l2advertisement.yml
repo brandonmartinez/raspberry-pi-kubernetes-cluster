@@ -25,3 +25,16 @@ metadata:
 spec:
   ipAddressPools:
     - ingress-vip
+---
+# Announce the Minecraft VIP pool over Layer 2. The two minecraft Services use
+# externalTrafficPolicy: Local and select the same single pod, so MetalLB
+# announces .81 from whichever node currently runs minecraft-0 and migrates it on
+# reschedule/failure (gratuitous ARP).
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: minecraft-vip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - minecraft-vip

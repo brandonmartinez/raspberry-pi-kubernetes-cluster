@@ -5,7 +5,7 @@
 # outage — k3s klipper (>= v1.24) ignores any Service that sets a
 # loadBalancerClass, and MetalLB is pinned to this class (see
 # platform/metallb/helm-values.yaml), so the two LB controllers never collide.
-# The unclassed klipper LB Services (chrony, minecraft, legacy pihole DNS) are
+# The unclassed klipper LB Services (chrony, legacy pihole DNS) are
 # untouched.
 apiVersion: v1
 kind: Service
