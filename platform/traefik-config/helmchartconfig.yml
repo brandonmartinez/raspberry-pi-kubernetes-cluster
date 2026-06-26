@@ -1,0 +1,45 @@
+---
+# HA tuning for the k3s-managed Traefik ingress.
+#
+# k3s installs Traefik via a HelmChart addon; a HelmChartConfig with the SAME
+# name/namespace is the supported way to customize it without the addon
+# controller reverting the change. Its valuesContent is DEEP-MERGED on top of the
+# k3s default HelmChart values (tolerations, image pin, providers, etc.), so this
+# file only adds the HA bits and leaves the k3s defaults intact.
+#
+# Why: Traefik shipped as a single replica — a single point of failure for ALL
+# ingress and incompatible with externalTrafficPolicy: Local on the ingress VIP
+# (Local only announces from a node that runs a ready Traefik pod). Two spread
+# replicas give node-failure tolerance and let the MetalLB ingress VIP (.80)
+# fail over between the two Traefik nodes.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # Two replicas so ingress survives a node loss. Spread across hostnames with
+    # ScheduleAnyway (per repo HA guidance) so they land on different nodes but
+    # still schedule on a constrained cluster.
+    deployment:
+      replicas: 2
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: traefik
+    # Keep at least one Traefik pod during node drains / rolling updates.
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+    # Modest footprint for a Raspberry Pi; Traefik idles well under these.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi

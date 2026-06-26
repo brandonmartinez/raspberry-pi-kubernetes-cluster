@@ -6,4 +6,5 @@ kind: Kustomization
 # existing Traefik pods. See ingress-vip-service.yml for the full rationale.
 namespace: kube-system
 resources:
+  - helmchartconfig.yml
   - ingress-vip-service.yml
