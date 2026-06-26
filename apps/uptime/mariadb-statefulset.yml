@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: uptime-mariadb
+spec:
+  # HA limitation: MariaDB requires exclusive access to the data directory and
+  # cannot hot-standby on a single RWO Longhorn volume. Single replica is by
+  # design. A PDB below prevents accidental eviction. Backups are handled by
+  # Longhorn RecurringJobs (backup-default + snapshot-default in 'default' group).
+  serviceName: uptime-mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      component: mariadb
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: mariadb
+    spec:
+      securityContext:
+        fsGroup: 999  # mysql group inside the official mariadb image
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: uptime-mariadb-pvc
+      containers:
+        - name: mariadb
+          image: mariadb:11.4.12  # LTS; arm64/v8 confirmed on Docker Hub 2026-06-26
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-secret
+                  key: MARIADB_ROOT_PASSWORD
+            - name: MARIADB_DATABASE
+              value: uptime_kuma
+            - name: MARIADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-secret
+                  key: MARIADB_USER
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-secret
+                  key: MARIADB_PASSWORD
+          ports:
+            - name: 3306-tcp
+              containerPort: 3306
+              protocol: TCP
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          # healthcheck.sh is shipped in all official mariadb images (>= 10.3).
+          # --connect verifies the socket/port is accepting connections;
+          # --innodb_initialized confirms InnoDB is fully started.
+          startupProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 12  # up to 2 minutes for first start
+          readinessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5

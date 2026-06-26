@@ -2,8 +2,10 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: uptime-pdb
-  # Single replica by design (SQLite/local storage); PDB prevents accidental eviction
+  # Single replica by design (external MariaDB; uptime-kuma itself is not multi-instance);
+  # PDB prevents accidental eviction during node drains/rolling updates.
 spec:
   minAvailable: 1
   selector:
-    matchLabels: {}
+    matchLabels:
+      component: kuma

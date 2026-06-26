@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptime-mariadb-pvc
+  labels:
+    # Explicit Longhorn default recurring-job group membership.
+    # Longhorn also auto-assigns the 'default' group to volumes with no
+    # recurring-job labels, so this is defense-in-depth to guarantee coverage
+    # (daily backup at 08:00 UTC, daily snapshot at 02:00 UTC).
+    recurring-job-group.longhorn.io/default: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn  # Longhorn for snapshot/backup via RecurringJobs
+  resources:
+    requests:
+      storage: 5Gi
