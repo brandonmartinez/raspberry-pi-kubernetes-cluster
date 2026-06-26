@@ -13,11 +13,13 @@
 #     this class. The original klipper Traefik Service (node IPs .110-.113) stays
 #     fully intact as an instant rollback path.
 #
-# externalTrafficPolicy: Cluster — Traefik runs a single replica, so Cluster lets
-# the VIP float to any healthy node (kube-proxy forwards to the Traefik pod
-# wherever it is). Trade-off: the client source IP is SNAT'd to the leader node.
-# To preserve real client IPs, first scale Traefik to >=2 replicas (a HelmChart-
-# Config change) and then switch this to Local.
+# externalTrafficPolicy: Local — Traefik runs 2 spread replicas (see
+# helmchartconfig.yml), so Local preserves the real client source IP: MetalLB
+# announces the VIP only from a node that has a READY Traefik endpoint, and
+# kube-proxy hands the connection straight to that node's local Traefik pod with
+# no SNAT. On node failure the VIP migrates to the other Traefik node (~10s).
+# (Cluster would SNAT the source IP to the leader node; it was used only while
+# Traefik was a single replica.)
 #
 # VIP mirror locations (update all three together — see cluster-config header):
 #   - components/cluster-config/kustomization.yml (ingress_lb_ip)
@@ -34,7 +36,7 @@ metadata:
 spec:
   type: LoadBalancer
   loadBalancerClass: metallb.io/layer2
-  externalTrafficPolicy: Cluster
+  externalTrafficPolicy: Local
   ipFamilyPolicy: SingleStack
   selector:
     app.kubernetes.io/name: traefik

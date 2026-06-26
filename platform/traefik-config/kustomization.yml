@@ -1,9 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Traefik is the k3s-managed ingress controller in kube-system. This stack does
-# NOT manage the Traefik chart/Deployment (k3s owns that via its HelmChart
-# addon); it only adds the additive MetalLB ingress VIP Service that fronts the
-# existing Traefik pods. See ingress-vip-service.yml for the full rationale.
+# Traefik is the k3s-managed ingress controller in kube-system. k3s owns the
+# Traefik Deployment via its HelmChart addon; this stack tunes that chart through
+# a HelmChartConfig (HA replicas/PDB/resources — helmchartconfig.yml, deep-merged
+# over the k3s defaults) and adds the additive MetalLB ingress VIP Service that
+# fronts the Traefik pods (ingress-vip-service.yml). ArgoCD owns only these CRs;
+# the k3s helm-controller still reconciles the resulting Deployment.
 namespace: kube-system
 resources:
   - helmchartconfig.yml
