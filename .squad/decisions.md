@@ -123,6 +123,40 @@ Triaged 12 pre-existing open issues against current repo state and 31 new issues
 
 ---
 
+### 7. Hardware Inventory Live-Fill & Thermal/Mount Findings (Parker, 2026-06-26)
+
+**Author:** Parker | **Date:** 2026-06-26 | **Status:** Completed + Action Items Identified
+
+Updated `docs/hardware-inventory.md` with real values gathered live from the cluster (read-only inspection only).
+
+**Per-Node Summary:**
+- rpi001: Pi 4B 8GB, SanDisk SSD PLUS 240GB @ `/media/data_ext` (Docker/k3s, 26% used)
+- rpi002: Pi 4B 4GB, SanDisk Extreme Pro ~256GB @ `/media/data_ext` (Longhorn, 14% used)
+- rpi003: Pi 4B 4GB, SanDisk Extreme Pro ~256GB @ `/media/data_ext` (Longhorn, 30% used)
+- rpi004: Pi 4B 4GB, SanDisk SSD PLUS 240GB @ `/media/data_ext` (Longhorn, 29% used)
+
+All Bullseye (not Bookworm), kernel 6.1.21-v8+, SanDisk SR32G 32GB SD cards.
+
+**CRITICAL — rpi003 Thermal Throttling (NEW-1):**
+- At inspection: **78.4 °C** (threshold ~80 °C), `vcgencmd get_throttled` = `0xe0000` (soft temp limit, arm freq capped, throttling events)
+- rpi003 hosts 5 Longhorn PVCs + Prometheus StatefulSet (25 GB) — heaviest load
+- **Action:** Add heatsink/fan to rpi003 or redistribute Longhorn workloads. Thermal events may cause unnecessary replica timeouts/rebuilds.
+
+**CRITICAL — rpi001 USB Mount Undocumented in Ansible (NEW-2):**
+- rpi001 has `/dev/sda1` at `/media/data_ext` but `group_vars/all.yml` still sets `mount_usb: false`
+- Extends existing F-02 finding to control-plane node. rpi001 USB is NOT Ansible-managed.
+
+**MEDIUM — Inconsistent USB Mount Options (NEW-4):**
+- rpi001/rpi004: `stripe=8191` mount option (manual tune)
+- rpi002/rpi003: plain `rw,nosuid,nodev,relatime`
+- **Action:** Investigate performance impact once mounts are Ansible-managed.
+
+**Confirmed:** Issue #52 (HDD vs SSD) RESOLVED — all drives are SSDs; ROTA quirk is USB-bridge kernel behavior.
+
+**Data Audit:** No secrets, tokens, passwords, serial numbers, MAC addresses, or public IPs in inventory. LAN IPs (192.168.52.x) retained.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

@@ -11,15 +11,28 @@ spec:
       targetPort: 123
       protocol: UDP
 ---
+# The NTP VIP. MetalLB (L2) assigns 192.168.52.54 and announces it from a node
+# that currently runs a ready chrony pod. This is additive to the klipper
+# pattern (see platform/metallb/helm-values.yaml): loadBalancerClass pins this
+# Service to MetalLB, so klipper ignores it and there is no controller collision.
+#
+# OPERATOR ACTION REQUIRED on sync: after ArgoCD syncs this change, point any
+# NTP client or DHCP option that references the old klipper node IPs
+# (192.168.52.110/112) to 192.168.52.54 instead.
 apiVersion: v1
 kind: Service
 metadata:
   name: chrony-ntp-udp
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.52.54"
+    metallb.universe.tf/address-pool: ntp-vip
 spec:
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/layer2
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: SingleStack
   ports:
     - name: 123-udp
       port: 123
       targetPort: 123
       protocol: UDP
-  externalTrafficPolicy: Local
-  type: LoadBalancer

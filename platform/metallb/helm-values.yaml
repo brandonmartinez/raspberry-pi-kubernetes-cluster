@@ -14,7 +14,9 @@
 # in a later sync wave, after these CRDs exist.
 
 # Pin MetalLB to a dedicated loadBalancerClass so it never fights klipper over
-# the unclassed LoadBalancer Services (chrony, minecraft, legacy pihole DNS).
+# the unclassed LoadBalancer Services (minecraft, legacy pihole DNS).
+# chrony-ntp-udp now uses loadBalancerClass: metallb.io/layer2 (issue #43) and
+# is claimed by MetalLB; only the legacy pihole DNS Services stay on klipper.
 loadBalancerClass: metallb.io/layer2
 
 # CRDs are installed by the chart (IPAddressPool, L2Advertisement, etc.).
@@ -40,6 +42,17 @@ speaker:
   # L2 mode: speaker uses ARP, not FRR/BGP.
   frr:
     enabled: false
+  # Allow the speaker DaemonSet to run on the control-plane node (rpi001) so
+  # the VIP leader pool includes it. Live taints on rpi001:
+  #   node-role.kubernetes.io/master:NoSchedule
+  #   node-role.kubernetes.io/control-plane:NoSchedule
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   resources:
     requests:
       cpu: 25m

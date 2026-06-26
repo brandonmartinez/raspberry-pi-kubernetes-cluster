@@ -16,6 +16,11 @@ configMapGenerator:
   - name: pihole-configmap
     envs:
       - .env
+  - name: pihole-gravity-sync-script
+    options:
+      disableNameSuffixHash: true
+    files:
+      - sync.py=gravity-sync.py
 
 resources:
   - namespace.yml
@@ -24,3 +29,4 @@ resources:
   - headless-service.yml
   - poddisruptionbudget.yml
   - ingress.yml
+  - gravity-sync.yml

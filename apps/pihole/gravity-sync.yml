@@ -1,0 +1,64 @@
+# Gravity sync CronJob: pulls the Pi-hole v6 Teleporter backup from pihole-0
+# (primary) and restores it to pihole-1 and pihole-2 (secondaries) every 6h.
+#
+# WHY NOT Orbital Sync: ghcr.io/mattwebbio/orbital-sync was archived March 2025
+# without Pi-hole v6 support. This CronJob replaces it using the v6 REST API
+# directly (see gravity-sync.py in the pihole-gravity-sync-script ConfigMap).
+#
+# OPERATOR INIT STEPS (for Lambert: document in #48):
+#   On first-sync or after a pod is recreated from scratch, run the CronJob
+#   manually to seed the new pod's gravity database before traffic reaches it:
+#     kubectl create job -n pihole gravity-sync-manual \
+#       --from=cronjob/pihole-gravity-sync
+#     kubectl wait -n pihole --for=condition=Complete job/gravity-sync-manual \
+#       --timeout=120s
+#     kubectl delete job -n pihole gravity-sync-manual
+#   The Pi-hole readinessProbe gates pod traffic on DNS functioning, so a replica
+#   with an empty gravity database is safe but will not block any ads until the
+#   sync completes and gravity is loaded (FTL restart happens automatically after
+#   the Teleporter import).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pihole-gravity-sync
+spec:
+  # Every 6 hours keeps replicas within hours of the primary's blocklists.
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: gravity-sync
+              # python:3.12-alpine3.21 — multi-arch (linux/arm64 for RPi 4B),
+              # stdlib-only (no pip install needed), minimal image.
+              image: python:3.12-alpine3.21
+              command:
+                - python3
+                - /scripts/sync.py
+              env:
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-secret
+                      key: FTLCONF_webserver_api_password
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "32Mi"
+                  cpu: "10m"
+                limits:
+                  memory: "64Mi"
+                  cpu: "100m"
+          volumes:
+            - name: scripts
+              configMap:
+                name: pihole-gravity-sync-script

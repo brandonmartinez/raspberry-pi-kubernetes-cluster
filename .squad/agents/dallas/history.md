@@ -32,3 +32,8 @@ Existing-issue triage completed and results merged into decisions.md. Coordinato
 - **#18** Diun image update notifications (P3)
 
 Coordination point: also owns `.env.sample` rewrite decision (decision #4, P1 — coordinate with Lambert). No sprint contention on Feature Backlog.
+
+
+## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
+
+**PR #55 merged.** DNS/storage/networking review complete. Longhorn: backup/trim jobs gap identified (daily-backup + weekly-trim needed); default config (replicas=3, Retain) correct. Pi-hole: critical findings: pin versions (pihole v5/v6 incompatibility), add Orbital Sync CronJob, add TLS to admin ingresses; dnsdist PDB minAvailable raised to 2 (issues #26, #33–#36, #39). Feature Backlog: 5 issues promoted (#11, #13, #15, #18 + existing). .env.sample rewrite coordination point with Lambert. Ready for next platform hardening sprint.

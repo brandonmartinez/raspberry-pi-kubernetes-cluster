@@ -21,3 +21,8 @@ Completed: Assembled committed review documents from ripley, parker, dallas, bis
 Output: Two committed docs + consolidated follow-up list. Review completion merged into `decisions.md`. GitHub milestone #1 now tracks 32 issues (#22–#53).
 
 Continuity: Agent history updated. Docs delivery complete; ready for next session sprint on platform/app hardening.
+
+
+## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
+
+**PR #55 merged.** Documentation complete: `docs/reviews/` + `docs/hardware-inventory.md` shipped (security-redacted, privacy audit: GREEN). .env.sample rewrite coordinated (issue #47); bootstrap.md ServerSideApply final step documented (issue #47). Review findings consolidated; 45 follow-ups tracked in decisions.md. Ready for next session hardening sprint.

@@ -3,7 +3,10 @@ kind: Ingress
 metadata:
   name: pihole-ingress
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
     cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
 spec:
   ingressClassName: traefik
   rules:
@@ -24,13 +27,20 @@ spec:
                 name: pihole-ui-svc
                 port:
                   name: 80-tcp
+  tls:
+    - secretName: pihole-tls
+      hosts:
+        - pihole.SUFFIX
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-0-ingress
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
     cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
 spec:
   ingressClassName: traefik
   rules:
@@ -51,13 +61,20 @@ spec:
                 name: pihole-0-ui-svc
                 port:
                   name: 80-tcp
+  tls:
+    - secretName: pihole-0-tls
+      hosts:
+        - pihole-0.SUFFIX
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-1-ingress
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
     cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
 spec:
   ingressClassName: traefik
   rules:
@@ -78,13 +95,20 @@ spec:
                 name: pihole-1-ui-svc
                 port:
                   name: 80-tcp
+  tls:
+    - secretName: pihole-1-tls
+      hosts:
+        - pihole-1.SUFFIX
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-2-ingress
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: security-redirect-https@kubernetescrd
     cluster-config/suffix-host: "true"
+    cluster-config/suffix-tls: "true"
 spec:
   ingressClassName: traefik
   rules:
@@ -105,3 +129,7 @@ spec:
                 name: pihole-2-ui-svc
                 port:
                   name: 80-tcp
+  tls:
+    - secretName: pihole-2-tls
+      hosts:
+        - pihole-2.SUFFIX

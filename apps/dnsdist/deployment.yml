@@ -65,20 +65,32 @@ spec:
               memory: "256Mi"
               cpu: "500m"
           startupProbe:
-            tcpSocket:
-              port: dns-tcp
+            # No DNS client (dig/drill/nslookup/nc) is shipped in
+            # powerdns/dnsdist-19:1.9.12. Bash IS present; /dev/tcp exercises
+            # the kernel TCP stack to confirm dnsdist is accepting connections.
+            exec:
+              command:
+                - bash
+                - -c
+                - "echo > /dev/tcp/127.0.0.1/53"
             failureThreshold: 30
             periodSeconds: 2
             timeoutSeconds: 3
           readinessProbe:
-            tcpSocket:
-              port: dns-tcp
+            exec:
+              command:
+                - bash
+                - -c
+                - "echo > /dev/tcp/127.0.0.1/53"
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           livenessProbe:
-            tcpSocket:
-              port: dns-tcp
+            exec:
+              command:
+                - bash
+                - -c
+                - "echo > /dev/tcp/127.0.0.1/53"
             periodSeconds: 30
             timeoutSeconds: 3
             failureThreshold: 5

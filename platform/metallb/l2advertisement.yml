@@ -26,6 +26,18 @@ spec:
   ipAddressPools:
     - ingress-vip
 ---
+# Announce the NTP VIP pool over Layer 2. With externalTrafficPolicy: Local on
+# chrony-ntp-udp, MetalLB elects a node that runs a ready chrony pod as the
+# ARP leader, giving automatic failover on pod/node failure.
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: ntp-vip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - ntp-vip
+---
 # Announce the Minecraft VIP pool over Layer 2. The two minecraft Services use
 # externalTrafficPolicy: Local and select the same single pod, so MetalLB
 # announces .81 from whichever node currently runs minecraft-0 and migrates it on
