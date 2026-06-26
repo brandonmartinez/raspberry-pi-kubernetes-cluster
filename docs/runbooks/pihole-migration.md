@@ -102,3 +102,11 @@ so its `10.43.100.20` upstream reference does not change.
 5. Reconcile Git with the rollback before enabling automation.
 
 Pi-hole should be promoted to auto-sync/self-heal only after multiple clean syncs and an explicit operator decision.
+
+## Gravity sync after migration
+
+Once all three Pi-hole replicas are running, trigger an initial gravity sync
+immediately so all pods share the same blocklists and settings:
+
+See [pihole-gravity-sync.md](./pihole-gravity-sync.md) for the manual trigger
+procedure and full details of the CronJob architecture.

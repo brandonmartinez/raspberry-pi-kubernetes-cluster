@@ -44,4 +44,5 @@ ArgoCD starts observed-only: no automated sync is committed initially. See [docs
 - Bootstrap order: [docs/runbooks/bootstrap.md](docs/runbooks/bootstrap.md)
 - Break-glass operations: [docs/runbooks/break-glass.md](docs/runbooks/break-glass.md)
 - Pi-hole migration: [docs/runbooks/pihole-migration.md](docs/runbooks/pihole-migration.md)
+- Pi-hole gravity sync: [docs/runbooks/pihole-gravity-sync.md](docs/runbooks/pihole-gravity-sync.md)
 - Disaster recovery: [docs/runbooks/disaster-recovery.md](docs/runbooks/disaster-recovery.md)
