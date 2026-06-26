@@ -55,7 +55,7 @@ Each worker node has an external USB SSD mounted at `/media/data_ext`. Longhorn 
 | `rpi004` | `/dev/sda` → `/dev/sda1` | `/media/data_ext` | ext4 | 229 GB usable (232.9 GB raw) | ~63 GB used (29 %) | Longhorn default data path: `/media/data_ext/longhorn` | Manual (not yet Ansible-managed) |
 | all nodes | — | `/clusterfs` | — | — | — | Ansible-provisioned shared cluster directory (purpose TBD) | Ansible `storage` role |
 
-**Off-cluster NAS (Longhorn backup target):** `192.168.52.100` — NFS share at `/rpi/longhorn/` (configured in `platform/longhorn/helm-values.yaml` as `backupTarget`). Longhorn recurring jobs confirm backups are active: daily backup (08:00, retain 10) and daily snapshot (02:00, retain 7). Not managed by this repo.
+**Off-cluster NAS (Longhorn backup target):** `192.168.52.100` — NFS share at `/rpi/longhorn/` (configured in `platform/longhorn/helm-values.yaml` as `backupTarget`). Longhorn **RecurringJobs are active in the live cluster** — daily backup (08:00, retain 10) and daily snapshot (02:00, retain 7) — so the real RPO is ~1 day, **not** "never". However, these jobs are **not codified in this repo** (GitOps drift: they would be lost on a Longhorn reinstall). Codifying them is tracked in issue #29. The NAS appliance itself is not managed by this repo.
 
 ### USB drive models
 
@@ -78,7 +78,7 @@ All nodes are on a single flat `/24` LAN with no VLAN segmentation between clust
 | Router / DHCP | Ubiquiti UDM-Pro | `platform/metallb/helm-values.yaml`, `docs/runbooks/break-glass.md` |
 | k3s API endpoint | `https://192.168.52.110:6443` | `ansible/roles/k3s_agent/defaults/main.yml` |
 | DNS fallback (nodes) | `8.8.8.8`, `8.8.4.4` | `ansible/inventory/group_vars/all.yml` |
-| Networking interface management | NetworkManager (Bookworm default) | `ansible/roles/base/tasks/main.yml` |
+| Networking interface management | `dhcpcd` (active) + `networking`; **not** NetworkManager | Live: `systemctl is-active` on rpi002, 2026-06-26 (Bullseye default) |
 | MetalLB mode | Layer 2 (gratuitous ARP) | `platform/metallb/l2advertisement.yml` |
 | NAS (NFS backup) | `192.168.52.100` | `platform/longhorn/helm-values.yaml` |
 | Hostname suffix | `themartinez.cloud` | `components/cluster-config/kustomization.yml` |
