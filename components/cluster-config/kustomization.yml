@@ -22,6 +22,16 @@ kind: Component
 #       - apps/dnsdist/service.yml (metallb.universe.tf/loadBalancerIPs)
 #     The unclassed klipper LB Services (chrony, minecraft, legacy pihole DNS)
 #     still advertise node IPs and are unaffected.
+#   * Ingress VIP (ingress_lb_ip): a second MetalLB Layer-2 VIP that fronts
+#     Traefik so internal *.themartinez.cloud names resolve to ONE always-live IP
+#     with automatic node failover, instead of round-robining the four node IPs.
+#     Mirrored (not replaced) the same way as the DNS VIP — update all three:
+#       - components/cluster-config/kustomization.yml (ingress_lb_ip, below)
+#       - platform/metallb/ipaddresspool.yml (ingress-vip pool)
+#       - platform/traefik-config/ingress-vip-service.yml (loadBalancerIPs)
+#     unbound's split-horizon local-data (apps/unbound/a-records.conf) points the
+#     suffix zone at this address. The original klipper Traefik Service (node IPs)
+#     is left intact as a rollback path.
 #   * Public (non-suffixed) hosts like bmtn.us are simply left un-annotated.
 #
 # Change a value here once; every opted-in resource updates on the next build.
@@ -35,6 +45,10 @@ configMapGenerator:
       # MetalLB DNS VIP. Mirrored (not replaced) into platform/metallb and
       # apps/dnsdist — see the DNS VIP note in the header. NOT .100 (the NAS).
       - lan_lb_ip=192.168.52.53
+      # MetalLB ingress VIP. Mirrored (not replaced) into platform/metallb and
+      # platform/traefik-config — see the Ingress VIP note in the header.
+      # Mnemonic: .80 = port 80 (web), paralleling the DNS VIP .53 = port 53.
+      - ingress_lb_ip=192.168.52.80
       - acme_email=admin@themartinez.cloud
       - tz=America/Detroit
       - puid=1000

@@ -254,3 +254,30 @@ spec:
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
+---
+##############################################################################
+# Wave 1: traefik-config — the additive MetalLB ingress VIP Service.
+#
+# Depends on metallb-config (wave 0) having created the `ingress-vip`
+# IPAddressPool. Targets kube-system, where the k3s-managed Traefik pods live;
+# this stack only adds the VIP Service, it does NOT manage the Traefik chart.
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/traefik-config
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true

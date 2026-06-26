@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Traefik is the k3s-managed ingress controller in kube-system. This stack does
+# NOT manage the Traefik chart/Deployment (k3s owns that via its HelmChart
+# addon); it only adds the additive MetalLB ingress VIP Service that fronts the
+# existing Traefik pods. See ingress-vip-service.yml for the full rationale.
+namespace: kube-system
+resources:
+  - ingress-vip-service.yml

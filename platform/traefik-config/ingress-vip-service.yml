@@ -1,0 +1,50 @@
+---
+# The HTTP/HTTPS ingress VIP. A second, ADDITIVE LoadBalancer Service that
+# selects the existing k3s-managed Traefik pods and gives them a single MetalLB
+# Layer-2 address (192.168.52.80). Internal *.themartinez.cloud names point here
+# so clients reach ingress through one always-live IP with automatic node
+# failover, instead of round-robining the four node IPs.
+#
+# Why a separate Service instead of editing the Traefik Service:
+#   * Traefik is a k3s HelmChart addon; the addon controller reverts direct edits
+#     to its Service, and changing it risks live ingress.
+#   * loadBalancerClass: metallb.io/layer2 makes this zero-collision — k3s klipper
+#     ignores any Service that sets a loadBalancerClass, and MetalLB is pinned to
+#     this class. The original klipper Traefik Service (node IPs .110-.113) stays
+#     fully intact as an instant rollback path.
+#
+# externalTrafficPolicy: Cluster — Traefik runs a single replica, so Cluster lets
+# the VIP float to any healthy node (kube-proxy forwards to the Traefik pod
+# wherever it is). Trade-off: the client source IP is SNAT'd to the leader node.
+# To preserve real client IPs, first scale Traefik to >=2 replicas (a HelmChart-
+# Config change) and then switch this to Local.
+#
+# VIP mirror locations (update all three together — see cluster-config header):
+#   - components/cluster-config/kustomization.yml (ingress_lb_ip)
+#   - platform/metallb/ipaddresspool.yml (ingress-vip pool)
+#   - this file (metallb.universe.tf/loadBalancerIPs)
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-ingress-vip
+  namespace: kube-system
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.52.80"
+    metallb.universe.tf/address-pool: ingress-vip
+spec:
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/layer2
+  externalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  selector:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik-kube-system
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+      protocol: TCP
+    - name: websecure
+      port: 443
+      targetPort: websecure
+      protocol: TCP

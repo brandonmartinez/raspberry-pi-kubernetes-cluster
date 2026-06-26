@@ -11,3 +11,17 @@ metadata:
 spec:
   ipAddressPools:
     - dns-vip
+---
+# Announce the ingress VIP pool over Layer 2. MetalLB elects one node as leader
+# for .80 and answers ARP from it. The Traefik ingress-VIP Service uses
+# externalTrafficPolicy: Cluster (Traefik is a single replica), so the VIP can
+# float to ANY healthy node independent of where the Traefik pod runs; kube-proxy
+# forwards from the leader node to the Traefik pod wherever it is.
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: ingress-vip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - ingress-vip
