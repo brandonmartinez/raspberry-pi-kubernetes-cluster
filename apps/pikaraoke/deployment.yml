@@ -30,13 +30,19 @@ spec:
           ports:
             - name: svc-5555-http
               containerPort: 5555
+          # pikaraoke is bursty: Python+Flask boot, song-library scan, a yt-dlp
+          # self-upgrade, and ffmpeg transcode (h264_v4l2m2m) all need real CPU.
+          # The old 50m CPU limit (below even idle, ~36m) throttled boot so hard
+          # the app never bound :5555 within the startup probe window -> SIGKILL
+          # -> permanent CrashLoop. Limits are generous to let boot/transcode
+          # burst; idle settles to ~36m CPU / ~162Mi memory.
           resources:
-            limits:
-              memory: "256Mi"
-              cpu: "50m"
             requests:
-              memory: "80Mi"
-              cpu: "5m"
+              memory: "192Mi"
+              cpu: "150m"
+            limits:
+              memory: "512Mi"
+              cpu: "1500m"
           startupProbe:
             httpGet:
               path: /
