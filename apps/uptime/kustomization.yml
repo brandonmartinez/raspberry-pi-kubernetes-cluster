@@ -15,6 +15,9 @@ configMapGenerator:
   - name: uptime-configmap
     envs:
       - .env
+  - name: uptime-mariadb-config
+    files:
+      - mariadb-tuning.cnf
 
 resources:
   - namespace.yml
