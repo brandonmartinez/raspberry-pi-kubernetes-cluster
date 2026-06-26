@@ -1,6 +1,16 @@
 # freeze chart version to live (helm list -n cert-manager) before first sync; do not invent or upgrade during adoption.
+#
+# CRDs are now managed by the dedicated `cert-manager-crds` ArgoCD Application
+# (platform/crds/cert-manager/, wave -2). Setting crds.enabled: false here
+# prevents the main chart from re-managing CRDs during upgrades. Helm will NOT
+# delete existing CRDs (they have helm.sh/resource-policy: keep), so this change
+# is safe. The CRD Application (ServerSideApply, prune OFF) takes SSA ownership
+# on its first sync.
+#
+# SYNC ORDER: always sync `cert-manager-crds` BEFORE `cert-manager` to ensure
+# the CRDs are present and owned before the operator starts.
 crds:
-  enabled: true
+  enabled: false
 
 # Resource requests/limits for cert-manager components
 resources:

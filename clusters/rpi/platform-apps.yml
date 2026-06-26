@@ -14,6 +14,49 @@
 # docs/gitops.md (Promotion gates).
 
 ##############################################################################
+# Wave -2: CRD-only Applications — prune is NEVER enabled on these.
+#
+# Each Application here installs CRDs for an owning chart Application at a later
+# wave. Keeping CRDs in dedicated Applications (prune OFF, ServerSideApply)
+# ensures chart upgrades and ArgoCD syncs can never accidentally delete CRs.
+#
+# UPGRADE PROCEDURE: when bumping a chart version, also update the CRD manifest
+# committed under platform/crds/<stack>/crds.yaml from the matching release and
+# re-sync the CRD Application FIRST, then the chart Application.
+#
+# Remaining charts whose CRDs still need dedicated Applications (follow-up work):
+#   - longhorn 1.10.0: no standalone CRD yaml in releases; extract via
+#     `helm template longhorn/longhorn --version 1.10.0 --set installCRDs=true \
+#       --include-crds | kubectl get -f - --ignore-not-found -o yaml`
+#   - kube-prometheus-stack 82.1.1: many CRDs, needs helm template extraction
+#   - metallb 0.15.2: CRDs have no helm.sh/chart label (k3s-managed HelmChart);
+#     investigation needed before splitting
+#   - traefik: fully k3s-managed HelmChart; NOT under our control
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/crds/cert-manager  # pinned to v1.19.3 (crds.yaml downloaded from GitHub release)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  # CRDs are cluster-scoped. Prune is NEVER enabled on this Application.
+  # ServerSideApply takes ownership of the CRDs from the chart-delivered copies.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+##############################################################################
 # Wave -1: cert-manager, Longhorn.
 #
 # Secrets are NOT managed by Argo. They are pushed out-of-band from 1Password by
@@ -76,6 +119,31 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn-jobs
+  namespace: argocd
+  # Wave 0: one wave AFTER the longhorn chart (wave -1) so the RecurringJob CRD
+  # exists before these CRs are applied. Codified from live state (drift fix);
+  # prune stays OFF so a sync can only ADD the CRs, never delete.
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/longhorn
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -197,6 +265,41 @@ spec:
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
       targetRevision: main
       ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-system-metrics
+  namespace: argocd
+  # Wave 0: before monitoring (wave 1) which depends on the k3s-metrics-service
+  # to scrape kubelet metrics from Prometheus. Previously this was in apps/ as
+  # the mis-classified `kube-system` Application (infra support, not a leaf
+  # workload). Moved to platform/ so it is not auto-discovered by the apps
+  # ApplicationSet.
+  #
+  # TRANSITION NOTE (for Brandon): the apps ApplicationSet will stop generating
+  # the `kube-system` Application once apps-appset.yml is synced and the
+  # exclusion takes effect. The ApplicationSet controller will DELETE the old
+  # `kube-system` Application (prune is OFF on its template, so the Service and
+  # Endpoints resources remain in the cluster). This new `kube-system-metrics`
+  # Application then adopts them on first sync. Recommended sync order:
+  #   1. Sync root (picks up this file)
+  #   2. Sync this `kube-system-metrics` Application (resources unchanged)
+  #   3. Sync the `apps` ApplicationSet (removes old `kube-system` Application)
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/kube-system
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

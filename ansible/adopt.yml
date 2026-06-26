@@ -69,3 +69,15 @@
     - role: k3s_agent
       vars:
         k3s_apply: "{{ allow_disruptive | bool }}"
+
+- name: Guarded node Docker adoption (rpi001 / run_node_docker hosts)
+  hosts: k3s_servers:k3s_agents
+  become: true
+  serial: 1
+  vars:
+    allow_disruptive: false
+  roles:
+    - role: node_docker
+      vars:
+        node_docker_apply: "{{ allow_disruptive | bool }}"
+      when: run_node_docker | default(false) | bool

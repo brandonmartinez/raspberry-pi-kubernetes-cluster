@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: longhorn-system
+# helm-values.yaml is intentionally NOT listed here — it is consumed by the
+# `longhorn` Helm Application (multi-source, $values ref), not kustomize.
+# Only the RecurringJob CRs live here; they are applied by a companion
+# `longhorn-jobs` Application in clusters/rpi/platform-apps.yml at wave "0"
+# (one wave after the `longhorn` Helm chart at wave "-1", so Longhorn CRDs
+# exist before these CRs are submitted).
+resources:
+  - recurring-jobs.yml

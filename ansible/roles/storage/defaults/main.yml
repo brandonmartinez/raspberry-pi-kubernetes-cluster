@@ -1,10 +1,10 @@
 ---
 storage_apply: true
-mount_usb: false
+mount_usb: true
 mount_usb_drive_path: /dev/sda
 mount_usb_drive_partition: /dev/sda1
 mount_usb_drive_format: false
-mount_usb_mount_path: /media/data
+mount_usb_mount_path: /media/data_ext
 mount_usb_fstype: ext4
 mount_usb_opts: defaults,auto,users,rw,exec,nofail
 clusterfs_path: /clusterfs

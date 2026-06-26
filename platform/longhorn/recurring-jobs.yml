@@ -1,0 +1,67 @@
+---
+# Live RecurringJob — codified from cluster on 2026-06-26 (executionCount: 267).
+# Spec matches kubectl get recurringjobs.longhorn.io backup-default -n longhorn-system -o yaml exactly.
+# Daily backup at 08:00 UTC; retain last 10 backup points; 2 volumes processed concurrently.
+# Group 'default' applies to every volume tagged with the 'default' recurring job group.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-default
+  namespace: longhorn-system
+spec:
+  concurrency: 2
+  cron: "0 8 * * *"
+  groups:
+    - default
+  labels: {}
+  name: backup-default
+  parameters: {}
+  retain: 10
+  task: backup
+---
+# Live RecurringJob — codified from cluster on 2026-06-26 (executionCount: 267).
+# Spec matches kubectl get recurringjobs.longhorn.io snapshot-default -n longhorn-system -o yaml exactly.
+# Daily snapshot at 02:00 UTC; retain last 7 snapshots; 2 volumes processed concurrently.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: snapshot-default
+  namespace: longhorn-system
+spec:
+  concurrency: 2
+  cron: "0 2 * * *"
+  groups:
+    - default
+  labels: {}
+  name: snapshot-default
+  parameters: {}
+  retain: 7
+  task: snapshot
+---
+# NEW — #41: Weekly filesystem TRIM for USB SSDs.
+# Longhorn issues fstrim on volume filesystems to reduce write amplification on
+# the USB SSDs used as Longhorn data disks (Pi 4B runs all Longhorn data on
+# USB 3.0 SSDs whose controllers benefit from periodic TRIM to reclaim freed
+# blocks and maintain write performance).
+#
+# Schedule: Sunday 03:00 UTC — low-traffic window, after the daily snapshot
+# (02:00) has completed but before the daily backup (08:00).
+# concurrency: 1 — serialise across volumes to avoid saturating the single
+# USB 3.0 bus shared by all data disks on a Pi 4B node.
+# retain: 2 — keep last two execution records (trim produces no backup artefacts
+# to prune; this just controls the job-status history).
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: filesystem-trim-weekly
+  namespace: longhorn-system
+spec:
+  concurrency: 1
+  cron: "0 3 * * 0"
+  groups:
+    - default
+  labels: {}
+  name: filesystem-trim-weekly
+  parameters: {}
+  retain: 2
+  task: filesystem-trim

@@ -26,12 +26,13 @@ base_cgroup_options:
 base_expand_rootfs: true
 base_upgrade_packages: true
 
-mount_usb: false # cluster-specific
+mount_usb: true # cluster-specific: all 4 nodes have USB SSD at /media/data_ext
 mount_usb_drive_path: /dev/sda # cluster-specific
 mount_usb_drive_partition: /dev/sda1 # cluster-specific
 mount_usb_drive_format: false # cluster-specific: destructive if true
-mount_usb_mount_path: /media/data # cluster-specific
+mount_usb_mount_path: /media/data_ext # cluster-specific
 mount_usb_fstype: ext4
+# rpi002/rpi003 use base opts; rpi001/rpi004 add stripe=8191 via host_vars.
 mount_usb_opts: defaults,auto,users,rw,exec,nofail
 clusterfs_path: /clusterfs # cluster-specific
 

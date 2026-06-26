@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# cert-manager CRDs pinned to v1.19.3 (live deployed version).
+# Source: https://github.com/cert-manager/cert-manager/releases/download/v1.19.3/cert-manager.crds.yaml
+#
+# Update this file ONLY when upgrading cert-manager. Bump crds.yaml from the
+# matching release and update the ArgoCD Application targetRevision-comment in
+# platform-apps.yml at the same time.
+resources:
+  - crds.yaml

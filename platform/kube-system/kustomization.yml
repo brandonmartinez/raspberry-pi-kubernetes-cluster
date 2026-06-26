@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kube-system
+
+labels:
+  # includeSelectors MUST be false here: k3s-metrics-service is a selectorless
+  # headless Service backed by manually managed Endpoints (the kubelet pod IPs).
+  # Injecting a spec.selector would make Kubernetes take over endpoint management
+  # and wipe the manual Endpoints, breaking Prometheus kubelet metrics scraping.
+  - pairs:
+      app: kube-system
+    includeSelectors: false
+
+resources:
+  - metrics-service.yml
