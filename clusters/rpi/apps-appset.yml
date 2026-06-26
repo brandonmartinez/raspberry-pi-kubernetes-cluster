@@ -12,6 +12,16 @@ metadata:
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
+  # SAFETY (post-incident 2026-06-26): when an app is removed from the generator
+  # — e.g. excluded to promote it to an explicit Application, or its folder is
+  # deleted — the ApplicationSet controller MUST NOT cascade-delete the live
+  # resources (namespaces, PVCs, data). Without this, excluding shlink/uptime
+  # for auto-sync promotion deleted uptime's local-path PVC and wiped its data.
+  # preserveResourcesOnDeletion removes the generated Application but leaves its
+  # resources running; orphan cleanup (if ever wanted) is then a deliberate
+  # manual act, never an accidental side effect of a generator change.
+  syncPolicy:
+    preserveResourcesOnDeletion: true
   generators:
     - git:
         repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
@@ -146,15 +156,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: uptime
   # Gate 3: auto-sync enabled. prune and selfHeal are NOT enabled (gates 5/4).
-  # HPA owns /spec/replicas — ignored so ArgoCD never reverts autoscaler decisions.
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
+  # ignoreDifferences removed: uptime runs at a fixed replicas: 1 (no HPA).
   syncPolicy:
     automated: {}
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true

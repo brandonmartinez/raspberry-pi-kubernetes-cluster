@@ -3,29 +3,72 @@ kind: Deployment
 metadata:
   name: uptime
 spec:
-  # replicas owned by uptime-hpa; ArgoCD ignores /spec/replicas
-  # (RespectIgnoreDifferences) so it never fights the autoscaler.
+  # Single instance: Uptime Kuma v2 with external MariaDB. Uses Recreate so
+  # the old pod fully exits before the new one starts (avoids two instances
+  # racing to write db-config.json on /app/data simultaneously).
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: uptime
+      component: kuma
   template:
     metadata:
       labels:
-        app: uptime
+        component: kuma
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: rpi002  # cluster-specific: UPTIME_NODE
+      initContainers:
+        - name: wait-for-mariadb
+          image: busybox:1.36.1  # tiny; nc is a busybox applet, -z flag supported
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until nc -z uptime-mariadb 3306; do
+                echo "Waiting for uptime-mariadb:3306..."; sleep 2
+              done
+              echo "MariaDB is reachable."
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "8Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
       volumes:
         - name: uptime-data
           persistentVolumeClaim:
-            claimName: uptime-pvc-local
+            claimName: uptime-data-pvc
       containers:
         - name: uptime
-          image: louislam/uptime-kuma:2
+          image: louislam/uptime-kuma:2.4.0  # latest stable v2; arm64 confirmed on Docker Hub 2026-06-26
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: uptime-configmap
+          env:
+            # External MariaDB connection — env var names verified from
+            # server/setup-database.js in louislam/uptime-kuma (UPTIME_KUMA_DB_TYPE block).
+            # Source: https://raw.githubusercontent.com/louislam/uptime-kuma/master/server/setup-database.js
+            - name: UPTIME_KUMA_DB_TYPE
+              value: mariadb
+            - name: UPTIME_KUMA_DB_HOSTNAME
+              value: uptime-mariadb
+            - name: UPTIME_KUMA_DB_PORT
+              value: "3306"
+            - name: UPTIME_KUMA_DB_NAME
+              value: uptime_kuma
+            - name: UPTIME_KUMA_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-secret
+                  key: MARIADB_USER
+            - name: UPTIME_KUMA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-secret
+                  key: MARIADB_PASSWORD
           volumeMounts:
             - name: uptime-data
               mountPath: /app/data

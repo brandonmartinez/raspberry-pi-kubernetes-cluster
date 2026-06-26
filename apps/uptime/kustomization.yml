@@ -18,11 +18,12 @@ configMapGenerator:
 
 resources:
   - namespace.yml
+  - data-pvc.yml
   - deployment.yml
-  - horizontalpodautoscaler.yml
   - service.yml
   - pdb.yml
-  - pvc-local.yml
-  - pvc-backup.yml
   - ingress.yml
-  - backup-cronjob.yml
+  - mariadb-pvc.yml
+  - mariadb-statefulset.yml
+  - mariadb-service.yml
+  - mariadb-pdb.yml

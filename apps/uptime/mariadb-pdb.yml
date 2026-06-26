@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: uptime-mariadb-pdb
+  # Single replica by design (exclusive data volume); PDB prevents accidental eviction
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      component: mariadb
