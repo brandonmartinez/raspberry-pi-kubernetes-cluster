@@ -8,6 +8,7 @@ How to decide who handles what.
 |-----------|----------|----------|
 | GitOps control plane & architecture | Ripley | ArgoCD root/appset/projects, sync waves, promotion gates, app-of-apps structure |
 | Kubernetes apps & platform stacks | Dallas | `apps/<app>` Kustomize bases, `platform/<stack>` Helm values, HA (probes/PDB/HPA/spread), Traefik ingress |
+| Observability & monitoring | Ash | `platform/monitoring` (Prometheus/Grafana/Alertmanager/exporters), ServiceMonitors/PrometheusRules/dashboards, scrape & retention tuning, Uptime Kuma synthetic checks, sizing of the monitoring stack |
 | Node provisioning & Ansible | Parker | Ansible roles, `provision.yml`/`adopt.yml`, k3s server/agent, storage, `bootstrap/` |
 | Secrets, TLS & security | Bishop | `secrets/templates` `op://` refs, `sync-secrets.sh`, cert-manager/TLS, `validate.sh` guards |
 | Documentation | Lambert | `docs/`, runbooks, `README.md`, keeping docs accurate for open-source learners |
@@ -40,3 +41,4 @@ How to decide who handles what.
 5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
 6. **Anticipate downstream work.** If a feature is being built, spawn the tester to write test cases from requirements simultaneously.
 7. **Issue-labeled work** — when a `squad:{member}` label is applied to an issue, route to that member. The Lead handles all `squad` (base label) triage.
+8. **Resource sizing is shared.** Ash owns the monitoring stack's own requests/limits and advises (with measured Prometheus numbers) on endpoint sizing; **Dallas owns the change** to an app/platform manifest. Pair them whenever a sizing change could let either the stack or an endpoint tank.

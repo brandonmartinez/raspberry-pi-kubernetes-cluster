@@ -17,6 +17,7 @@
 | Parker | Infra / Ansible Engineer | .squad/agents/parker/charter.md | 🔧 active |
 | Bishop | Security & Secrets Engineer | .squad/agents/bishop/charter.md | 🔒 active |
 | Lambert | Docs / Technical Writer | .squad/agents/lambert/charter.md | 📝 active |
+| Ash | Observability / Monitoring Engineer | .squad/agents/ash/charter.md | 📡 active |
 | Scribe | Session Logger / Memory | .squad/agents/scribe/charter.md | 📋 silent |
 | Ralph | Work Monitor | .squad/agents/ralph/charter.md | 🔄 monitor |
 | Rai | RAI Reviewer | .squad/agents/Rai/charter.md | 🛡️ background |

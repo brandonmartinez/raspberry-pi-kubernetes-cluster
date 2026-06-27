@@ -4,6 +4,11 @@
       "universe": "Alien",
       "assignment_id": "rpi-k8s-initial-2026-06-26",
       "used_at": "2026-06-26T12:56:25-04:00"
+    },
+    {
+      "universe": "Alien",
+      "assignment_id": "rpi-k8s-observability-2026-06-26",
+      "used_at": "2026-06-26T22:10:00-04:00"
     }
   ],
   "assignment_cast_snapshots": {
@@ -17,6 +22,13 @@
         "docs-technical-writer": "Lambert"
       },
       "created_at": "2026-06-26T12:56:25-04:00"
+    },
+    "rpi-k8s-observability-2026-06-26": {
+      "universe": "Alien",
+      "agents": {
+        "observability-monitoring-engineer": "Ash"
+      },
+      "created_at": "2026-06-26T22:10:00-04:00"
     }
   }
 }
