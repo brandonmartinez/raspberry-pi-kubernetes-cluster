@@ -24,13 +24,15 @@
 # committed under platform/crds/<stack>/crds.yaml from the matching release and
 # re-sync the CRD Application FIRST, then the chart Application.
 #
-# Remaining charts whose CRDs still need dedicated Applications (follow-up work):
-#   - longhorn 1.10.0: no standalone CRD yaml in releases; extract via
-#     `helm template longhorn/longhorn --version 1.10.0 --set installCRDs=true \
-#       --include-crds | kubectl get -f - --ignore-not-found -o yaml`
-#   - metallb 0.15.2: CRDs have no helm.sh/chart label (k3s-managed HelmChart);
-#     investigation needed before splitting
-#   - traefik: fully k3s-managed HelmChart; NOT under our control
+# Other charts' CRDs — investigated 2026-06-27 (see issue #45), intentionally
+# left chart-managed (safe while cluster-wide prune is OFF):
+#   - longhorn 1.10.0: NOT split — 22 CRDs render from templates/crds.yaml with
+#     no skip flag (no crds.enabled/installCRDs, not in a helm crds/ dir), so a
+#     dedicated app would only double-manage them. Leave chart-managed.
+#   - metallb 0.15.2: splittable (crds.enabled: false yields 0 CRDs) but DEFERRED
+#     — DNS/NTP VIP stack; live CRDs are unlabeled (k3s-managed origin) so the
+#     SSA ownership handoff needs a carefully observed sync. Revisit deliberately.
+#   - traefik: fully k3s-managed HelmChart; NOT under our control.
 ##############################################################################
 apiVersion: argoproj.io/v1alpha1
 kind: Application
