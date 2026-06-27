@@ -28,7 +28,6 @@
 #   - longhorn 1.10.0: no standalone CRD yaml in releases; extract via
 #     `helm template longhorn/longhorn --version 1.10.0 --set installCRDs=true \
 #       --include-crds | kubectl get -f - --ignore-not-found -o yaml`
-#   - kube-prometheus-stack 82.1.1: many CRDs, needs helm template extraction
 #   - metallb 0.15.2: CRDs have no helm.sh/chart label (k3s-managed HelmChart);
 #     investigation needed before splitting
 #   - traefik: fully k3s-managed HelmChart; NOT under our control
@@ -49,6 +48,29 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
+  # CRDs are cluster-scoped. Prune is NEVER enabled on this Application.
+  # ServerSideApply takes ownership of the CRDs from the chart-delivered copies.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/crds/monitoring  # pinned to kube-prometheus-stack 82.1.1 (CRDs extracted from chart)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
   # CRDs are cluster-scoped. Prune is NEVER enabled on this Application.
   # ServerSideApply takes ownership of the CRDs from the chart-delivered copies.
   syncPolicy:
@@ -325,6 +347,7 @@ spec:
       chart: kube-prometheus-stack
       targetRevision: "82.1.1" # live: helm list -n monitoring (chart kube-prometheus-stack-82.1.1)
       helm:
+        skipCrds: true
         valueFiles:
           - $values/platform/monitoring/helm-values.yaml
     - repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git

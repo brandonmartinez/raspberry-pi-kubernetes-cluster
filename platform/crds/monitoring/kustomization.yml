@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# kube-prometheus-stack CRDs pinned to chart 82.1.1 (live deployed version).
+# Source: helm show crds prometheus-community/kube-prometheus-stack --version 82.1.1
+# Equivalent chart CRD source for:
+#   helm template kps prometheus-community/kube-prometheus-stack --version 82.1.1 --include-crds --set crds.enabled=true -n monitoring
+#
+# Update this file ONLY when upgrading kube-prometheus-stack. Re-render crds.yaml
+# from the matching chart version and update the ArgoCD Application
+# targetRevision-comment in platform-apps.yml at the same time.
+resources:
+  - crds.yaml

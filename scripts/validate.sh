@@ -157,6 +157,7 @@ allowed_value_bits = ('${', '$(', '$', '{{', 'op://', 'REPLACE', '#Your', 'your'
 allowed_line_bits = (
     'remoteRef:', 'secretKey:', 'serviceAccountSecretRef:', 'secretStoreRef',
     'secretName:', 'existingSecret:', 'envFromSecret:', 'bearerTokenFile:', 'passwordKey:',
+    'automountServiceAccountToken:',
     'secret:',
     'possible plaintext secret',
 )
