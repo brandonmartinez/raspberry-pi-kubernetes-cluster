@@ -26,6 +26,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: uptime-mariadb-pvc
+        - name: config
+          configMap:
+            name: uptime-mariadb-config
       containers:
         - name: mariadb
           image: mariadb:11.4.12  # LTS; arm64/v8 confirmed on Docker Hub 2026-06-26
@@ -33,6 +36,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/mysql
+              subPath: data  # init into an empty subdir so the volume's lost+found does not block first-run init
+            - name: config
+              mountPath: /etc/mysql/conf.d/zz-pi-tuning.cnf
+              subPath: mariadb-tuning.cnf
+              readOnly: true
           env:
             - name: MARIADB_ROOT_PASSWORD
               valueFrom:
@@ -57,7 +65,7 @@ spec:
               protocol: TCP
           resources:
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "100m"
             limits:
               memory: "1Gi"
@@ -74,7 +82,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 10
-            failureThreshold: 12  # up to 2 minutes for first start
+            failureThreshold: 30  # up to ~5 min for a cold first init on a Pi (image unpack + InnoDB init)
           readinessProbe:
             exec:
               command:
