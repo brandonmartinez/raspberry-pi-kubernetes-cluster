@@ -10,6 +10,36 @@
       k3s agent service exists={{ k3s_agent_service.stat.exists }};
       join will {{ 'be skipped' if k3s_agent_service.stat.exists or not (k3s_apply | bool) else 'run' }}.
 
+- name: Ensure k3s agent config directory exists
+  ansible.builtin.file:
+    path: "{{ k3s_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: k3s_apply | bool
+
+- name: Manage k3s agent config with kubelet resilience args
+  ansible.builtin.copy:
+    dest: "{{ k3s_config_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible. Node-resilience settings were added after the
+      # DNS-outage/overload incident; apply by rolling one worker at a time while
+      # watching DNS, MetalLB, Longhorn, and node pressure.
+      kubelet-arg:
+      {% for arg in (k3s_common_kubelet_args + k3s_node_resilience_kubelet_args) %}
+        - {{ arg | to_json }}
+      {% endfor %}
+      kube-proxy-arg:
+      {% for arg in k3s_common_kube_proxy_args %}
+        - {{ arg | to_json }}
+      {% endfor %}
+  notify: restart k3s agent
+  when: k3s_apply | bool
+
 - name: Require k3s token for fresh agent joins
   ansible.builtin.fail:
     msg: "Set k3s_token via Ansible Vault or -e before provisioning a fresh agent."
@@ -24,8 +54,7 @@
     INSTALL_K3S_CHANNEL={{ k3s_channel | quote }}
     K3S_URL={{ k3s_server_url | quote }}
     K3S_TOKEN={{ k3s_token | quote }} sh -s -
-    {% for arg in k3s_common_kubelet_args %} --kubelet-arg={{ arg | quote }}{% endfor %}
-    {% for arg in k3s_common_kube_proxy_args %} --kube-proxy-arg {{ arg | quote }}{% endfor %}
+    --config {{ k3s_config_file | quote }}
   args:
     creates: "{{ k3s_agent_service_file }}"
   no_log: true

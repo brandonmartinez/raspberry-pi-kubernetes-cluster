@@ -1,0 +1,6 @@
+---
+- name: restart k3s agent
+  ansible.builtin.systemd:
+    name: k3s-agent
+    state: restarted
+  when: k3s_apply | bool

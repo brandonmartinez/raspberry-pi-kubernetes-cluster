@@ -32,3 +32,20 @@ base_cgroup_options:
   - cgroup_enable=cpuset
   - cgroup_enable=memory
   - cgroup_memory=1
+# Node-resilience tuning from the DNS-outage/overload incident. These are only
+# applied when base_apply is true, so adopt.yml --check --diff remains read-only.
+base_manage_writeback_sysctls: true
+base_writeback_sysctls:
+  # Raspberry Pi USB SSDs stall badly when Linux lets too much dirty memory
+  # accumulate. Keep writeback smaller than the default 20/10 percent.
+  - name: vm.dirty_ratio
+    value: "10"
+  - name: vm.dirty_background_ratio
+    value: "5"
+# Disable the vestigial Raspberry Pi OS /var/swap instead of adding zram. The
+# cluster relies on kubelet reservations/evictions and Longhorn-backed storage;
+# small slow swap masks memory pressure and can amplify I/O stalls during heavy
+# rollouts.
+base_disable_legacy_var_swap: true
+base_legacy_swap_path: /var/swap
+base_legacy_swap_service: dphys-swapfile.service

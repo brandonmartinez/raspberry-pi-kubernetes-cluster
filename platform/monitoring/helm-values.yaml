@@ -268,6 +268,121 @@ defaultRules:
     kubernetesStorage: false
     kubernetesSystem: true
     kubeScheduler: false
+
+# Additive post-incident alerts. These are intentionally early-warning rules for
+# the DNS-outage failure mode: a Pi gets overloaded, MetalLB drops the DNS VIP,
+# and the node only becomes obviously NotReady after user traffic is impacted.
+additionalPrometheusRulesMap:
+  node-resilience:
+    groups:
+      - name: homelab.node-resilience
+        rules:
+          - alert: HomelabNodeHighLoadAverage
+            expr: |
+              (
+                node_load15{job=~".*node-exporter.*"}
+                / on(instance)
+                count by (instance) (node_cpu_seconds_total{job=~".*node-exporter.*", mode="idle"})
+              ) > 1.5
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Node load is high before kubelet marks it NotReady"
+              description: "15-minute load on {{ $labels.instance }} is more than 1.5x CPU count. Pause heavy rollouts and check image pulls, database cold starts, and Longhorn I/O."
+
+          - alert: HomelabNodeMemoryPressureEarly
+            expr: |
+              (
+                1 - (
+                  node_memory_MemAvailable_bytes{job=~".*node-exporter.*"}
+                  / node_memory_MemTotal_bytes{job=~".*node-exporter.*"}
+                )
+              ) > 0.90
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Node memory pressure is high"
+              description: "{{ $labels.instance }} has less than 10% available memory for 10 minutes. On 4GB workers this can precede kubelet eviction or MetalLB speaker instability."
+
+          - alert: HomelabNodeTemperatureHigh
+            expr: |
+              max by (instance, chip, sensor) (
+                node_hwmon_temp_celsius{job=~".*node-exporter.*"}
+              ) > 75
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Raspberry Pi node temperature is high"
+              description: "{{ $labels.instance }} reports {{ $value }}C via node_hwmon_temp_celsius. If this metric is absent, enable a Pi thermal collector or rpi exporter before relying on temperature alerts."
+
+          - alert: HomelabNodeCpuThrottling
+            expr: |
+              increase(node_cpu_core_throttles_total{job=~".*node-exporter.*"}[15m]) > 0
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Node CPU throttling detected"
+              description: "{{ $labels.instance }} is reporting CPU throttling. This metric depends on node-exporter's thermal/throttling collector; absence is a monitoring gap for Raspberry Pi throttling."
+
+          - alert: HomelabNodePressureCondition
+            expr: |
+              kube_node_status_condition{
+                condition=~"MemoryPressure|DiskPressure|PIDPressure",
+                status="true"
+              } == 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Kubernetes reports node pressure"
+              description: "{{ $labels.node }} has {{ $labels.condition }} for 5 minutes. Treat this as pre-NotReady risk for DNS and storage workloads."
+
+          - alert: HomelabKubeletTargetDown
+            expr: |
+              up{job=~".*kubelet.*"} == 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Kubelet scrape target is down"
+              description: "Prometheus cannot scrape kubelet on {{ $labels.instance }}. If kubelet scraping is not enabled, this rule will not fire; NodePressure alerts still cover kube-state-metrics conditions."
+
+      - name: homelab.metallb-resilience
+        rules:
+          - alert: HomelabMetalLBControllerUnavailable
+            expr: |
+              kube_deployment_status_replicas_available{
+                namespace="metallb-system",
+                deployment="metallb-controller"
+              } < 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "MetalLB controller is unavailable"
+              description: "MetalLB controller has no available replicas. DNS VIP recovery may be impaired during node overload."
+
+          - alert: HomelabMetalLBSpeakerUnavailable
+            expr: |
+              kube_daemonset_status_number_available{
+                namespace="metallb-system",
+                daemonset="metallb-speaker"
+              }
+              <
+              kube_daemonset_status_desired_number_scheduled{
+                namespace="metallb-system",
+                daemonset="metallb-speaker"
+              }
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "MetalLB speaker is unavailable on one or more nodes"
+              description: "Available MetalLB speakers are below desired scheduled speakers. The DNS VIP depends on speaker health during failover and overload."
 # Node Exporter configuration
 nodeExporter:
   enabled: true

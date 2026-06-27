@@ -1,0 +1,6 @@
+---
+- name: restart k3s server
+  ansible.builtin.systemd:
+    name: k3s
+    state: restarted
+  when: k3s_apply | bool

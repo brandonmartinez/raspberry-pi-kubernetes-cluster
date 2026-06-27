@@ -5,6 +5,19 @@ k3s_service_file: /etc/systemd/system/k3s.service
 k3s_write_kubeconfig_mode: "644"
 k3s_common_kubelet_args:
   - node-ip=0.0.0.0
+k3s_config_dir: /etc/rancher/k3s
+k3s_config_file: "{{ k3s_config_dir }}/config.yaml"
+# Control-plane node-resilience tuning from the DNS-outage/overload incident.
+# Gated by k3s_apply in adopt.yml; roll this one node at a time after cordon,
+# drain, and DNS/MetalLB observation.
+k3s_node_resilience_kubelet_args:
+  # rpi001 has 8GiB RAM and also hosts control-plane components.
+  - system-reserved=cpu=250m,memory=512Mi
+  - kube-reserved=cpu=250m,memory=768Mi
+  - eviction-hard=memory.available<512Mi,nodefs.available<10%,imagefs.available<15%
+  - eviction-soft=memory.available<768Mi,nodefs.available<15%,imagefs.available<20%
+  - eviction-soft-grace-period=memory.available=2m,nodefs.available=5m,imagefs.available=5m
+  - eviction-max-pod-grace-period=60
 k3s_common_kube_proxy_args:
   - metrics-bind-address=0.0.0.0
 k3s_server_controller_manager_args:
