@@ -48,8 +48,10 @@ spec:
 # (02:00) has completed but before the daily backup (08:00).
 # concurrency: 1 — serialise across volumes to avoid saturating the single
 # USB 3.0 bus shared by all data disks on a Pi 4B node.
-# retain: 2 — keep last two execution records (trim produces no backup artefacts
-# to prune; this just controls the job-status history).
+# retain: 0 — REQUIRED. Longhorn's controller forces retain=0 for filesystem-trim
+# tasks (trim produces no snapshot/backup artefacts to retain). Any other value
+# is reset to 0 by longhorn-manager, which causes the longhorn-jobs ArgoCD
+# Application to re-drift to OutOfSync immediately after every sync. Keep at 0.
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
@@ -63,5 +65,5 @@ spec:
   labels: {}
   name: filesystem-trim-weekly
   parameters: {}
-  retain: 2
+  retain: 0
   task: filesystem-trim
