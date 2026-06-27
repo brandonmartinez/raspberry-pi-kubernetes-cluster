@@ -221,6 +221,31 @@ For databases or services with exclusive file locks:
 - Document the HA limitation in a comment in the manifest.
 - Consider alternatives (e.g., PgBouncer connection pooling for PostgreSQL).
 
+## Data safety — verify backups before risking data
+
+**Hard gate (no exceptions).** Before ANY operation that touches or could affect
+persisted data — PVCs, StatefulSets, databases, Longhorn volumes, anything with a
+reclaim consequence — you MUST, in order:
+
+1. **Verify backups are configured** for the affected data. For Longhorn-backed
+   PVCs, confirm the volume is in a backup `RecurringJob` group (e.g. the
+   `default` group → `backup-default`): check
+   `kubectl -n longhorn-system get recurringjobs.longhorn.io` and the volume's
+   `recurring-job-group.longhorn.io/<group>: enabled` label.
+2. **Verify at least one backup has actually completed** — not merely scheduled.
+   Confirm a real, recent backup/snapshot exists (Longhorn volume backup status /
+   `executionCount > 0`), not just a configured job.
+3. **Before a data-risking change, re-verify a fresh/current backup exists first**,
+   then proceed. If no verified, current backup exists, **STOP** — do not risk the
+   data. Trigger a backup and confirm it completed before continuing.
+
+This rule exists because an ApplicationSet exclusion without
+`preserveResourcesOnDeletion` once cascade-deleted a local-path PVC and
+**permanently destroyed data**. "We can probably recover it" is NOT a backup.
+Note: `local-path` PVCs (Delete reclaim) and pushed Secrets are NOT covered by
+Longhorn backups — treat them as especially fragile and migrate stateful data to
+backed-up Longhorn volumes.
+
 ## SSL and TLS
 
 - SSL/TLS is managed by [cert-manager](https://cert-manager.io) using the
@@ -260,6 +285,9 @@ For databases or services with exclusive file locks:
   without the relevant runbook gate.
 - **Never** recreate StatefulSets, PVCs, or immutable selectors just to make an
   ArgoCD diff disappear — investigate the diff instead.
+- **Never** run an operation that touches persisted data (PVCs, StatefulSets,
+  databases, Longhorn volumes) without first verifying a backup is configured AND
+  a recent backup has actually completed — see "Data safety". No verified backup → stop.
 - **Never** tear down or interrupt the running cluster. Everything is additive.
 
 ## Editing guidance
