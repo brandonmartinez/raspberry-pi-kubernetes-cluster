@@ -29,6 +29,9 @@ frrk8s:
 
 controller:
   logLevel: info
+  # Keep MetalLB admitted during node-overload incidents so DNS VIP assignment
+  # is not starved behind normal workloads.
+  priorityClassName: system-cluster-critical
   resources:
     requests:
       cpu: 25m
@@ -39,6 +42,9 @@ controller:
 
 speaker:
   logLevel: info
+  # Keep VIP advertisement running during node-overload incidents; the DNS VIP
+  # depends on speakers staying schedulable and healthy.
+  priorityClassName: system-cluster-critical
   # L2 mode: speaker uses ARP, not FRR/BGP.
   frr:
     enabled: false
@@ -59,7 +65,8 @@ speaker:
       memory: 64Mi
     limits:
       cpu: 200m
-      memory: 128Mi
+      # Speaker was OOM-killed at 128Mi during the DNS-VIP incident.
+      memory: 256Mi
 
 # Metrics wiring into kube-prometheus-stack can be enabled later once validated;
 # the ServiceMonitor CRD lives in the monitoring stack.
