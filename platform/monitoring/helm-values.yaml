@@ -1,6 +1,15 @@
 # freeze chart version to live (helm list -n monitoring) before first sync; do not invent or upgrade during adoption.
 # Taken from: https://picluster.ricsanfre.com/docs/prometheus/
 
+# CRDs are now managed by the dedicated `monitoring-crds` ArgoCD Application
+# (platform/crds/monitoring/, wave -2). Setting crds.enabled: false here keeps
+# the kube-prometheus-stack CRD subchart out of normal chart rendering so chart
+# syncs/upgrades never touch Prometheus-operator CRDs or CRs.
+#
+# SYNC ORDER: always sync `monitoring-crds` BEFORE `monitoring`.
+crds:
+  enabled: false
+
 prometheusOperator:
   # Resources for the operator
   resources:
