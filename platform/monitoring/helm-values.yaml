@@ -98,6 +98,26 @@ prometheus:
       limits:
         memory: 1536Mi
         cpu: 500m
+    # Earmark Prometheus (the cluster's largest memory tenant ~1.5Gi) to the 8GB
+    # node rpi001 so it stays off the memory-constrained 4GB workers. The
+    # toleration permits the control-plane taint; the preferred nodeAffinity pulls
+    # it to the large node but falls back to a worker if rpi001 is unavailable.
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node.themartinez.cloud/memory-tier
+                  operator: In
+                  values: ["large"]
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -197,16 +217,26 @@ grafana:
     accessModes:
       - ReadWriteOnce
     storageClassName: longhorn
-  # Pod scheduling - avoid co-locating with Prometheus
+  # Earmark Grafana to the 8GB node rpi001 alongside Prometheus. The large node
+  # has room for both; this vacates a memory-constrained 4GB worker. Replaces the
+  # previous anti-affinity that deliberately spread Grafana away from Prometheus
+  # across the 4GB workers — co-locating them on the 8GB node is now desired.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
   affinity:
-    podAntiAffinity:
+    nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: prometheus
-            topologyKey: kubernetes.io/hostname
+          preference:
+            matchExpressions:
+              - key: node.themartinez.cloud/memory-tier
+                operator: In
+                values: ["large"]
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
@@ -403,6 +433,25 @@ kube-state-metrics:
     limits:
       memory: 128Mi
       cpu: 100m
+  # Earmark kube-state-metrics to the 8GB node rpi001 (it was crash-looping under
+  # memory pressure on the 4GB workers). Small, but co-locating the monitoring
+  # stack on the large node keeps it stable.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node.themartinez.cloud/memory-tier
+                operator: In
+                values: ["large"]
 
 crds:
   # CRDs for kube-prometheus-stack are managed out-of-band (server-side apply,
