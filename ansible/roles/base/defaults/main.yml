@@ -49,3 +49,41 @@ base_writeback_sysctls:
 base_disable_legacy_var_swap: true
 base_legacy_swap_path: /var/swap
 base_legacy_swap_service: dphys-swapfile.service
+
+# DNS/network resiliency gates for the 2026-06-28 dhcpcd lease-loss incident.
+# Every item is default-off and still requires base_apply=true, preserving
+# adopt.yml --check --diff as read-only. Restarting dhcpcd can drop SSH; only
+# set base_dhcpcd_restart_apply=true during an operator-controlled one-node
+# maintenance window.
+base_static_ip_apply: false
+base_static_ip_interface: eth0
+base_static_ip_address: ""
+base_static_ip_prefix: 22
+base_static_ip_gateway: ""
+base_static_ip_dns_servers: []
+base_dhcpcd_persistent_apply: false
+base_dhcpcd_restart_apply: false
+
+# Periodic network self-healing. The timer first tries dhcpcd rebind/default
+# route repair, then reboots only after sustained gateway loss and a reboot
+# backoff guard. Default-off because an incorrect threshold can create churn.
+base_network_watchdog_apply: false
+base_network_watchdog_enable: false
+base_network_watchdog_interface: "{{ base_static_ip_interface }}"
+base_network_watchdog_gateway: "{{ base_static_ip_gateway }}"
+base_network_watchdog_static_gateway: "{{ base_static_ip_gateway }}"
+base_network_watchdog_ping_count: 2
+base_network_watchdog_ping_timeout_seconds: 2
+base_network_watchdog_timer_seconds: 60
+base_network_watchdog_rebind_after_failures: 5
+base_network_watchdog_reboot_after_failures: 15
+base_network_watchdog_reboot_max_per_window: 1
+base_network_watchdog_reboot_window_seconds: 86400
+base_network_watchdog_state_dir: /var/lib/homelab-network-watchdog
+
+# Optional Raspberry Pi hardware watchdog defense-in-depth for kernel hangs.
+# Operator opt-in only; this writes systemd watchdog config and reports that a
+# reboot/manual rollout is required for complete activation.
+base_hardware_watchdog_apply: false
+base_hardware_watchdog_runtime_sec: 30s
+base_hardware_watchdog_reboot_sec: 10min

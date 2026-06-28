@@ -1,0 +1,22 @@
+# Klipper node-IP fallback resolver. Point the UDM-Pro at 192.168.52.53 as the
+# primary DNS server and a node IP (for example, 192.168.52.110) as secondary.
+# This unclassed LoadBalancer is claimed by k3s ServiceLB (klipper), not MetalLB,
+# and klipper exposes it on every node IP :53, so it survives total MetalLB
+# controller/VIP allocation outages.
+apiVersion: v1
+kind: Service
+metadata:
+  name: dnsdist-fallback
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: SingleStack
+  selector: {}
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: dns-udp
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: dns-tcp
+      protocol: TCP

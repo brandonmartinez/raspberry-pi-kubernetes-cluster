@@ -1,0 +1,11 @@
+[Unit]
+Description=Run homelab network self-healing watchdog
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec={{ base_network_watchdog_timer_seconds }}s
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -5,6 +5,22 @@
     state: restarted
   when: base_apply | bool
 
+- name: restart dhcpcd
+  ansible.builtin.systemd:
+    name: dhcpcd
+    state: restarted
+  when:
+    - base_apply | bool
+    - base_dhcpcd_restart_apply | bool
+    - not ansible_check_mode
+
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - base_apply | bool
+    - not ansible_check_mode
+
 - name: report reboot required
   ansible.builtin.debug:
     msg: >-

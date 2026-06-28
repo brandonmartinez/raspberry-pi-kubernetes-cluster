@@ -19,6 +19,22 @@ k3s_token: "" # TODO secret: pass from Vault or -e for agent joins
 base_dns_servers:
   - 8.8.8.8 # cluster-specific
   - 8.8.4.4 # cluster-specific
+base_static_ip_interface: eth0 # cluster-specific: Pis are wired on eth0
+base_static_ip_prefix: 22 # cluster-specific: 192.168.52.0/22 LAN
+base_static_ip_gateway: 192.168.52.1 # cluster-specific: UDM-Pro
+# Keep UDM-Pro DHCP reservations for mapping/visibility, but each Pi can assert
+# a static IP when the gated dhcpcd task is applied. Node DNS must not point at
+# the cluster DNS VIP (.53); otherwise a DNS outage creates a circular dependency.
+base_static_ip_dns_servers:
+  - 192.168.52.1 # UDM-Pro, independent of cluster DNS
+  - 1.1.1.1 # public fallback if the gateway resolver is impaired
+base_network_watchdog_gateway: "{{ base_static_ip_gateway }}"
+base_network_watchdog_static_gateway: "{{ base_static_ip_gateway }}"
+base_network_watchdog_interface: "{{ base_static_ip_interface }}"
+base_network_watchdog_rebind_after_failures: 5 # 5 minutes at the default timer
+base_network_watchdog_reboot_after_failures: 15 # 15 minutes at the default timer
+base_network_watchdog_reboot_max_per_window: 1
+base_network_watchdog_reboot_window_seconds: 86400
 base_cgroup_options:
   - cgroup_enable=cpuset
   - cgroup_enable=memory

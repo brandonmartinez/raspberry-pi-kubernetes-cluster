@@ -32,12 +32,24 @@ controller:
   # Keep MetalLB admitted during node-overload incidents so DNS VIP assignment
   # is not starved behind normal workloads.
   priorityClassName: system-cluster-critical
+  # The controller is intentionally single-replica. During the DNS-VIP outage,
+  # the default 1s /metrics liveness probe killed it repeatedly on a loaded Pi;
+  # keep liveness tolerant so slow metrics cannot self-destruct VIP assignment.
+  livenessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 5
   resources:
+    # Guaranteed QoS: matching requests/limits prevents CPU throttling from
+    # making /metrics slow enough to trip the liveness probe.
     requests:
-      cpu: 25m
-      memory: 64Mi
+      cpu: 100m
+      memory: 128Mi
     limits:
-      cpu: 200m
+      cpu: 100m
       memory: 128Mi
 
 speaker:

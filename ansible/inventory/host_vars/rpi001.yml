@@ -1,4 +1,6 @@
 ---
+base_static_ip_address: 192.168.52.110 # cluster-specific: rpi001 LAN static IP
+
 # rpi001 has a USB SSD at /media/data_ext hosting Homebridge and Scrypted.
 # homebridge_data_dir is set explicitly (not via the mount_usb ternary) to
 # prevent silent data relocation if USB-mount management changes.

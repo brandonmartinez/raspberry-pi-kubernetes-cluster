@@ -19,4 +19,5 @@ resources:
   - namespace.yml
   - deployment.yml
   - service.yml
+  - service-fallback.yml
   - pdb.yml

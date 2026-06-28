@@ -56,6 +56,139 @@
   notify: restart networkmanager
   when: base_apply | bool
 
+- name: Report static IP and network resiliency gates
+  ansible.builtin.debug:
+    msg:
+      - "static IP apply={{ (base_apply | bool) and (base_static_ip_apply | bool) }} iface={{ base_static_ip_interface }} address={{ base_static_ip_address }}/{{ base_static_ip_prefix }} gateway={{ base_static_ip_gateway }}"
+      - "node DNS={{ base_static_ip_dns_servers }} (must not point at cluster DNS VIP; avoids circular dependency during DNS outages)"
+      - "dhcpcd persistent apply={{ (base_apply | bool) and (base_dhcpcd_persistent_apply | bool) }}"
+      - "dhcpcd restart apply={{ (base_apply | bool) and (base_dhcpcd_restart_apply | bool) }} (operator-only; restarting networking can drop SSH)"
+      - "network watchdog install={{ (base_apply | bool) and (base_network_watchdog_apply | bool) }} enable={{ (base_apply | bool) and (base_network_watchdog_apply | bool) and (base_network_watchdog_enable | bool) }}"
+      - "hardware watchdog apply={{ (base_apply | bool) and (base_hardware_watchdog_apply | bool) }}"
+
+- name: Configure dhcpcd static IP and persistent lease behavior
+  ansible.builtin.blockinfile:
+    path: /etc/dhcpcd.conf
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+    marker: "# {mark} ANSIBLE MANAGED HOMELAB STATIC NETWORK"
+    block: |
+      # Managed by Ansible after the 2026-06-28 lease-loss incident.
+      # The UDM-Pro DHCP reservations stay in place for inventory/visibility, but
+      # this Pi also asserts its own static address so a DHCP outage cannot remove
+      # the node IP/default route.
+      interface {{ base_static_ip_interface }}
+      {% if base_dhcpcd_persistent_apply | bool %}
+      # Keep the address/route if a DHCP lease expires or dhcpcd exits. This is
+      # defense-in-depth for DHCP disruptions and would have reduced the hard-down
+      # behavior seen during the 2026-06-28 incident.
+      persistent
+      {% endif %}
+      {% if base_static_ip_apply | bool %}
+      static ip_address={{ base_static_ip_address }}/{{ base_static_ip_prefix }}
+      static routers={{ base_static_ip_gateway }}
+      # Node-level DNS intentionally avoids the cluster DNS VIP (.53). Nodes must
+      # resolve names even when Pi-hole/cluster DNS is unavailable.
+      static domain_name_servers={{ base_static_ip_dns_servers | join(' ') }}
+      {% endif %}
+  notify: restart dhcpcd
+  when:
+    - base_apply | bool
+    - (base_static_ip_apply | bool) or (base_dhcpcd_persistent_apply | bool)
+
+- name: Install network watchdog script
+  ansible.builtin.template:
+    src: homelab-network-watchdog.sh.j2
+    dest: /usr/local/sbin/homelab-network-watchdog
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - base_apply | bool
+    - base_network_watchdog_apply | bool
+
+- name: Install network watchdog systemd service
+  ansible.builtin.template:
+    src: homelab-network-watchdog.service.j2
+    dest: /etc/systemd/system/homelab-network-watchdog.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload systemd
+  when:
+    - base_apply | bool
+    - base_network_watchdog_apply | bool
+
+- name: Install network watchdog systemd timer
+  ansible.builtin.template:
+    src: homelab-network-watchdog.timer.j2
+    dest: /etc/systemd/system/homelab-network-watchdog.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload systemd
+  when:
+    - base_apply | bool
+    - base_network_watchdog_apply | bool
+
+- name: Configure network watchdog timer state
+  ansible.builtin.systemd:
+    name: homelab-network-watchdog.timer
+    enabled: "{{ base_network_watchdog_enable | bool }}"
+    state: "{{ (base_network_watchdog_enable | bool) | ternary('started', 'stopped') }}"
+    daemon_reload: true
+  when:
+    - base_apply | bool
+    - base_network_watchdog_apply | bool
+    - not ansible_check_mode
+
+- name: Configure Raspberry Pi hardware watchdog module loading
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/bcm2835-wdt.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible. Optional defense-in-depth for true kernel hangs.
+      bcm2835-wdt
+  notify: report reboot required
+  when:
+    - base_apply | bool
+    - base_hardware_watchdog_apply | bool
+
+- name: Ensure systemd manager config drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - base_apply | bool
+    - base_hardware_watchdog_apply | bool
+
+- name: Configure systemd hardware watchdog
+  ansible.builtin.copy:
+    dest: /etc/systemd/system.conf.d/90-homelab-watchdog.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible after the 2026-06-28 network incident.
+      # Optional/off by default: enables systemd RuntimeWatchdogSec using the
+      # Raspberry Pi bcm2835-wdt hardware watchdog for kernel-hang recovery.
+      [Manager]
+      RuntimeWatchdogSec={{ base_hardware_watchdog_runtime_sec }}
+      RebootWatchdogSec={{ base_hardware_watchdog_reboot_sec }}
+  notify:
+    - reload systemd
+    - report reboot required
+  when:
+    - base_apply | bool
+    - base_hardware_watchdog_apply | bool
+
 - name: Refresh apt cache and upgrade packages
   ansible.builtin.apt:
     update_cache: true
