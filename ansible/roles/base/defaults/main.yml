@@ -84,6 +84,13 @@ base_network_watchdog_state_dir: /var/lib/homelab-network-watchdog
 # Optional Raspberry Pi hardware watchdog defense-in-depth for kernel hangs.
 # Operator opt-in only; this writes systemd watchdog config and reports that a
 # reboot/manual rollout is required for complete activation.
+#
+# WARNING: the Raspberry Pi BCM2835 hardware watchdog has a ~15s MAXIMUM timeout.
+# RuntimeWatchdogSec must stay under it (systemd pets at half the interval), or
+# the watchdog will hard-reset the node under I/O load before systemd can pet it.
+# A value of 30s caused a confirmed hard reset on rpi004 during a heavy apply
+# (2026-06-28); keep this <= 14s. Activation is also intentionally separate from
+# the other resilience gates and stays off during routine node rollouts.
 base_hardware_watchdog_apply: false
-base_hardware_watchdog_runtime_sec: 30s
+base_hardware_watchdog_runtime_sec: 14s
 base_hardware_watchdog_reboot_sec: 10min

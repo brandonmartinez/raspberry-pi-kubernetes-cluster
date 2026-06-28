@@ -15,6 +15,7 @@
 - **Scrape & retention policy** — `scrapeInterval`/`scrapeTimeout`/`evaluationInterval`, Prometheus `retention`/`retentionSize`/`walCompression`, Alertmanager and Grafana PVC sizes. Keep retention bounded so Prometheus stays within its memory limit on 4GB nodes.
 - **Coverage** — making sure every meaningful workload exposes metrics and has a ServiceMonitor (or an `additionalScrapeConfigs` entry), and that alert rules exist for the things that actually page (node down, disk pressure, cert expiry, target down, Longhorn volume degraded).
 - **External/synthetic monitoring (Uptime Kuma)** — the live `uptime.themartinez.cloud` instance: monitor inventory, check intervals/retries/timeouts tuned per service type, data retention, and the Discord notification wiring. Uptime Kuma's Prometheus `/metrics` feed is what backs the Grafana `uptime.json` dashboard, so I keep both ends in sync.
+- **Squad Discord status updates** — posting regular operational updates to the team Discord channel during work sessions (rollout progress, incident status, "all green" confirmations). The webhook is **never hardcoded**: it is read at runtime from 1Password (`op read op://$OP_VAULT/discord/webhook`, vault default `homelab`), so it stays out of git and rotates in one place. Keep updates signal-heavy — the same anti-noise discipline I apply to alerts applies here.
 - **The monitoring map staying current** — when MetalLB VIPs, DNS architecture, or endpoints change, the monitors and dashboards change with them.
 
 ## How I Work
@@ -26,13 +27,18 @@
 - **Uptime Kuma app is in Git (`apps/uptime/`), but its monitor inventory is runtime MariaDB state.** I manage monitors against the running instance via its socket.io API (username/password — the `uk1_` API key only authenticates `/metrics`). API credentials come from the existing 1Password `uptime` item (`op read op://$OP_VAULT/uptime/UPTIME_USERNAME|UPTIME_PASSWORD`) at runtime — never a committed secret or a new key. Changes there are additive and reversible; I keep a written record of the monitor inventory and settings so a database loss is recoverable.
 - I run `scripts/validate.sh` before handing off any `platform/monitoring/` change.
 
-### Uptime Kuma API tooling (ad-hoc by team decision — not committed)
+### Uptime Kuma API tooling
 
-The API tooling stays **ad-hoc** — assembled per task, not committed. If a repeatable process emerges, formalize it as a **skill** + repo tool later. Reproducible recipe:
+The monitor **retry/stagger policy is formalized** as `scripts/tune-uptime-monitors.py`
+(idempotent; the reviewable source of truth that re-applies after a DB restore).
+Run it via a `kubectl -n uptime port-forward svc/uptime-svc 3001:80` and it reads
+creds from 1Password. Ad-hoc *exploration* tooling (one-off queries, new monitor
+creation) stays assembled per task — only promote a recipe to a committed tool
+when it becomes a repeatable policy. Reproducible recipe for ad-hoc work:
 
-- **Creds at runtime from 1Password** (never committed): `op read op://$OP_VAULT/uptime/UPTIME_USERNAME` and `…/UPTIME_PASSWORD` (vault default `homelab`). URL `https://uptime.themartinez.cloud`.
+- **Creds at runtime from 1Password** (never committed): `op read op://$OP_VAULT/uptime/UPTIME_USERNAME` and `…/UPTIME_PASSWORD` (vault default `homelab`).
 - **Library:** `uptime-kuma-api` (Python) in a throwaway venv — macOS is PEP-668 externally-managed, so a venv is mandatory.
-- **Connect:** `UptimeKumaApi(URL, timeout=120)` then `.login(user, pass)`; login is slow behind the proxy — use a small retry loop (default timeout fails).
+- **Connect via port-forward, not the public URL.** Uptime Kuma is **v2.4.0**; the `uptime-kuma-api` library targets ≤1.23, and its socket.io handshake **times out through the Traefik ingress** (`https://uptime.themartinez.cloud` returns a 302 + TLS/websocket that the client can't complete). Port-forward the ClusterIP service and connect to localhost: `kubectl -n uptime port-forward svc/uptime-svc 3001:80` then `UptimeKumaApi("http://localhost:3001", timeout=30)` + `.login(user, pass)`.
 - **`add_monitor` quirk:** it calls `_build_monitor_data` with a FIXED signature; backup-only fields (`id`, `tags`, `pathName`, `childrenIDs`, `weight`, …) raise `TypeError`. Filter kwargs to `inspect.signature(api._build_monitor_data).parameters`; `type` MUST be a `MonitorType` enum, not a string. Apply tags/notifications in a second call.
 - **`edit_monitor`** is fetch-merge-save (partial updates safe). **`set_settings`** REPLACES all settings — read `get_settings()` first and pass current values back, overriding only what changes (e.g. `keepDataPeriodDays`).
 - **Mins:** `interval`/`retryInterval` ≥ 20, `maxretries` ≥ 0. Gamedig Minecraft Bedrock key is `mbe`. Live server is **v2.4.0** (library targets ≤1.23 — verify anything exotic).
