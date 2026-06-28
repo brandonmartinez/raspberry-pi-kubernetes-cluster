@@ -98,26 +98,11 @@ prometheus:
       limits:
         memory: 1536Mi
         cpu: 500m
-    # Earmark Prometheus (the cluster's largest memory tenant ~1.5Gi) to the 8GB
-    # node rpi001 so it stays off the memory-constrained 4GB workers. The
-    # toleration permits the control-plane taint; the preferred nodeAffinity pulls
-    # it to the large node but falls back to a worker if rpi001 is unavailable.
-    tolerations:
-      - key: node-role.kubernetes.io/control-plane
-        operator: Exists
-        effect: NoSchedule
-      - key: node-role.kubernetes.io/master
-        operator: Exists
-        effect: NoSchedule
-    affinity:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-                - key: node.themartinez.cloud/memory-tier
-                  operator: In
-                  values: ["large"]
+    # NOTE: Prometheus uses a Longhorn PVC, so it is NOT earmarked to rpi001 —
+    # rpi001 is not a Longhorn node and cannot attach Longhorn volumes (its
+    # control-plane taint keeps the longhorn-csi-plugin DaemonSet off it). Keep
+    # Prometheus on the dedicated storage nodes (rpi002/003/004). See #77: making
+    # rpi001 a Longhorn node would let this move to the 8GB node later.
     # PVC configuration
     storageSpec:
       volumeClaimTemplate:
@@ -217,26 +202,19 @@ grafana:
     accessModes:
       - ReadWriteOnce
     storageClassName: longhorn
-  # Earmark Grafana to the 8GB node rpi001 alongside Prometheus. The large node
-  # has room for both; this vacates a memory-constrained 4GB worker. Replaces the
-  # previous anti-affinity that deliberately spread Grafana away from Prometheus
-  # across the 4GB workers — co-locating them on the 8GB node is now desired.
-  tolerations:
-    - key: node-role.kubernetes.io/control-plane
-      operator: Exists
-      effect: NoSchedule
-    - key: node-role.kubernetes.io/master
-      operator: Exists
-      effect: NoSchedule
+  # NOTE: Grafana uses a Longhorn PVC, so it is NOT earmarked to rpi001 (rpi001
+  # cannot attach Longhorn volumes — see the Prometheus note above and #77). Keep
+  # the original anti-affinity so Grafana avoids co-locating with Prometheus on a
+  # single 4GB worker.
   affinity:
-    nodeAffinity:
+    podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 100
-          preference:
-            matchExpressions:
-              - key: node.themartinez.cloud/memory-tier
-                operator: In
-                values: ["large"]
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: prometheus
+            topologyKey: kubernetes.io/hostname
   # ServiceMonitor label and job relabel
   serviceMonitor:
     labels:
