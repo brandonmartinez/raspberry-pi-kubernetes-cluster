@@ -1,4 +1,6 @@
 ---
+base_static_ip_address: 192.168.52.113 # cluster-specific: rpi004 LAN static IP
+
 # rpi004 ext4 was formatted with stripe=8191; preserve to avoid fstab churn.
 # rpi002/rpi003 have no stripe option and inherit group_vars defaults.
 mount_usb_opts: defaults,auto,users,rw,exec,nofail,stripe=8191

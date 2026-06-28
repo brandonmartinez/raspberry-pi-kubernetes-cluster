@@ -1,0 +1,2 @@
+---
+base_static_ip_address: 192.168.52.112 # cluster-specific: rpi003 LAN static IP
