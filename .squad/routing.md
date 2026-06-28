@@ -9,6 +9,7 @@ How to decide who handles what.
 | GitOps control plane & architecture | Ripley | ArgoCD root/appset/projects, sync waves, promotion gates, app-of-apps structure |
 | Kubernetes apps & platform stacks | Dallas | `apps/<app>` Kustomize bases, `platform/<stack>` Helm values, HA (probes/PDB/HPA/spread), Traefik ingress |
 | Observability & monitoring | Ash | `platform/monitoring` (Prometheus/Grafana/Alertmanager/exporters), ServiceMonitors/PrometheusRules/dashboards, scrape & retention tuning, Uptime Kuma synthetic checks, sizing of the monitoring stack |
+| Discord status updates | Ash | Posting regular operational updates to the team Discord during work sessions; webhook read at runtime from 1Password (`op://homelab/discord/webhook`), never hardcoded |
 | Node provisioning & Ansible | Parker | Ansible roles, `provision.yml`/`adopt.yml`, k3s server/agent, storage, `bootstrap/` |
 | Secrets, TLS & security | Bishop | `secrets/templates` `op://` refs, `sync-secrets.sh`, cert-manager/TLS, `validate.sh` guards |
 | Documentation | Lambert | `docs/`, runbooks, `README.md`, keeping docs accurate for open-source learners |
