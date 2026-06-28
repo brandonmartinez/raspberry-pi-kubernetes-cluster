@@ -1,0 +1,8 @@
+[Unit]
+Description=Homelab network self-healing watchdog
+Documentation=man:systemd.service(5)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homelab-network-watchdog

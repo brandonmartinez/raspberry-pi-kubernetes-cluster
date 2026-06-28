@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Managed by Ansible. Network self-healing for the 2026-06-28 dhcpcd lease-loss
+# incident. A sustained gateway outage first triggers dhcpcd/route remediation;
+# reboot is last-resort and guarded to avoid loops.
+
+IFACE="{{ base_network_watchdog_interface }}"
+GATEWAY="{{ base_network_watchdog_gateway }}"
+STATIC_GATEWAY="{{ base_network_watchdog_static_gateway }}"
+PING_COUNT="{{ base_network_watchdog_ping_count }}"
+PING_TIMEOUT="{{ base_network_watchdog_ping_timeout_seconds }}"
+REBIND_AFTER="{{ base_network_watchdog_rebind_after_failures }}"
+REBOOT_AFTER="{{ base_network_watchdog_reboot_after_failures }}"
+REBOOT_MAX="{{ base_network_watchdog_reboot_max_per_window }}"
+REBOOT_WINDOW="{{ base_network_watchdog_reboot_window_seconds }}"
+STATE_DIR="{{ base_network_watchdog_state_dir }}"
+FAIL_FILE="${STATE_DIR}/fail-count"
+REBOOT_FILE="${STATE_DIR}/reboot-history"
+
+mkdir -p "${STATE_DIR}"
+
+gateway_reachable() {
+  ping -I "${IFACE}" -c "${PING_COUNT}" -W "${PING_TIMEOUT}" "${GATEWAY}" >/dev/null 2>&1
+}
+
+read_count() {
+  if [[ -r "$1" ]]; then
+    tr -dc '0-9' < "$1"
+  else
+    printf '0'
+  fi
+}
+
+write_count() {
+  printf '%s\n' "$2" > "$1"
+}
+
+if gateway_reachable; then
+  write_count "${FAIL_FILE}" 0
+  exit 0
+fi
+
+fail_count="$(read_count "${FAIL_FILE}")"
+fail_count="$((fail_count + 1))"
+write_count "${FAIL_FILE}" "${fail_count}"
+
+logger -t homelab-network-watchdog "gateway ${GATEWAY} unreachable on ${IFACE}; consecutive_failures=${fail_count}"
+
+if (( fail_count >= REBIND_AFTER )); then
+  logger -t homelab-network-watchdog "attempting dhcpcd rebind and default route repair for ${IFACE}"
+  if command -v dhcpcd >/dev/null 2>&1; then
+    timeout 30 dhcpcd --rebind "${IFACE}" || true
+  fi
+  if [[ -n "${STATIC_GATEWAY}" ]]; then
+    ip route replace default via "${STATIC_GATEWAY}" dev "${IFACE}" || true
+  fi
+  sleep 5
+  if gateway_reachable; then
+    logger -t homelab-network-watchdog "gateway recovered after remediation"
+    write_count "${FAIL_FILE}" 0
+    exit 0
+  fi
+fi
+
+if (( fail_count < REBOOT_AFTER )); then
+  exit 0
+fi
+
+now="$(date +%s)"
+cutoff="$((now - REBOOT_WINDOW))"
+recent_reboots=()
+if [[ -r "${REBOOT_FILE}" ]]; then
+  while IFS= read -r ts; do
+    [[ "${ts}" =~ ^[0-9]+$ ]] || continue
+    if (( ts >= cutoff )); then
+      recent_reboots+=("${ts}")
+    fi
+  done < "${REBOOT_FILE}"
+fi
+
+if (( ${#recent_reboots[@]} >= REBOOT_MAX )); then
+  logger -t homelab-network-watchdog "reboot suppressed; ${#recent_reboots[@]} reboot(s) already recorded inside ${REBOOT_WINDOW}s window"
+  printf '%s\n' "${recent_reboots[@]}" > "${REBOOT_FILE}"
+  exit 0
+fi
+
+recent_reboots+=("${now}")
+printf '%s\n' "${recent_reboots[@]}" > "${REBOOT_FILE}"
+logger -t homelab-network-watchdog "gateway still unreachable after ${fail_count} checks; requesting controlled reboot"
+systemctl reboot --message="homelab-network-watchdog: gateway ${GATEWAY} unreachable after ${fail_count} checks"
