@@ -5,9 +5,10 @@ set -euo pipefail
 #
 # This is the homelab-friendly replacement for External Secrets Operator: instead
 # of the cluster pulling from 1Password (which needs a Business service account),
-# the operator PUSHES secrets from their signed-in `op` session. Nothing in the
-# cluster depends on 1Password at runtime, so a 1Password/DNS/internet outage has
-# ZERO effect on running workloads — secrets live in etcd until you re-push.
+# the operator PUSHES secrets from their signed-in `op` session or an optional
+# read-only service-account token. Nothing in the cluster depends on 1Password
+# at runtime, so a 1Password/DNS/internet outage has ZERO effect on running
+# workloads — secrets live in etcd until you re-push.
 #
 # Mechanism: every file in secrets/templates/ is a Kubernetes Secret manifest
 # whose values are 1Password references ({{ op://$OP_VAULT/item/field }}).
@@ -23,6 +24,11 @@ set -euo pipefail
 #   scripts/sync-secrets.sh --verify        # read-only: report missing live Secrets
 #   scripts/sync-secrets.sh --reconcile     # push only missing live Secrets
 #
+# Auth:
+#   Defaults to the interactive `op` session. If OP_SERVICE_ACCOUNT_TOKEN is not
+#   set and macOS Keychain has the configured item, the script exports it for
+#   non-interactive service-account auth.
+#
 # Modes:
 #   default      Resolve all selected 1Password refs, then apply selected Secrets.
 #   --dry-run    Resolve all selected 1Password refs, but do not apply anything.
@@ -30,20 +36,29 @@ set -euo pipefail
 #   --reconcile  Check expected Secret names first, then apply only missing ones.
 #
 # Env:
-#   OP_VAULT    1Password vault holding homelab items (default: homelab)
-#   OP_ACCOUNT  1Password account shorthand/sign-in address (for multi-account)
+#   OP_VAULT                         1Password vault holding homelab items (default: homelab)
+#   OP_ACCOUNT                       1Password account shorthand/sign-in address (interactive auth only)
+#   OP_SERVICE_TOKEN_KEYCHAIN_ITEM   Keychain item for optional service-account token (default: op-service-token-homelab)
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 source "${REPO_ROOT}/_shared/echo.sh"
 
 export OP_VAULT="${OP_VAULT:-homelab}"
+OP_SERVICE_TOKEN_KEYCHAIN_ITEM="${OP_SERVICE_TOKEN_KEYCHAIN_ITEM:-op-service-token-homelab}"
 TEMPLATE_DIR="${REPO_ROOT}/secrets/templates"
 PG_TEMPLATE="${REPO_ROOT}/secrets/postgres-app.tpl.yaml"
 PG_LABEL="postgres-client=true"
 
 OP_ARGS=()
-[[ -n "${OP_ACCOUNT:-}" ]] && OP_ARGS=(--account "${OP_ACCOUNT}")
+configure_op_args() {
+  OP_ARGS=()
+  # Service-account auth comes from OP_SERVICE_ACCOUNT_TOKEN; --account can conflict.
+  if [[ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" && -n "${OP_ACCOUNT:-}" ]]; then
+    OP_ARGS=(--account "${OP_ACCOUNT}")
+  fi
+}
+configure_op_args
 
 MODE=sync
 MODE_SET=false
@@ -77,7 +92,7 @@ for arg in "$@"; do
       MODE=reconcile
       ;;
     -h | --help)
-      sed -n '3,34p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '3,41p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*)
@@ -96,13 +111,33 @@ fi
 
 # --- preconditions -----------------------------------------------------------
 if [[ "${MODE}" != "verify" ]]; then
+  if [[ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]] && command -v security >/dev/null 2>&1; then
+    if token=$(security find-generic-password -w -s "${OP_SERVICE_TOKEN_KEYCHAIN_ITEM}" -a "${USER}" 2>/dev/null); then
+      export OP_SERVICE_ACCOUNT_TOKEN="${token}"
+      log "Using 1Password service account from Keychain (non-interactive)."
+    fi
+    unset token
+  fi
+  configure_op_args
   command -v op >/dev/null 2>&1 || {
     echo "op (1Password CLI) is required. Install it and sign in." >&2
     exit 1
   }
-  if ! op "${OP_ARGS[@]}" account get >/dev/null 2>&1; then
-    echo "No usable 1Password session. Run 'eval \$(op signin)' (or enable the" >&2
-    echo "desktop app CLI integration), then retry. Set OP_ACCOUNT for multi-account." >&2
+  # Verify auth. Service-account tokens authenticate the *session*, which
+  # `op whoami` reports reliably; `op account get` targets interactive accounts
+  # and can fail under a service-account token even when it is valid. Use a
+  # presence flag (never the token value) to choose the check.
+  op_sa_present="${OP_SERVICE_ACCOUNT_TOKEN:+1}"
+  if [[ -n "${op_sa_present}" ]]; then
+    op_auth_check=(op "${OP_ARGS[@]}" whoami)
+  else
+    op_auth_check=(op "${OP_ARGS[@]}" account get)
+  fi
+  if ! "${op_auth_check[@]}" >/dev/null 2>&1; then
+    echo "No usable 1Password auth. Run 'eval \$(op signin)' (or enable the" >&2
+    echo "desktop app CLI integration), or store a service-account token in" >&2
+    echo "Keychain item '${OP_SERVICE_TOKEN_KEYCHAIN_ITEM}'; see docs/secrets.md." >&2
+    echo "Set OP_ACCOUNT for multi-account interactive auth." >&2
     exit 1
   fi
 fi
