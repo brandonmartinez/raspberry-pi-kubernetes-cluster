@@ -168,6 +168,23 @@ Read `docs/provisioning.md`. Provisioning is `ansible/`.
   Never redefine these — always source `_shared/echo.sh`.
 - Scripts must be **non-interactive** and **idempotent** where possible.
 
+## Multi-agent / AI workflow (git safety)
+
+- When multiple AI agents/subagents work concurrently, **git-mutating operations**
+  (`checkout`, `switch`, `commit`, `branch`, `stash`, `reset`, `rebase`,
+  `cherry-pick`) MUST NOT be run by more than one actor in the same working tree.
+- Use one of two safe patterns: **serialize** git-mutating work (one actor at a
+  time), or give each agent an **isolated git worktree** (`git worktree add`).
+- The **coordinator owns all commits**. Specialist agents edit files only and
+  receive explicit "do NOT run git" instructions unless they have their own
+  isolated worktree.
+- Agents working in a shared tree must stick to **disjoint file paths** to avoid
+  edit conflicts.
+- Before committing, the coordinator verifies the intended branch and HEAD are
+  correct, guarding against a moved HEAD.
+- Rationale: HEAD moved mid-commit once, corrupting local `main` and requiring
+  reflog recovery.
+
 ## Validation
 
 `scripts/validate.sh` is local CI (also run by a GitHub Action). It runs

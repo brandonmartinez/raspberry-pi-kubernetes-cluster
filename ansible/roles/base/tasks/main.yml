@@ -107,6 +107,65 @@
     - base_apply | bool
     - base_remove_avahi | bool
 
+- name: Inspect active swap devices
+  ansible.builtin.command: swapon --show=NAME --noheadings
+  register: base_active_swap
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Stat legacy Raspberry Pi OS swap file
+  ansible.builtin.stat:
+    path: "{{ base_legacy_swap_path }}"
+  register: base_legacy_swap_stat
+  changed_when: false
+  check_mode: false
+
+- name: Report legacy swap decision
+  ansible.builtin.debug:
+    msg:
+      - "legacy swap path={{ base_legacy_swap_path }} exists={{ base_legacy_swap_stat.stat.exists }}"
+      - "active swap devices={{ base_active_swap.stdout_lines | default([]) }}"
+      - "disable legacy /var/swap apply={{ (base_apply | bool) and (base_disable_legacy_var_swap | bool) }}"
+      - "tradeoff: no slow USB-backed swap; kubelet reservations/evictions surface memory pressure sooner."
+
+- name: Stop active legacy swap file
+  ansible.builtin.command: "swapoff {{ base_legacy_swap_path | quote }}"
+  when:
+    - base_apply | bool
+    - base_disable_legacy_var_swap | bool
+    - base_legacy_swap_path in (base_active_swap.stdout_lines | default([]))
+
+- name: Disable dphys-swapfile service when present
+  ansible.builtin.systemd:
+    name: "{{ base_legacy_swap_service }}"
+    enabled: false
+    state: stopped
+  failed_when: false
+  when:
+    - base_apply | bool
+    - base_disable_legacy_var_swap | bool
+
+- name: Remove legacy Raspberry Pi OS swap file
+  ansible.builtin.file:
+    path: "{{ base_legacy_swap_path }}"
+    state: absent
+  when:
+    - base_apply | bool
+    - base_disable_legacy_var_swap | bool
+
+- name: Tune dirty writeback thresholds for USB SSD nodes
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/90-homelab-writeback.conf
+    state: present
+    reload: true
+  loop: "{{ base_writeback_sysctls }}"
+  when:
+    - base_apply | bool
+    - base_manage_writeback_sysctls | bool
+
 - name: Stat Bookworm boot cmdline path (/boot/firmware/cmdline.txt)
   ansible.builtin.stat:
     path: /boot/firmware/cmdline.txt

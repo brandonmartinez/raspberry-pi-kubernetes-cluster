@@ -33,6 +33,51 @@ This order rebuilds from significant cluster loss while preserving DNS and data 
 13. Restore/migrate Pi-hole last, following [pihole-migration.md](pihole-migration.md).
 14. Add ArgoCD self-management last.
 
+## ArgoCD cascade-delete safety
+
+An ApplicationSet generator change can become a data-loss event if it deletes the
+child `Application` and that Application does not preserve its resources. The
+incident pattern is:
+
+1. Remove an app from the `apps/*` generator, add an exclusion, or otherwise
+   transfer ownership to an explicit ArgoCD `Application`.
+2. The ApplicationSet controller deletes the generated `Application`.
+3. Without `spec.syncPolicy.preserveResourcesOnDeletion: true`, ArgoCD
+   cascade-deletes the application's managed resources, including its Namespace
+   and PVCs.
+4. If a PVC uses `local-path` with the default `Delete` reclaim behavior, the
+   backing data is deleted permanently.
+
+The repository now sets `preserveResourcesOnDeletion: true` on the apps
+ApplicationSet. That means removing a generated Application leaves its live
+resources running; any cleanup is a deliberate manual step after backup and
+verification, not a side effect of a generator edit.
+
+Lessons from the incident:
+
+- Treat Application ownership transfers like data-plane changes, not harmless
+  YAML reshuffling.
+- Confirm stateful apps have a current, restorable backup before changing their
+  Application source or generator membership. Use
+  [backup-verification.md](backup-verification.md) as the pre-flight gate.
+- Pushed Secrets are namespace-scoped. If a namespace is cascade-deleted and then
+  recreated, those Secrets are gone too; re-run `scripts/sync-secrets.sh <app>`
+  before expecting workloads to start.
+- Longhorn-backed PVCs may be recoverable from Longhorn backups, but `local-path`
+  PVCs with delete reclaim are not a backup strategy.
+
+Before deleting, excluding, renaming, or transferring any generated Application:
+
+```sh
+kubectl -n argocd get applicationset apps -o jsonpath='{.spec.syncPolicy.preserveResourcesOnDeletion}{"\n"}'
+kubectl -n argocd get app <app> -o jsonpath='{.spec.syncPolicy.preserveResourcesOnDeletion}{"\n"}'
+kubectl -n <namespace> get pvc
+```
+
+If the first check is not `true`, stop and add the safety setting before syncing
+the generator change. If the app is already explicit, set the same safety on that
+Application before deleting or replacing it.
+
 ## PostgreSQL restore sketch
 
 ```sh

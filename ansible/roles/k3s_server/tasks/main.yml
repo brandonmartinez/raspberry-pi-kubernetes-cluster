@@ -10,16 +10,51 @@
       k3s server service exists={{ k3s_server_service.stat.exists }};
       install will {{ 'be skipped' if k3s_server_service.stat.exists or not (k3s_apply | bool) else 'run' }}.
 
-- name: Install k3s server with legacy-compatible flags
+- name: Ensure k3s server config directory exists
+  ansible.builtin.file:
+    path: "{{ k3s_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: k3s_apply | bool
+
+- name: Manage k3s server config with kubelet resilience args
+  ansible.builtin.copy:
+    dest: "{{ k3s_config_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible. Node-resilience settings were added after the
+      # DNS-outage/overload incident; apply by rolling one node at a time while
+      # watching DNS, MetalLB, Longhorn, and node pressure.
+      write-kubeconfig-mode: "{{ k3s_write_kubeconfig_mode }}"
+      kubelet-arg:
+      {% for arg in (k3s_common_kubelet_args + k3s_node_resilience_kubelet_args) %}
+        - {{ arg | to_json }}
+      {% endfor %}
+      kube-proxy-arg:
+      {% for arg in k3s_common_kube_proxy_args %}
+        - {{ arg | to_json }}
+      {% endfor %}
+      kube-controller-manager-arg:
+      {% for arg in k3s_server_controller_manager_args %}
+        - {{ arg | to_json }}
+      {% endfor %}
+      kube-scheduler-arg:
+      {% for arg in k3s_server_scheduler_args %}
+        - {{ arg | to_json }}
+      {% endfor %}
+      prefer-bundled-bin: {{ k3s_prefer_bundled_bin | bool | ternary('true', 'false') }}
+  notify: restart k3s server
+  when: k3s_apply | bool
+
+- name: Install k3s server with managed config
   ansible.builtin.shell: >-
     curl -sfL https://get.k3s.io |
     INSTALL_K3S_CHANNEL={{ k3s_channel | quote }} sh -s -
-    --write-kubeconfig-mode {{ k3s_write_kubeconfig_mode | quote }}
-    {% for arg in k3s_common_kubelet_args %} --kubelet-arg={{ arg | quote }}{% endfor %}
-    {% for arg in k3s_server_controller_manager_args %} --kube-controller-manager-arg {{ arg | quote }}{% endfor %}
-    {% for arg in k3s_common_kube_proxy_args %} --kube-proxy-arg {{ arg | quote }}{% endfor %}
-    {% for arg in k3s_server_scheduler_args %} --kube-scheduler-arg {{ arg | quote }}{% endfor %}
-    {% if k3s_prefer_bundled_bin | bool %} --prefer-bundled-bin{% endif %}
+    --config {{ k3s_config_file | quote }}
   args:
     creates: "{{ k3s_service_file }}"
   when:

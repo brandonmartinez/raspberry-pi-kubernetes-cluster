@@ -278,11 +278,135 @@ PY
   fi
 }
 
+check_appset_preserve_policy() {
+  section "ApplicationSet deletion safety"
+  set +e
+  python3 - "$REPO_ROOT" <<'PY'
+import os, sys
+
+root = sys.argv[1]
+path = os.path.join(root, 'clusters', 'rpi', 'apps-appset.yml')
+rel = os.path.relpath(path, root)
+with open(path, encoding='utf-8') as fh:
+    text = fh.read()
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+def scalar_true(value):
+    return value.split('#', 1)[0].strip().strip('"\'').lower() == 'true'
+
+def stripped_docs(raw):
+    import re
+    return [doc for doc in re.split(r'(?m)^---\s*$', raw) if doc.strip()]
+
+def fallback_doc_kind(doc):
+    import re
+    match = re.search(r'(?m)^kind:\s*["\']?([^"\'\n#]+)', doc)
+    return match.group(1).strip() if match else None
+
+def fallback_doc_name(doc):
+    import re
+    match = re.search(r'(?m)^metadata:\s*\n(?:\s+.*\n)*?\s+name:\s*["\']?([^"\'\n#]+)', doc)
+    return match.group(1).strip() if match else '<unnamed>'
+
+def fallback_spec_sync_policy_preserve(doc):
+    stack = []
+    for raw_line in doc.splitlines():
+        if not raw_line.strip() or raw_line.lstrip().startswith('#'):
+            continue
+        if ':' not in raw_line:
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(' '))
+        key, value = raw_line.strip().split(':', 1)
+        key = key.strip().strip('"\'')
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        stack.append((indent, key))
+        path = [item[1] for item in stack]
+        if path == ['spec', 'syncPolicy', 'preserveResourcesOnDeletion']:
+            return scalar_true(value)
+    return False
+
+if yaml:
+    docs = [doc for doc in yaml.safe_load_all(text) if isinstance(doc, dict)]
+    appsets = [doc for doc in docs if doc.get('kind') == 'ApplicationSet']
+    if not appsets:
+        print(f'{rel}: expected an ApplicationSet document.', file=sys.stderr)
+        sys.exit(1)
+
+    appset = appsets[0]
+    explicit_apps = [
+        doc.get('metadata', {}).get('name', '<unnamed>')
+        for doc in docs
+        if doc.get('kind') == 'Application'
+    ]
+
+    def has_exclude_true(node):
+        if isinstance(node, dict):
+            if node.get('exclude') is True:
+                return True
+            return any(has_exclude_true(value) for value in node.values())
+        if isinstance(node, list):
+            return any(has_exclude_true(value) for value in node)
+        return False
+
+    has_generator_excludes = has_exclude_true(appset.get('spec', {}).get('generators', []))
+    preserve = appset.get('spec', {}).get('syncPolicy', {}).get('preserveResourcesOnDeletion') is True
+else:
+    docs = stripped_docs(text)
+    appset_docs = [doc for doc in docs if fallback_doc_kind(doc) == 'ApplicationSet']
+    if not appset_docs:
+        print(f'{rel}: expected an ApplicationSet document.', file=sys.stderr)
+        sys.exit(1)
+    appset_doc = appset_docs[0]
+    explicit_apps = [
+        fallback_doc_name(doc)
+        for doc in docs
+        if fallback_doc_kind(doc) == 'Application'
+    ]
+    has_generator_excludes = any(
+        scalar_true(line.split(':', 1)[1])
+        for line in appset_doc.splitlines()
+        if line.strip().startswith('exclude:')
+    )
+    preserve = fallback_spec_sync_policy_preserve(appset_doc)
+
+uses_ownership_transfer = bool(explicit_apps) or has_generator_excludes
+
+# Excluding generator paths or defining explicit Applications transfers ownership
+# away from the ApplicationSet. Without this flag, the controller can cascade
+# delete generated Applications and their live resources (including PVCs).
+if uses_ownership_transfer and not preserve:
+    details = []
+    if explicit_apps:
+        details.append('explicit Application objects: ' + ', '.join(explicit_apps))
+    if has_generator_excludes:
+        details.append('generator exclude: true entries')
+    print(
+        f'{rel}: ownership-transfer pattern in use ({ "; ".join(details) }) '
+        'but spec.syncPolicy.preserveResourcesOnDeletion is not true.',
+        file=sys.stderr,
+    )
+    sys.exit(1)
+PY
+  local rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    fail "ApplicationSet preserveResourcesOnDeletion guard failed."
+  else
+    pass "ApplicationSet ownership-transfer paths preserve live resources on deletion."
+  fi
+}
+
 check_kustomize
 check_helm
 check_kubeconform
 check_secrets
 check_prune_policy
+check_appset_preserve_policy
 
 section "Validation summary"
 log "Warnings: ${WARNINGS}"

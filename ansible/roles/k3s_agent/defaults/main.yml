@@ -6,5 +6,18 @@ k3s_server_url: "https://192.168.52.110:6443"
 k3s_token: ""
 k3s_common_kubelet_args:
   - node-ip=0.0.0.0
+k3s_config_dir: /etc/rancher/k3s
+k3s_config_file: "{{ k3s_config_dir }}/config.yaml"
+# Worker node-resilience tuning from the DNS-outage/overload incident. Gated by
+# k3s_apply in adopt.yml; roll agents one at a time while watching DNS/MetalLB.
+k3s_node_resilience_kubelet_args:
+  # rpi002/rpi003/rpi004 have 4GiB RAM; keep headroom for kubelet, containerd,
+  # Longhorn, MetalLB speaker, and kernel writeback under heavy image pulls.
+  - system-reserved=cpu=150m,memory=384Mi
+  - kube-reserved=cpu=200m,memory=512Mi
+  - eviction-hard=memory.available<384Mi,nodefs.available<10%,imagefs.available<15%
+  - eviction-soft=memory.available<640Mi,nodefs.available<15%,imagefs.available<20%
+  - eviction-soft-grace-period=memory.available=2m,nodefs.available=5m,imagefs.available=5m
+  - eviction-max-pod-grace-period=60
 k3s_common_kube_proxy_args:
   - metrics-bind-address=0.0.0.0
