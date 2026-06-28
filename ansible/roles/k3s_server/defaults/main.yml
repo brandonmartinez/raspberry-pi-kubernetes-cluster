@@ -27,3 +27,11 @@ k3s_server_scheduler_args:
 k3s_prefer_bundled_bin: true
 k3s_install_helm: true
 k3s_helm_path: /usr/local/bin/helm
+# Node labels applied via the k3s `node-label` config key. rpi001 was upgraded
+# from 4GB to 8GB RAM, so it is earmarked to host the cluster's largest memory
+# tenants (Prometheus, Grafana, ArgoCD controller/repo-server) via per-workload
+# tolerations + nodeAffinity. The legacy control-plane NoSchedule taint (added
+# when rpi001 was 4GB) stays in place so the node is reserved for these earmarked
+# workloads rather than open to everything.
+k3s_server_node_labels:
+  - "node.themartinez.cloud/memory-tier=large"

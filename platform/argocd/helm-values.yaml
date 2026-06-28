@@ -8,10 +8,46 @@ redis-ha:
   enabled: false
 controller:
   replicas: 1
+  # Earmark the application-controller (the heaviest ArgoCD component — it holds
+  # all Application state in memory) to the 8GB node rpi001, off the 4GB workers.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node.themartinez.cloud/memory-tier
+                operator: In
+                values: ["large"]
 server:
   replicas: 1
 repoServer:
   replicas: 1
+  # Earmark the repo-server (renders manifests during sync — memory-hungry) to the
+  # 8GB node rpi001 alongside the controller, off the 4GB workers.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node.themartinez.cloud/memory-tier
+                operator: In
+                values: ["large"]
 applicationSet:
   replicas: 1
 # Dex is unused (no SSO); the raw install's argocd-dex-server is orphaned at
