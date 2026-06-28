@@ -4,7 +4,12 @@ metadata:
   name: minecraft
 spec:
   serviceName: "minecraft"
-  replicas: 1
+  # Temporarily disabled (replicas: 0) to relieve rpi002 CPU saturation — the
+  # Bedrock server image is amd64-only and runs under qemu-x86_64 emulation
+  # (~24% of a Pi core). The PVC (minecraft-pvc-minecraft-0) is retained, so
+  # world data is preserved; set back to 1 to re-enable. Tracking: #77 (move
+  # amd64 workloads to the Intel QNAP node).
+  replicas: 0
   updateStrategy:
     type: RollingUpdate
   template:
