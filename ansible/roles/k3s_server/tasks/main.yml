@@ -34,6 +34,12 @@
       {% for arg in (k3s_common_kubelet_args + k3s_node_resilience_kubelet_args) %}
         - {{ arg | to_json }}
       {% endfor %}
+      {% if k3s_server_node_labels | default([]) | length > 0 %}
+      node-label:
+      {% for label in k3s_server_node_labels %}
+        - {{ label | to_json }}
+      {% endfor %}
+      {% endif %}
       kube-proxy-arg:
       {% for arg in k3s_common_kube_proxy_args %}
         - {{ arg | to_json }}
