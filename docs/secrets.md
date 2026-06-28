@@ -8,10 +8,16 @@ authenticates to 1Password, so there is no operator and no runtime dependency on
 the push script non-interactively; its token never goes into the cluster.
 
 > **Why push, not pull?** External Secrets Operator's 1Password providers
-> (`onepasswordSDK`/Connect) both require a **Business** service account. This
-> account is a **Family** plan, which cannot create service accounts. The
-> push-sync model sidesteps that entirely — the operator's own signed-in `op`
-> session resolves the references, so a Family (or even personal) plan works.
+> (`onepasswordSDK`/Connect) pull from 1Password's hosted API and need a
+> credential with direct **SaaS access** — a Connect server or a Business/Teams
+> service account — deployed *inside* the cluster, a permanent runtime dependency
+> on 1Password. A Family plan *can* create a service account, but only for
+> **local desktop CLI** use (`op` with `OP_SERVICE_ACCOUNT_TOKEN`), not the
+> hosted SaaS access ESO requires. The push-sync model only ever uses the local
+> `op` CLI, so it works on a Family (or personal) plan — and every form of
+> 1Password auth (an interactive `op` session, or the optional **read-only**
+> workstation service account described below) stays on the workstation and
+> never enters the cluster.
 
 The guiding rule is unchanged: **only genuinely private values go to 1Password.**
 Non-secret, cluster-specific values (hostnames, LAN IPs, timezone, UID/GID,
@@ -76,9 +82,13 @@ Operator setup (do this manually, not from an agent):
 
 1. Create a 1Password service account with **read-only** access to only the
    `homelab` vault.
-2. Store its token in macOS Keychain, using a placeholder here for the value:
+2. Store its token in macOS Keychain. Copy the full `ops_…` token to your
+   clipboard first, then store it *from the clipboard* — a very long token can be
+   silently truncated if pasted into an interactive prompt:
    ```sh
-   security add-generic-password -a "$USER" -s "op-service-token-homelab" -w "<token>" -U
+   pbpaste | wc -c   # sanity-check length (~800+ chars) before storing
+   security add-generic-password -U -a "$USER" -s "op-service-token-homelab" -w "$(pbpaste)"
+   pbcopy </dev/null # clear the clipboard afterward
    ```
 3. Never commit or print the token. Rotate it immediately if it is exposed.
 
