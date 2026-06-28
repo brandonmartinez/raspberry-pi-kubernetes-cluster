@@ -15,6 +15,7 @@ REBOOT_AFTER="{{ base_network_watchdog_reboot_after_failures }}"
 REBOOT_MAX="{{ base_network_watchdog_reboot_max_per_window }}"
 REBOOT_WINDOW="{{ base_network_watchdog_reboot_window_seconds }}"
 STATE_DIR="{{ base_network_watchdog_state_dir }}"
+{% raw %}
 FAIL_FILE="${STATE_DIR}/fail-count"
 REBOOT_FILE="${STATE_DIR}/reboot-history"
 
@@ -89,3 +90,4 @@ recent_reboots+=("${now}")
 printf '%s\n' "${recent_reboots[@]}" > "${REBOOT_FILE}"
 logger -t homelab-network-watchdog "gateway still unreachable after ${fail_count} checks; requesting controlled reboot"
 systemctl reboot --message="homelab-network-watchdog: gateway ${GATEWAY} unreachable after ${fail_count} checks"
+{% endraw %}
