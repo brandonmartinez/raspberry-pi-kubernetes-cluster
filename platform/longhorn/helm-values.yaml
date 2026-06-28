@@ -1,5 +1,7 @@
 # LONGHORN ADOPTION WARNING — LIVE STORAGE LAYER
-# Do NOT change defaultDataPath, defaultReplicaCount, backup target, or StorageClass during adoption.
+# Do NOT change defaultDataPath, backup target, or StorageClass during adoption.
+# defaultReplicaCount intentionally tuned 3->2 post-adoption (capacity diet #83);
+# affects new volumes only — existing volumes migrate one at a time, watch rebuilds.
 # CRDs are chart-delivered for now and must never be pruned.
 # Freeze chart version to live (platform-apps.yml currently pins 1.10.0; confirm with helm list -n longhorn-system).
 # Do not upgrade while adopting the live release.
@@ -20,15 +22,24 @@ defaultSettings:
   # D-state, DNS UDP recv-queue backing up). Cross-node reads on a small LAN are
   # cheap, so locality is not worth the rebuild churn.
   defaultDataLocality: disabled
-  defaultReplicaCount: "3" # cluster-specific: LONGHORN_REPLICACOUNT
+  # 2 (down from 3): memory diet. Hard zone anti-affinity is per-node, so 2
+  # replicas still survive a single-node loss; 3-replica gave no extra zone
+  # safety on a 4-node cluster but cost ~1/3 more replica RAM/disk + double the
+  # rebuild I/O after a reschedule. Applies to NEW volumes only — existing
+  # volumes keep their numberOfReplicas until migrated 3->2 one at a time.
+  defaultReplicaCount: "2" # cluster-specific: LONGHORN_REPLICACOUNT
   disableSchedulingOnCordonedNode: true
   # 30s (max allowed), up from the 16s we ran before: on contended Pi disks a
   # replica can be slow-but-alive mid-rebuild. A short timeout marks it failed and
   # triggers yet another rebuild, feeding the I/O storm. The Longhorn-permitted
   # range is 8-30s; use the max to tolerate slow rebuilds without flapping.
   engineReplicaTimeout: "30"
-  guaranteedEngineManagerCPU: 200m
-  guaranteedReplicaManagerCPU: 200m
+  # 8% (down from the 12% chart default): the old guaranteedEngineManagerCPU /
+  # guaranteedReplicaManagerCPU keys were merged into this single setting in
+  # Longhorn 1.x and were silently ignored (Setting showed applied:false). 8% of
+  # 4 cores ~= 320m reserved/node frees ~160m/node for latency-sensitive pods
+  # while keeping instance-managers guaranteed. Raise back to 12 if I/O suffers.
+  guaranteedInstanceManagerCPU: "8"
   # 120s, up from the 30s default: large snapshot chains (e.g. prometheus) take
   # longer than 30s to sync over the LAN to a rebuilding replica on slow Pi disks.
   # Too low a timeout aborts the file sync and restarts the rebuild from scratch.
@@ -76,3 +87,6 @@ persistence:
   # should not request best-effort locality for new PVCs.
   defaultDataLocality: disabled
   reclaimPolicy: Retain
+  # Match defaultSettings.defaultReplicaCount: new PVCs from the longhorn
+  # StorageClass provision with 2 replicas.
+  defaultClassReplicaCount: 2
