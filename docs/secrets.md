@@ -3,14 +3,21 @@
 Secrets are intentionally lightweight and **homelab-friendly**: **1Password is
 the source of truth**, and a small workstation script **pushes** the private
 values into the cluster as Kubernetes Secrets. Nothing in the cluster
-authenticates to 1Password, so there is no service-account token, no operator,
-and no runtime dependency on 1Password at all.
+authenticates to 1Password, so there is no operator and no runtime dependency on
+1Password at all. An optional workstation-only service account can authenticate
+the push script non-interactively; its token never goes into the cluster.
 
 > **Why push, not pull?** External Secrets Operator's 1Password providers
-> (`onepasswordSDK`/Connect) both require a **Business** service account. This
-> account is a **Family** plan, which cannot create service accounts. The
-> push-sync model sidesteps that entirely — the operator's own signed-in `op`
-> session resolves the references, so a Family (or even personal) plan works.
+> (`onepasswordSDK`/Connect) pull from 1Password's hosted API and need a
+> credential with direct **SaaS access** — a Connect server or a Business/Teams
+> service account — deployed *inside* the cluster, a permanent runtime dependency
+> on 1Password. A Family plan *can* create a service account, but only for
+> **local desktop CLI** use (`op` with `OP_SERVICE_ACCOUNT_TOKEN`), not the
+> hosted SaaS access ESO requires. The push-sync model only ever uses the local
+> `op` CLI, so it works on a Family (or personal) plan — and every form of
+> 1Password auth (an interactive `op` session, or the optional **read-only**
+> workstation service account described below) stays on the workstation and
+> never enters the cluster.
 
 The guiding rule is unchanged: **only genuinely private values go to 1Password.**
 Non-secret, cluster-specific values (hostnames, LAN IPs, timezone, UID/GID,
@@ -57,11 +64,47 @@ Environment:
 | Var | Default | Purpose |
 | --- | --- | --- |
 | `OP_VAULT` | `homelab` | 1Password vault holding the homelab items. |
-| `OP_ACCOUNT` | _(unset)_ | Account shorthand / sign-in address for multi-account `op` setups (e.g. `themartinezfamily.1password.com`). |
+| `OP_ACCOUNT` | _(unset)_ | Account shorthand / sign-in address for multi-account interactive `op` setups (e.g. `themartinezfamily.1password.com`). |
+| `OP_SERVICE_TOKEN_KEYCHAIN_ITEM` | `op-service-token-homelab` | macOS Keychain item name for the optional service-account token. |
 
 The script runs a **validation pass first** — it `op inject`s every selected
 template and aborts before touching the cluster if any reference fails to
 resolve, so a typo never leaves you with a half-applied set of Secrets.
+
+
+## Optional: Non-interactive sync via a 1Password service account
+
+The default path remains an interactive `op` session, but operators may configure
+a read-only service account to avoid per-item biometric prompts. This is useful
+for hands-free disaster-recovery re-pushes after etcd loss or cluster rebuilds.
+
+Operator setup (do this manually, not from an agent):
+
+1. Create a 1Password service account with **read-only** access to only the
+   `homelab` vault.
+2. Store its token in macOS Keychain. Copy the full `ops_…` token to your
+   clipboard first, then store it *from the clipboard* — a very long token can be
+   silently truncated if pasted into an interactive prompt:
+   ```sh
+   pbpaste | wc -c   # sanity-check length (~800+ chars) before storing
+   security add-generic-password -U -a "$USER" -s "op-service-token-homelab" -w "$(pbpaste)"
+   pbcopy </dev/null # clear the clipboard afterward
+   ```
+3. Never commit or print the token. Rotate it immediately if it is exposed.
+
+When `scripts/sync-secrets.sh` runs outside `--verify`, it first checks whether
+`OP_SERVICE_ACCOUNT_TOKEN` is already set. If not, and macOS Keychain is
+available, it reads the configured Keychain item into that environment variable
+at runtime. If no service-account token is available, the script falls back to
+the existing interactive `op` session behavior.
+
+Use `OP_SERVICE_TOKEN_KEYCHAIN_ITEM` to override the Keychain item name when
+needed. Service-account auth intentionally does not pass `OP_ACCOUNT`, because
+`OP_SERVICE_ACCOUNT_TOKEN` selects the account context.
+
+Keep the service account least-privilege: read-only, scoped only to `homelab`,
+and independently revocable from any human operator account. Rotate the token on
+a regular schedule and after operator workstation changes.
 
 ## The 1Password item model (one item per app)
 
