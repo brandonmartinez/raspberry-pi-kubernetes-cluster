@@ -15,13 +15,6 @@ spec:
       middlewares:
         - name: stripprefix
     - kind: Rule
-      match: Host(`monitoring.themartinez.cloud`) && PathPrefix(`/alertmanager`)
-      services:
-        - name: monitoring-kube-prometheus-alertmanager
-          port: 9093
-      middlewares:
-        - name: stripprefix
-    - kind: Rule
       match: Host(`monitoring.themartinez.cloud`) && PathPrefix(`/grafana`)
       services:
         - name: monitoring-grafana

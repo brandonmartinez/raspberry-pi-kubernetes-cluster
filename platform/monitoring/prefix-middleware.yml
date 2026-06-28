@@ -6,5 +6,4 @@ spec:
   stripPrefix:
     prefixes:
       - "/prometheus"
-      - "/alertmanager"
     forceSlash: false
