@@ -71,6 +71,23 @@ speaker:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists
       effect: NoSchedule
+  # Tolerant probes mirror the controller fix (#75): on a memory/CPU-saturated Pi
+  # the default fast probe killed MetalLB and dropped the DNS VIP. Give the speaker
+  # the same slack so a slow /metrics can't self-destruct VIP advertisement (#77).
+  livenessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 5
   resources:
     requests:
       cpu: 25m
