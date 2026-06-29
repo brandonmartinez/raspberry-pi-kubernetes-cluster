@@ -285,6 +285,78 @@ Currently deployed:
 
 ---
 
+### 12. Observability Implementation: Dashboards + ServiceMonitors Live (2026-06-29T01-15-08)
+
+**Author:** Ash | **Date:** 2026-06-29 | **Status:** Edit-only pending sync
+
+Executed observability stack implementation (Task 1–5 from decision #11 review):
+
+**TASK 1 — Removed 6 dead dashboards:**
+- Deleted etcd, kubernetes-api-server, kubernetes-controller-manager, kubernetes-kubelet, kubernetes-proxy, kubernetes-scheduler dashboard JSONs
+- Removed corresponding 6 configMapGenerator entries from `platform/monitoring/kustomization.yml`
+- Kept uptime.json/grafana-uptime
+
+**TASK 3–4 — Added 5 lean dashboards + 2 ServiceMonitors:**
+- **Dashboards:** node-exporter (1860, 124 panels ⚠️ heavy but high value for thermal visibility), cluster-overview (15757, 26 panels), coredns (5926, 12 panels), longhorn (13032, 28 panels), cert-manager (20842, 8 panels)
+- All datasource UIDs normalized to `${DS_PROMETHEUS}` in JSON; added configMapGenerator entries with `disableNameSuffixHash: true` + `grafana_dashboard: "true"` label
+- **ServiceMonitors:** longhorn (ns monitoring, app=longhorn-manager, port 9500, 60s) and certmanager (ns monitoring, app.kubernetes.io/name=cert-manager, port 9402, 120s); both labeled `release: monitoring`
+- All resources added to `platform/monitoring/kustomization.yml`
+
+**TASK 5 — Cardinality assessment:**
+- Longhorn 60s, cert-manager 120s, no histogram cardinality adds
+- Node Exporter Full (1860) concern: 124 panels vs. "avoid 100+ panel" guideline. Task explicitly named this ID; RPi thermal/memory visibility ROI justifies risk. Recommend Brandon post-sync evaluation; fallback to ID 13978 (26 panels) if render performance unacceptable
+
+**Status:** Kustomization.yml + JSONs + ServiceMonitors committed (7 files); Dallas independently enabled MetalLB ServiceMonitor; edit-only (no git mutation by Scribe); pending Brandon manual sync.
+
+---
+
+### 13. Triage Verdicts for 27 Open Issues — Recommended Closures & Sprint Plan (2026-06-29T05-18-45)
+
+**Author:** Ripley & team | **Date:** 2026-06-29 | **Status:** Read-only triage; pending Brandon closure execution
+
+Full triage of 27 open issues by Ripley (lead), Dallas (GitOps/K8s), Parker (Infra), Bishop (Security), Ash (capacity/monitoring), Lambert (docs).
+
+**RECOMMEND CLOSE (9 issues):**
+- **#65** — preserveResourcesOnDeletion guard in scripts/validate.sh (check_appset_preserve_policy) + clusters/rpi/apps-appset.yml line 24
+- **#71** — scripts/verify-backup.sh + docs/runbooks/backup-verification.md (both substantive)
+- **#73** — epic COMPLETE: MetalLB HA (3 commits: 3366899, ad07ffe, +1), static node IPs in ansible host_vars, OS net self-healing watchdog templates
+- **#40** — obsolete (dnsdist exec /dev/tcp probes, no dig in image)
+- **#77** — superseded (qemu Minecraft replicas→0 in commit a9055d56; open work in #62 + #82)
+- **#68** — docs/runbooks/heavy-rollouts.md + HomelabNodeHighLoadAverage alert in platform/monitoring/helm-values.yaml line 298
+- **#67** — sync-secrets.sh --verify/--reconcile, commit 6d186ac9da, documented in docs/runbooks/credential-rotation.md + docs/secrets.md
+- **#69** — docs/runbooks/argocd-outofsync.md + docs/runbooks/disaster-recovery.md (both substantive)
+- **#45** — platform/crds/cert-manager v1.19.3 + platform/crds/monitoring kps 82.1.1; Longhorn/MetalLB infeasibility documented in clusters/rpi/platform-apps.yml lines 28–35
+
+**RECOMMEND HOLD OPEN (1 issue):**
+- **#46** — "Only 3 of 5 apps auto-sync." changedetection + unbound still in appset directory generator with no automated block (gate-3 auto-sync promotion pending) — FAILED VERIFICATION; open for follow-up #46.1: promote changedetection + unbound to gate-3 auto-sync to finish
+
+**ENRICH & KEEP (9 issues — feature backlog):**
+- #54, #16, #17, #74, #83, #66, #14, #11, #13, #15, #18, #62, #82, #70, #7, #20, #53 (various P2–P3 features and ongoing work)
+
+**NEEDS-INFO (6 issues — requires clarification):**
+- #62, #82, #70, #7, #20, #53 (clarification/design phase)
+
+**Evidence-Based Verification:**
+- Each owner re-verified evidence concretely before close recommendation
+- All 9 recommended closures cite specific commits, file paths, runbook links, or live cluster evidence
+- #46 held open because only 3 of 5 apps auto-sync enabled (changedetection + unbound lack gate-3 automation) — failing hard verification gate
+
+---
+
+### 14. Promote changedetection to GitOps gate-3 (auto-sync); keep unbound on manual sync (#46)
+
+**Author:** Brandon Martinez (decision) — implemented by Dallas, reviewed/approved by Ripley | **Date:** 2026-06-29 | **Status:** Shipped via branch + PR; #46 closed
+
+changedetection was promoted from ApplicationSet-generated to an explicit gate-3 Application in `clusters/rpi/apps-appset.yml`. Auto-sync is ON (`automated: {}`); prune and selfHeal remain OFF (gates 5/4). The change mirrors the uptime stateful pattern: fixed `replicas: 1`, no HPA, and therefore NO `/spec/replicas` ignoreDifferences.
+
+unbound was intentionally NOT promoted. It remains generator-managed/manual per the DNS-path policy after the 2026-06-26 outage, tracked under DNS-resilience #73/#62/#70.
+
+**Data safety:** changedetection is stateful (Longhorn PVC `changedetection-pvc`, reclaim `Retain`) with fresh backup `2026-06-29T07:00:07Z`. `preserveResourcesOnDeletion: true` ensures the generated → explicit handoff does NOT prune the PVC. `scripts/validate.sh` passed, including prune/selfHeal guard and ApplicationSet deletion-safety guard.
+
+**Outcome:** shipped via branch `feat/changedetection-autosync` + PR; issue #46 closed.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

@@ -41,3 +41,16 @@ Coordination point: also owns `.env.sample` rewrite decision (decision #4, P1 �
 ## 2026-06-28T21:10:50-04:00 — Observability implementation
 
 Cross-agent handoff recorded by Scribe for Brandon Martinez. Dallas fixed kubelet Endpoints to node IPs `192.168.52.110-113` in `apps+platform/kube-system/metrics-service.yml` and enabled the MetalLB ServiceMonitor. Ash removed 6 dead Grafana dashboards and entries, added lean dashboards for node-exporter 13978, cluster 15757, CoreDNS 5926, Longhorn 13032, and cert-manager 20842 using datasource `${DS_PROMETHEUS}`, added Longhorn/cert-manager ServiceMonitors (`release: monitoring`), and wired kustomization. Ripley is reviewing. Edit-only; Brandon owns commits and `scripts/validate.sh`.
+
+
+---
+
+### 2026-06-29T10:28:25Z — Issue Closure Verification Session (Cross-Agent Coordination)
+
+**Session:** Verified closure of triage-flagged issues  
+**Role:** GitOps/K8s infrastructure verification
+
+- Re-verified & closed #65, #71, #73, #40 with concrete evidence (preserveResourcesOnDeletion guard, backup script, MetalLB HA commits, obsolete probes)
+- Read-only verification only (gh-issue-API); no working-tree mutations
+- Coordination: 5-agent parallel triage; backup-verification gate (decision #10) now standing rule
+2026-06-29T11:05:06-04:00 Promoted changedetection to gate-3 explicit Application (stateful, auto-sync, prune/selfHeal OFF) in apps-appset.yml for #46.
