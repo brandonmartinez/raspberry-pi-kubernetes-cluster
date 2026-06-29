@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cert-manager-monitoring
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - cert-manager
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+  endpoints:
+    # cert-manager svc exposes metrics on port 9402 (named "tcp-prometheus-servicemonitor")
+    - port: tcp-prometheus-servicemonitor
+      interval: 120s
+      scrapeTimeout: 15s

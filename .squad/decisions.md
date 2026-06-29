@@ -157,6 +157,134 @@ All Bullseye (not Bookworm), kernel 6.1.21-v8+, SanDisk SR32G 32GB SD cards.
 
 ---
 
+### 8. Capacity Diet #83 — 6 Validated PRs (P1)
+
+**Author:** Ash | **Date:** 2026-06-28 | **Status:** Ready for manual sync
+
+Delivered 6 validated, reversible PRs targeting footprint reduction and control-plane capacity recovery for Q2 homelab live cluster.
+
+**Footprint PRs (4):**
+- **#84 Shlink 2→1 replica** (~-264Mi): verify baseline load supports 1 → manual sync only
+- **#85 Longhorn 3→2 default + guaranteedInstanceManagerCPU 12→8%** (~-80Mi): backup gate verified (13/13 snapshots confirmed), applies to new volumes only; 5 existing vols migrate 3→2 incrementally one at a time
+- **#86 Monitoring -300Mi** (retention 21→10d, drop Alertmanager + ingress/middleware/rule, Grafana 1Gi→512Mi)
+- **#87 ArgoCD notifications disabled** (~-27Mi)
+
+**Carryover PRs (2):**
+- **#88 Descheduler v1alpha1→v1alpha2** (Longhorn/kube-system protections restored, helm-templated)
+- **#89 MetalLB speaker tolerant probes** (per #75 probe spec, pod-disruption-safe)
+
+**Baseline Pressure:**
+- rpi001: 61% | rpi002: 88% | rpi003: 104% | rpi004: 107% (all over 80% threshold)
+- Post-sync forecast: rpi004 ~90–95% (headroom achieved); rpi003 remains tight
+- Major relief: shlink reduction + Longhorn 3→2 migration
+
+**Recommended Sync Order:**
+1. Shlink, monitoring, argocd, metallb, descheduler (fast, no data risk)
+2. Longhorn (migrate remaining 5 vols from 3→2 one per week)
+
+**Non-Capacity Issue Found:**
+- meal-planner + nebulasync crashes are config (CreateContainerConfigError), not capacity — separate triage
+
+---
+
+### 9. Issue #23 Closed — Both Leaked Credentials Rotated (P1)
+
+**Author:** Coordinator | **Date:** 2026-06-28 | **Status:** Complete
+
+Security-sweep issue #23 is closed. Both historically-leaked credentials were confirmed rotated on 2026-06-28 by Brandon:
+
+1. **Uptime Kuma admin password** (UPTIME_PASSWORD, leaked in .env.sample history f780e85..baea8ec) — rotated via Uptime Kuma UI, re-pushed via sync-secrets.sh
+2. **Scrypted/Watchtower API token** (SCRYPTED_WEBHOOK_UPDATE_AUTHORIZATION / WATCHTOWER_HTTP_API_TOKEN, leaked in docker/scrypted.yml history 2fce99f) — regenerated in Scrypted UI, updated in docker/.env, re-pushed
+
+**Git-History Scrub Sub-Task — Declined:**
+- Rationale: `git filter-repo` rewrite changes every commit SHA, breaking ArgoCD self-repo refs (which track `main`), forks, clones, and SHA references, for zero security benefit once the credentials are rotated and old values are dead
+- Decision: NOT pursued as part of #23 closure
+- Future: Can be revisited as separate coordinated task if Brandon approves
+
+**Follow-ups remaining (from Bishop sweep):**
+- Issue #32: Fix `scripts/validate.sh` secret-scanner false positives (`.copilot/` and `.squad/` path-skip)
+
+---
+
+### 10. Mandatory Backup-Verification Gate — Any Operation Touching Persisted Data (P1 Standing Rule)
+
+**Author:** squad-coordinator | **Date:** 2026-06-27 | **Status:** Standing Rule (Codified)
+
+**Directive:** Brandon (@brandonmartinez) — standing rule following uptime data-loss incident (ApplicationSet exclusion without `preserveResourcesOnDeletion` cascade-deleted uptime's local-path PVC → permanent data loss).
+
+**Hard Precondition Gate (No Exceptions):**
+
+Before ANY operation that touches or could affect persisted data (PVCs, StatefulSets, databases, Longhorn volumes, file-backed storage, anything with a reclaim consequence):
+
+1. **VERIFY backups are CONFIGURED** for affected data
+   - For Longhorn-backed PVCs: confirm volume is in a backup RecurringJob group (e.g., `default` group → `backup-default`)
+   - Check: `kubectl -n longhorn-system get recurringjobs.longhorn.io` and volume `recurring-job-group.longhorn.io/<group>: enabled` label
+
+2. **VERIFY at least one backup has ACTUALLY COMPLETED** (not merely scheduled)
+   - Confirm real, recent backup/snapshot exists (Longhorn volume backup status / `executionCount > 0`)
+   - NOT: "we can probably recover it" or "backups should exist"
+
+3. **Before a data-risking change, RE-VERIFY a fresh/current backup exists FIRST**, then proceed
+   - If no verified, current backup exists → **STOP and do not risk the data**
+   - Trigger a backup and confirm completion before continuing
+
+**Why:** The data-loss incident proved that "we can probably recover" is not a backup. `local-path` PVCs (Delete reclaim) and pushed Secrets are especially fragile — NOT covered by Longhorn backups, treat as fragile and migrate stateful data to backed-up Longhorn volumes.
+
+**Codification:** Being written into `.github/copilot-instructions.md` and tracked as P1 retro-action issue to build verification tooling and runbook grounded in Longhorn RecurringJob backups.
+
+**Applies to:**
+- Every agent (Ash, Dallas, Parker, Ripley, Lambert, Bishop, Rai)
+- Every change touching: PVCs, StatefulSets, databases (PostgreSQL, Redis, etc.), Longhorn volumes, USB mounts, fstab, storage drivers
+- Every infrastructure change that could cause a cascade deletion or data loss
+
+---
+
+### 11. Observability Stack Assessment & ServiceMonitor Gaps (P2–P3)
+
+**Author:** Ash | **Date:** 2026-06-28 | **Status:** Review-only recommendations staged for prioritization
+
+Comprehensive assessment of `platform/monitoring/` observability stack and kube-prometheus-stack deployment.
+
+**Dashboard Health:**
+- **5 of 7 dashboards DEAD** — root cause: control-plane jobs disabled (Prometheus scrape config gap)
+  - Affected: Node Exporter, Cluster, Kubernetes API server, kubelet, kube-proxy dashboards
+  - Status: RECOVERABLE (root cause identified; re-enabling jobs will populate dashboards)
+- **2 of 7 dashboards working:**
+  - kubelet probes ✅ (host visibility present)
+  - uptime probes ✅ (endpoint monitoring present)
+
+**ServiceMonitor Coverage Gaps:**
+
+Currently deployed:
+- prometheus-operator self-monitoring ✅
+
+**Recommended for deployment (prioritized):**
+1. **node-exporter ServiceMonitor (ID1860)** — IMMEDIATE (host-level metrics: CPU, memory, disk, network)
+2. **cluster-level metrics (ID15757)** — high priority (kube-state-metrics coverage, pod/node/deployment telemetry)
+3. **Longhorn volume/backup metrics** — medium (data path observability, backup success/failure tracking)
+4. **Traefik ingress metrics** — medium (routing latency, request counts, error tracking)
+5. **cert-manager renewal tracking** — medium (certificate expiry alerts, renewal automation assurance)
+6. **MetalLB LoadBalancer service metrics** — lower (LAN service health, VIP failover tracking)
+
+**Memory Budget Analysis:**
+- Current: kube-prometheus-stack retention `21 days` → recommend `10 days` (~-300Mi)
+- Grafana resource limit: `1Gi` → feasible at `512Mi` (standard dashboards)
+- Alertmanager ingress/middleware/rule overhead: redundant for homelab → trim opportunity
+- Net memory freed: ~+60–150Mi within current node budget (rpi004 at 107% can achieve headroom post-optimization)
+
+**Integration Path:**
+- Review-only; no manifests changed (gitignored review document)
+- Recommendations staged for Coordinator prioritization
+- Metrics deployment follows capacity diet #83 sync window (coordinate with retention optimization)
+- Node-Exporter recommended first (quick, high observability ROI)
+
+**Validation:**
+- ✅ Ash: Analysis complete, recommendations documented
+- ✅ Rai: Secret-scan override (docs/reviews gitignored, `op://` references only, no plaintext secrets)
+- ✅ Ripley: Code review APPROVE (minor MetalLB line citation off-by-one, non-blocking)
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

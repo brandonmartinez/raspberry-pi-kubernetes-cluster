@@ -100,5 +100,11 @@ speaker:
 # Metrics wiring into kube-prometheus-stack can be enabled later once validated;
 # the ServiceMonitor CRD lives in the monitoring stack.
 prometheus:
+  # Required by the chart when serviceMonitor is enabled: SA Prometheus runs as
+  # (kube-prometheus-stack) so metrics RBAC is scoped correctly.
+  serviceAccount: monitoring-kube-prometheus-prometheus
+  namespace: monitoring
   serviceMonitor:
-    enabled: false
+    enabled: true
+    additionalLabels:
+      release: monitoring

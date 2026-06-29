@@ -37,3 +37,7 @@ Coordination point: also owns `.env.sample` rewrite decision (decision #4, P1 �
 ## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
 
 **PR #55 merged.** DNS/storage/networking review complete. Longhorn: backup/trim jobs gap identified (daily-backup + weekly-trim needed); default config (replicas=3, Retain) correct. Pi-hole: critical findings: pin versions (pihole v5/v6 incompatibility), add Orbital Sync CronJob, add TLS to admin ingresses; dnsdist PDB minAvailable raised to 2 (issues #26, #33–#36, #39). Feature Backlog: 5 issues promoted (#11, #13, #15, #18 + existing). .env.sample rewrite coordination point with Lambert. Ready for next platform hardening sprint.
+
+## 2026-06-28T21:10:50-04:00 — Observability implementation
+
+Cross-agent handoff recorded by Scribe for Brandon Martinez. Dallas fixed kubelet Endpoints to node IPs `192.168.52.110-113` in `apps+platform/kube-system/metrics-service.yml` and enabled the MetalLB ServiceMonitor. Ash removed 6 dead Grafana dashboards and entries, added lean dashboards for node-exporter 13978, cluster 15757, CoreDNS 5926, Longhorn 13032, and cert-manager 20842 using datasource `${DS_PROMETHEUS}`, added Longhorn/cert-manager ServiceMonitors (`release: monitoring`), and wired kustomization. Ripley is reviewing. Edit-only; Brandon owns commits and `scripts/validate.sh`.

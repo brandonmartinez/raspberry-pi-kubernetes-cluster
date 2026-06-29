@@ -32,3 +32,24 @@ Joined the squad as Observability / Monitoring Engineer. First task completed ag
 - NTP VIP intentionally **not** monitored (no reliable synthetic check).
 
 Continuity: Coordination point with Dallas on whether to bring Uptime Kuma into the repo as an `apps/uptime-kuma` base, and with Bishop on storing the Uptime Kuma credentials/API key in 1Password push-sync. Next watch item: confirm the new VIP monitors and retention change are reflected in the Grafana `uptime.json` dashboard.
+
+
+## Session: Observability Stack Assessment & ServiceMonitor Gaps (2026-06-28)
+
+**Mode:** Sync (Primary) | **Cross-Team:** Rai (secret-scan), Ripley (code-review)
+
+Comprehensive review of `platform/monitoring/` kube-prometheus-stack health and ServiceMonitor coverage gaps:
+
+- **Dashboard Health:** Identified root cause of 5 dead dashboards (control-plane Prometheus scrape jobs disabled). 2 dashboards working (kubelet, uptime probes). All recoverable once jobs re-enabled.
+- **ServiceMonitor Gaps:** Documented 6 recommended ServiceMonitors for incremental deployment: node-exporter (ID1860, immediate priority), cluster metrics (ID15757), Longhorn, Traefik, cert-manager, MetalLB. Prioritized by observability ROI and memory budget.
+- **Memory Budget:** Recommended retention 21d → 10d (~-300Mi), Grafana 1Gi → 512Mi feasible. Net +60–150Mi headroom available within current rpi004 budget (107% → 90–95% post-capacity-diet-#83 sync).
+
+**Validation:** Rai confirmed secret-scan override (gitignored docs, `op://` refs only). Ripley approved analysis (minor MetalLB citation polish, non-blocking).
+
+**Integration:** All findings staged in decisions.md § 11 for Coordinator prioritization. Review-only; no manifests changed. Recommendations ready to integrate with capacity diet #83 sync window. Node-exporter deployment (ID1860) recommended as immediate first step.
+
+**Continuity:** Coordinate ServiceMonitor + retention optimization follow-up post-capacity-diet sync. Node-exporter addition should populate dead dashboards immediately (validate in live Grafana).
+
+## 2026-06-28T21:10:50-04:00 — Observability implementation
+
+Cross-agent handoff recorded by Scribe for Brandon Martinez. Ash removed 6 dead Grafana dashboards and entries, added lean dashboards for node-exporter 13978, cluster 15757, CoreDNS 5926, Longhorn 13032, and cert-manager 20842 using datasource `${DS_PROMETHEUS}`. Ash also added Longhorn and cert-manager ServiceMonitors (`release: monitoring`) and wired kustomization. Dallas fixed kubelet Endpoints to node IPs `192.168.52.110-113` in `apps+platform/kube-system/metrics-service.yml` and enabled the MetalLB ServiceMonitor. Ripley is reviewing. Edit-only; Brandon owns commits and `scripts/validate.sh`.

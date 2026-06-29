@@ -667,7 +667,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Uptime - Metrics",
-  "uid": "CN8E-vZ7k",
+  "uid": "${DS_PROMETHEUS}",
   "version": 8,
   "weekStart": ""
 }

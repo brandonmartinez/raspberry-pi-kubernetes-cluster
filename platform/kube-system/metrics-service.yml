@@ -22,10 +22,10 @@ metadata:
   name: k3s-metrics-service
 subsets:
   - addresses:
-      - ip: 10.42.0.0
-      - ip: 10.42.1.0
-      - ip: 10.42.2.0
-      - ip: 10.42.3.0
+      - ip: 192.168.52.110
+      - ip: 192.168.52.111
+      - ip: 192.168.52.112
+      - ip: 192.168.52.113
     ports:
       - name: https-metrics
         port: 10250

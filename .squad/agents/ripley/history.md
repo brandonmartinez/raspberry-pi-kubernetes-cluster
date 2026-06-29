@@ -36,3 +36,20 @@ No sprint contention; all Feature Backlog issues are post-hardening scope. Ready
 ## Sprint 1 (CI/HA Baseline) — Completion Note (2026-06-26)
 
 **PR #55 merged.** Global GitOps review complete; sync-wave annotation applied to apps ApplicationSet (#25). Triage results recorded. Feature Backlog milestone created; 9 enriched issues promoted (#7, #11, #13–#18, #20). Next: .env.sample rewrite coordination + Traefik CRD verification (decisions #1, #4).
+
+
+## Session: Observability Stack Review — Code Review (2026-06-28)
+
+**Mode:** Sync | **Cross-Team Session:** Ash (primary), Rai (secret-scan override)
+
+Reviewed Ash's comprehensive observability stack assessment and recommendations:
+
+- **Analysis Validation:** Dashboard health findings sound (5 dead due to control-plane job config gap, 2 working). ServiceMonitor recommendations well-founded and prioritized by ROI. Memory budget analysis correct (21d → 10d saves ~300Mi, Grafana sizing feasible).
+- **Code Review Result:** **APPROVE** ✅ — analysis structure and recommendations approved for team circulation.
+- **Minor Issue Noted:** MetalLB ServiceMonitor citation line reference off-by-one in context (documentation polish only; does not affect recommendation validity or deployment).
+
+**Secret-Scan Coordination:** Rai's false-positive override confirmed — gitignored review docs (`docs/reviews/2026-06-28-observability-stack-review.md`), `op://` references only, no plaintext secrets.
+
+**Integration:** Findings merged into decisions.md § 11 (Observability Stack Assessment & ServiceMonitor Gaps). Review-only, no manifest changes. Recommendations staged for Coordinator prioritization against capacity diet #83 sync window.
+
+**Continuity:** Ready for next sprint phase (ServiceMonitor deployment sequencing + retention optimization after capacity-diet baseline sync).

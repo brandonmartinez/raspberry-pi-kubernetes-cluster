@@ -4,51 +4,44 @@ kind: Kustomization
 namespace: monitoring
 
 configMapGenerator:
-  - name: grafana-etcd-dashboard
-    files:
-      - grafana-dashboards/etcd-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
-  - name: grafana-kubernetes-api-server-dashboard
-    files:
-      - grafana-dashboards/kubernetes-api-server-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
-  - name: grafana-kubernetes-controller-manager-dashboard
-    files:
-      - grafana-dashboards/kubernetes-controller-manager-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
-  - name: grafana-kubernetes-kubelet-dashboard
-    files:
-      - grafana-dashboards/kubernetes-kubelet-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
-  - name: grafana-kubernetes-proxy-dashboard
-    files:
-      - grafana-dashboards/kubernetes-proxy-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
-  - name: grafana-kubernetes-scheduler-dashboard
-    files:
-      - grafana-dashboards/kubernetes-scheduler-dashboard.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
   - name: grafana-uptime
     files:
       - grafana-dashboards/uptime.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "true"
+  - name: grafana-node-exporter-full
+    files:
+      - grafana-dashboards/node-exporter-full-dashboard.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "true"
+  - name: grafana-cluster-overview
+    files:
+      - grafana-dashboards/cluster-overview-dashboard.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "true"
+  - name: grafana-coredns
+    files:
+      - grafana-dashboards/coredns-dashboard.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "true"
+  - name: grafana-longhorn
+    files:
+      - grafana-dashboards/longhorn-dashboard.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "true"
+  - name: grafana-cert-manager
+    files:
+      - grafana-dashboards/cert-manager-dashboard.json
     options:
       disableNameSuffixHash: true
       labels:
@@ -59,3 +52,5 @@ resources:
   - ingress.yml
   - service-monitor.yml
   - prometheus-rule.yml
+  - longhorn-service-monitor.yml
+  - certmanager-service-monitor.yml
