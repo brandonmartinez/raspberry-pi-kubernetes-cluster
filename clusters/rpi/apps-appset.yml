@@ -40,10 +40,10 @@ spec:
           # `kube-system-metrics` Application (see platform-apps.yml wave 0).
           - path: apps/kube-system
             exclude: true
-          # shlink, uptime, meal-planner, and localproxy have been promoted to
-          # gate 3 (auto-sync). They are defined as explicit Applications below
-          # so syncPolicy.automated can be set per-app. See transition notes in
-          # those Applications.
+          # shlink, uptime, meal-planner, localproxy, and changedetection have
+          # been promoted to gate 3 (auto-sync). They are defined as explicit
+          # Applications below so syncPolicy.automated can be set per-app. See
+          # transition notes in those Applications.
           - path: apps/shlink
             exclude: true
           - path: apps/uptime
@@ -51,6 +51,8 @@ spec:
           - path: apps/meal-planner
             exclude: true
           - path: apps/localproxy
+            exclude: true
+          - path: apps/changedetection
             exclude: true
   template:
     metadata:
@@ -89,11 +91,11 @@ spec:
 ##############################################################################
 # Gate-3 (auto-sync) explicit Applications
 #
-# shlink, uptime, meal-planner, and localproxy are excluded from the
-# ApplicationSet generator above and defined here as explicit Applications so
-# syncPolicy.automated can be set per-app (the shared template cannot carry
-# automated because it applies to ALL apps including stateful ones not ready for
-# it).
+# shlink, uptime, meal-planner, localproxy, and changedetection are excluded
+# from the ApplicationSet generator above and defined here as explicit
+# Applications so syncPolicy.automated can be set per-app (the shared template
+# cannot carry automated because it applies to ALL apps including stateful ones
+# not ready for it).
 #
 # Gate 3 only: automated: {} means auto-sync on drift. prune and selfHeal are
 # deliberately omitted — those are gate 5 and gate 4 respectively and require
@@ -101,14 +103,14 @@ spec:
 #
 # TRANSITION NOTE (for Brandon): when root is synced with this file, the
 # ApplicationSet controller will DELETE the appset-generated `shlink`,
-# `uptime`, `meal-planner`, and `localproxy` Applications (their cluster
-# resources are NOT deleted because prune was OFF on the template). These
-# explicit Applications are then created by root and auto-sync reconciles the
-# running workloads. Recommended sync order:
+# `uptime`, `meal-planner`, `localproxy`, and `changedetection` Applications
+# (their cluster resources are NOT deleted because prune was OFF on the
+# template). These explicit Applications are then created by root and auto-sync
+# reconciles the running workloads. Recommended sync order:
 #   1. Sync `root` (picks up this file — creates these Applications and updates
 #      the ApplicationSet with the new exclusions simultaneously)
-#   2. Verify shlink, uptime, meal-planner, and localproxy Applications appear
-#      Synced / auto-syncing
+#   2. Verify shlink, uptime, meal-planner, localproxy, and changedetection
+#      Applications appear Synced / auto-syncing
 #   There is no manual pre-step needed; ArgoCD handles the Application name
 #   hand-off because the appset deletes its copy and root creates the explicit
 #   copy in the same reconcile pass.
@@ -240,3 +242,35 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+---
+##############################################################################
+# Gate-3 stateful promotion
+#
+# changedetection is stateful (Longhorn PVC, Retain reclaim). Auto-sync is safe
+# here ONLY because prune and selfHeal stay OFF — the PVC is never pruned.
+# Fixed replicas: 1 (Recreate), no HPA, so no /spec/replicas ignoreDifferences.
+##############################################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: changedetection
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    app.kubernetes.io/managed-by: argocd
+spec:
+  project: apps
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: apps/changedetection
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: changedetection
+  # Gate 3: auto-sync enabled. prune and selfHeal are NOT enabled (gates 5/4).
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
