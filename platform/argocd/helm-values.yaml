@@ -55,6 +55,13 @@ applicationSet:
 dex:
   enabled: false
 
+# Notifications controller is unused: cluster status updates are posted via a
+# 1Password-sourced Discord webhook from a workstation script, not ArgoCD
+# triggers/templates. Disable the controller to reclaim its pod (~27Mi live).
+# Re-enable if in-cluster notification routing is ever wired up. (#83)
+notifications:
+  enabled: false
+
 # Pin redis to the exact live image so adoption does not bump the cache version
 # or change the registry host (live runs public.ecr.aws/.../redis:7.2.7-alpine).
 redis:
