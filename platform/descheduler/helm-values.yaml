@@ -1,105 +1,66 @@
-# freeze chart version to live (helm list -n kube-system) before first sync; do not invent or upgrade during adoption.
-# Descheduler for Kubernetes
+# Descheduler for Kubernetes (chart 0.34.0 / app v0.34.0 live — kube-system).
 # https://github.com/kubernetes-sigs/descheduler/tree/master/charts/descheduler
+# Freeze chart version to live (helm list -n kube-system) before sync; never upgrade during adoption.
+#
+# RECONCILE (#77): the old deschedulerPolicy.strategies block was the legacy
+# v1alpha1 format and is silently IGNORED by descheduler v0.34 — on sync the
+# rendered policy would lose its longhorn-system/kube-system protections. This
+# mirrors the LIVE v1alpha2 `profiles` policy and re-asserts namespace
+# protections so the git source matches the cluster and stays safe.
 
-# Run as a CronJob (default) or Job
 kind: CronJob
-
-# Schedule for CronJob (every 30 minutes)
 schedule: "*/30 * * * *"
 
-# Descheduler configuration
 deschedulerPolicy:
-  # Global namespace exclusions - avoid critical system namespaces
-  nodeResourceUtilizationThresholds:
-    # Exclude critical namespaces from descheduling
-    includedNamespaces: []
-    excludedNamespaces:
-      - longhorn-system     # Longhorn storage system
-      - kube-system        # Core Kubernetes system
-      - kube-public        # Public Kubernetes resources
-      - kube-node-lease    # Node lease objects
-      - cert-manager       # Certificate management
+  profiles:
+    - name: default
+      pluginConfig:
+        # Never evict PVC-backed (Longhorn-attached) pods; ignore local-storage
+        # pods. Protects stateful workloads from descheduler eviction.
+        - name: DefaultEvictor
+          args:
+            podProtections:
+              defaultDisabled:
+                - PodsWithLocalStorage
+              extraEnabled:
+                - PodsWithPVC
+        - name: RemoveDuplicates
+          args:
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: RemovePodsHavingTooManyRestarts
+          args:
+            includingInitContainers: true
+            podRestartThreshold: 100
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: RemovePodsViolatingNodeAffinity
+          args:
+            nodeAffinityType: [requiredDuringSchedulingIgnoredDuringExecution]
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: RemovePodsViolatingNodeTaints
+          args:
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: RemovePodsViolatingInterPodAntiAffinity
+          args:
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: RemovePodsViolatingTopologySpreadConstraint
+          args:
+            namespaces:
+              exclude: [longhorn-system, kube-system, kube-public, kube-node-lease, cert-manager]
+        - name: LowNodeUtilization
+          args:
+            targetThresholds: {cpu: 50, memory: 50, pods: 50}
+            thresholds: {cpu: 20, memory: 20, pods: 20}
+      plugins:
+        balance:
+          enabled: [RemoveDuplicates, RemovePodsViolatingTopologySpreadConstraint, LowNodeUtilization]
+        deschedule:
+          enabled: [RemovePodsHavingTooManyRestarts, RemovePodsViolatingNodeTaints, RemovePodsViolatingNodeAffinity, RemovePodsViolatingInterPodAntiAffinity]
 
-  strategies:
-    # Remove duplicate pods
-    RemoveDuplicates:
-      enabled: true
-      params:
-        excludeOwnerKinds:
-          - DaemonSet          # Don't touch DaemonSets (Longhorn uses these)
-          - StatefulSet        # Don't touch StatefulSets (Longhorn uses these)
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-    # Remove pods that are running longer than specified time
-    PodLifeTime:
-      enabled: true
-      params:
-        podLifeTime:
-          maxPodLifeTimeSeconds: 86400  # 24 hours
-        excludeOwnerKinds:
-          - DaemonSet          # Don't touch DaemonSets
-          - StatefulSet        # Don't touch StatefulSets
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-    # Remove pods violating inter-pod anti-affinity
-    RemovePodsViolatingInterPodAntiAffinity:
-      enabled: true
-      params:
-        excludeOwnerKinds:
-          - DaemonSet
-          - StatefulSet
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-    # Remove pods violating node affinity
-    RemovePodsViolatingNodeAffinity:
-      enabled: true
-      params:
-        nodeAffinityType:
-          - requiredDuringSchedulingIgnoredDuringExecution
-        excludeOwnerKinds:
-          - DaemonSet
-          - StatefulSet
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-    # Remove pods violating node taints
-    RemovePodsViolatingNodeTaints:
-      enabled: true
-      params:
-        excludeOwnerKinds:
-          - DaemonSet
-          - StatefulSet
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-    # Remove failed pods
-    RemoveFailedPods:
-      enabled: true
-      params:
-        failedPods:
-          reasons:
-            - OutOfcpu
-            - CreateContainerConfigError
-          includingInitContainers: true
-          excludeOwnerKinds:
-            - Job
-            - DaemonSet
-            - StatefulSet
-          minPodLifetimeSeconds: 3600  # 1 hour
-        excludedNamespaces:
-          - longhorn-system
-          - kube-system
-
-# Resource limits and requests
 resources:
   requests:
     cpu: 25m
@@ -108,38 +69,29 @@ resources:
     cpu: 250m
     memory: 256Mi
 
-# Node selector for scheduling the descheduler
 nodeSelector:
   kubernetes.io/os: linux
 
-# Tolerations (if needed for master nodes)
 tolerations: []
 
-# Pod disruption budget
 podDisruptionBudget:
   enabled: false
 
-# Service account
 serviceAccount:
   create: true
   name: ""
 
-# RBAC
 rbac:
   create: true
 
-# Priority class
 priorityClassName: ""
 
-# Image configuration
 image:
   repository: registry.k8s.io/descheduler/descheduler
-  tag: ""  # Uses chart appVersion if not specified
+  tag: ""
   pullPolicy: IfNotPresent
 
-# Additional command line arguments
 cmdOptions:
-  v: 2  # Verbosity level
+  v: 2
 
-# Dry run mode (set to true for testing)
 dryRun: false
