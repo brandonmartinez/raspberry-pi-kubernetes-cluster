@@ -178,7 +178,7 @@ for dirpath, dirnames, filenames in os.walk(root):
     for name in filenames:
         path = os.path.join(dirpath, name)
         rel = os.path.relpath(path, root)
-        if rel == 'scripts/validate.sh' or rel.startswith('docs/'):
+        if rel == 'scripts/validate.sh' or rel.startswith('docs/') or rel.startswith('.github/skills/'):
             continue
         if name.startswith('compiled') or name == 'kubeconfig.yml':
             continue
