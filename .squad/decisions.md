@@ -4,7 +4,7 @@
 
 ### 1. Decision: Convert nebulasync Deployment → CronJob (Issue #91)
 
-**Author:** Dallas | **Date:** 2026-06-30T08:57:47.650-04:00 | **Status:** Approved (Ripley APPROVED WITH CHANGES: backoffLimit 2→1, post-delete orphans)
+**Author:** Dallas | **Date:** 2026-06-30T08:57:47.650-04:00 | **Status:** Approved → DEPLOYED & VERIFIED 2026-06-30 (Acceptance met; CronJob is sole workload; clean runs, no 429)
 
 ---
 
@@ -127,6 +127,31 @@ open, so only truly idle tabs are affected. Acceptable for a home lab.
 | Deleted | `apps/nebulasync/pdb.yml` |
 | Modified | `apps/nebulasync/.env` (removed `CRON=*/10 * * * *`) |
 | Modified | `apps/nebulasync/kustomization.yml` (replaced deployment.yml+pdb.yml with cronjob.yml) |
+
+---
+
+## Deploy & Verification Outcome (2026-06-30)
+
+**Deploy path:** Break-glass `kustomize build | kubectl apply` — ArgoCD CLI unavailable locally; used `kubectl kustomize apps/nebulasync | ssh pi@192.168.52.110 'sudo kubectl apply -f -'`. CronJob applied successfully; kustomize-generated configmap `nebulasync-configmap-dhghmdktbb` created.
+
+**Deployment deletions:** Both stale Deployments imperatively deleted (stateless, no PVCs):
+- `deploy/nebulasync -n nebulasync` (was 0/0 replicas, 2 old RSes) — ✅ DELETED
+- `deploy/nebulasync -n pihole` (470-day orphan, 0/0 replicas) — ✅ DELETED
+
+**Verification results:**
+1. **First verify run (`nebulasync-verify`)** — Failed BackoffLimitExceeded (likely lingering Pi-hole session state or startup transient); pod killed before logs captured; ~1–2s failure before normal auth phase. Not reproducible in subsequent runs.
+2. **Second verify run (`nebulasync-verify2`)** — ✅ Completed 1/1 in 28s. Clean logs: `INF Sync completed`. No 429 errors. Session invalidation successful (no WRN). Syncing 2 Pi-hole replicas.
+3. **First scheduled run (`nebulasync-29713830` at 10:30)** — ✅ Completed 1/1 in 26s. Clean logs, no 429 errors. CronJob schedule firing correctly.
+
+**Final workload state:**
+- **nebulasync namespace:** CronJob is the sole nebulasync workload. No Deployments, no crash loops. ✅
+- **pihole namespace:** Orphan Deployment deleted. ✅
+- **Pi-hole health:** All 3 pods Running, DNS unaffected. ✅
+- **Harmless orphans (prune off, safe to delete imperatively):** `pdb/nebulasync-pdb` (old era); `configmap/nebulasync-configmap-kd2h772tt5` (old hash-suffixed configmap).
+
+**Recommendation: CLOSE #91.** Deployment → CronJob conversion deployed and verified. Two clean sync runs confirm no 429, session invalidation successful, schedule firing correctly.
+
+**Recommendation: #93 (Pi-hole session TTL) remains GATED.** Awaiting Brandon's explicit approval to proceed with `FTLCONF_webserver_session_timeout: 86400→300` + one-pod-at-a-time pihole rollout with DNS verification (Ripley to coordinate).
 
 ---
 

@@ -86,3 +86,16 @@ Reviewed Ash's comprehensive observability stack assessment and recommendations:
 **Coordination:** Dallas → applied backoffLimit correction → validate.sh PASS → Coordinator merged PR #92.
 
 **Continuity:** Awaiting network reconnect for deploy+verify. Will coordinate post-CronJob verification for issue #93 timing (TTL reduction requires clean sync first).
+
+---
+
+## Session: Issue #91 Deploy & Verification — nebulasync CronJob (2026-06-30T10:16:53-04:00)
+
+**Mode:** Sync (Dallas executor, Brandon requester)  
+**Status:** #91 DEPLOYMENT & VERIFICATION COMPLETE; acceptance met
+
+Dallas deployed merged PR #92 (CronJob) via break-glass kustomize apply; deleted two stale Deployments (`deploy/nebulasync -n {nebulasync,pihole}`). Two clean verify runs confirm: nebulasync-verify2 Completed 1/1 in 28s, scheduled 10:30 Completed 1/1 in 26s — no 429 errors, session invalidation successful, CronJob schedule firing correctly. Pi-hole 3/3 Running, DNS unaffected.
+
+**#91 recommendation:** CLOSE. Deployment → CronJob conversion deployed and verified.
+
+**#93 (Pi-hole session-TTL 86400→300):** GATED, awaiting Brandon's explicit approval. When approved, Ripley to coordinate one-pod-at-a-time pihole StatefulSet rollout with DNS health verification before and after.

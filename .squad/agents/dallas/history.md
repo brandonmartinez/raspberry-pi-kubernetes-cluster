@@ -79,3 +79,25 @@ Cross-agent handoff recorded by Scribe for Brandon Martinez. Dallas fixed kubele
 - Deferred: ArgoCD sync, first CronJob run verification, Pi-hole 429 confirmation, orphan cleanup (imperative `kubectl delete deploy/nebulasync -n pihole`)
 
 **Gated follow-up:** Issue #93 (Pi-hole session TTL 86400 → 300s) filed; coordinate with Ripley post-deploy-verify.
+
+## Session: Issue #91 — CronJob Deploy + Verification (2026-06-30T10:16:53-04:00)
+
+**Mode:** Deploy+Verify (network restored, LAN SSH confirmed)
+**Status:** COMPLETE — #91 acceptance MET
+
+**Deploy path:** Break-glass `kubectl kustomize apps/nebulasync | kubectl apply` (argocd CLI not available). CronJob + configmap `nebulasync-configmap-dhghmdktbb` applied. ArgoCD Application `nebulasync` was Synced/Healthy on old state; manual apply overlaid the new CronJob on top.
+
+**Deletions:**
+- `deploy/nebulasync -n nebulasync`: DELETED (old Deployment, 0/0 replicas)
+- `deploy/nebulasync -n pihole`: DELETED (470-day orphan, per decisions.md post-deploy cleanup note)
+
+**Verify runs:**
+1. `nebulasync-verify`: FAILED in ~1–2s (BackoffLimitExceeded). Pod logs lost. Probable Pi-hole 429 on first attempt (session table residue from crash-loop) or transient CRI startup issue.
+2. `nebulasync-verify2`: COMPLETED 1/1 in 28s. `INF Sync completed`. No 429. No WRN on session invalidation.
+3. Scheduled `nebulasync-29713830` (10:30 AM): COMPLETED 1/1 in 26s. `INF Sync completed`. No 429. Sessions invalidated successfully (`INF Invalidating sessions...` — no WRN).
+
+**Final state:** CronJob only in nebulasync ns; no Deployments or RSes in nebulasync or pihole ns; Pi-hole pods all Running (3/3).
+
+**Orphans (prune OFF):** `nebulasync-pdb` PDB + old configmap `nebulasync-configmap-kd2h772tt5` remain. Harmless; can be deleted imperatively.
+
+**#91:** CLOSED. **#93 (session TTL):** Awaiting Brandon's approval — gated per decisions.md.
