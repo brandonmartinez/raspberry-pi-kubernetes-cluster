@@ -526,6 +526,126 @@ unbound was intentionally NOT promoted. It remains generator-managed/manual per 
 
 ---
 
+### 16. Reviewer Gate Decision: Issue #93 — Pi-hole Session TTL 86400→300 (Ripley, 2026-06-30)
+
+**Author:** Ripley | **Date:** 2026-06-30T12:26:15-04:00 | **Status:** APPROVED
+
+**Verdict: APPROVE**
+
+All safety gates pass. The plan is technically sound. Proceed with partition=0 release as described.
+
+#### Gate-by-Gate Findings (live spot-check)
+
+**GATE 1 — Data Safety: PASS ✅**
+- All 3 PVCs (pihole-pvc-pihole-0/1/2): storageClass=longhorn, recurring-job-group=default → backup-default
+- executionCount=271 — 271 completed backup executions confirmed
+- lastBackupAt: 2026-06-30T07:01–07:03Z (today, ~5h before review)
+- Data safety hard gate satisfied.
+
+**GATE 2 — Cluster Health: PASS ✅**
+- pihole-0: 1/1 Running, session_timeout=86400 (frozen, partition=1)
+- pihole-1: 1/1 Running, session_timeout=300 ✓
+- pihole-2: 1/1 Running, session_timeout=300 ✓
+- DNS spot-check (github.com): all 3 pods + VIP resolving ✅
+- PDB currentHealthy=3, disruptionsAllowed=1 — absorbs restart with margin
+
+#### Review Answers
+
+**Q1 — Safety gates adequate?** Yes. executionCount=271 with lastBackup=today is compelling evidence of functioning, recently-exercised backup chain. Health state confirmed live. No concurrent Longhorn rebuilds.
+
+**Q2 — Releasing pihole-0 via partition=0: correct and safe?** Yes. StatefulSet pod template already references configmap pihole-configmap-bc58mbhchm (session_timeout=300 confirmed). Setting partition=0 is purely a gate release. Readiness probe is DNS-gated; pihole-0 not marked Ready until DNS answering. During ~30–60s restart, VIP routes to pihole-1/2 (both healthy).
+
+**Q3 — GitOps hygiene: acceptable to leave OutOfSync until merge?** Yes, REQUIRED sequencing. Do NOT ArgoCD-sync before PR #94 merges. ArgoCD currently sources main (86400 old value). Pre-merge sync would revert all 3 pods back to 86400. After PR #94 merges, ArgoCD sync produces same configmap hash → no-op.
+
+**Q4 — ArgoCD automated/selfHeal/prune state:** Live-verified. No automated block. No selfHeal. No prune. Zero auto-revert risk.
+
+**Q5 — Required conditions before proceeding / blockers:** No blockers. Do NOT trigger ArgoCD manual sync until PR #94 merges to main — non-negotiable guardrail.
+
+#### Recommended Execution Sequence
+1. Patch partition 1→0
+2. Watch pihole-0 restart
+3. Verify pihole-0: Running 1/1, session_timeout=300, DNS resolving
+4. Run nebulasync verify Job: confirm Completed 1/1, no 429
+5. Merge PR #94 → main
+6. (Optional) ArgoCD manual sync: expect no-op
+7. Close #93
+
+---
+
+### 17. Decision: Issue #93 — Pi-hole Session TTL Roll Plan (Dallas, 2026-06-30)
+
+**Author:** Dallas | **Date:** 2026-06-30T12:30:00-04:00 | **Status:** Proposed — awaiting coordinator merge
+
+#### Context
+
+Issue #93 reduces `FTLCONF_webserver_session_timeout` from 86400→300 to durably eliminate nebulasync HTTP 429s. PR #94 open on branch `squad/93-pihole-session-ttl-300`. A break-glass `kubectl kustomize` was already executed ~35 min before this check — roll already 2/3 complete.
+
+#### Current Cluster State (as of 2026-06-30T12:30 EDT)
+
+| Pod | session_timeout | Revision | Status |
+|---|---|---|---|
+| pihole-0 | 86400 (old) | pihole-58d559646f | frozen at partition=1 |
+| pihole-1 | 300 ✓ | pihole-847677564f (update) | Ready |
+| pihole-2 | 300 ✓ | pihole-847677564f (update) | Ready |
+
+StatefulSet: updatedReplicas=2, readyReplicas=3, partition=1  
+Active configmap: pihole-configmap-bc58mbhchm (session_timeout=300, created 35min ago)  
+ArgoCD pihole: OutOfSync/Healthy — selfHeal=OFF, prune=OFF (safe)
+
+#### Decision: Patch partition=0 to complete the roll
+
+Only remaining action: `kubectl -n pihole patch sts pihole --type=merge -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":0}}}}'`
+
+This releases pihole-0. K8s rolls it one pod. Readiness probe gates promotion.
+
+#### Deploy-source decision
+
+- Break-glass apply already done. Do NOT trigger ArgoCD manual sync until PR #94 merges to main.
+- After pihole-0 verified: merge PR #94 → main. ArgoCD sync produces same configmap hash → no-op.
+
+#### Rollback path (if pihole-0 fails)
+
+- pihole-1 and pihole-2 keep serving DNS (PDB minAvailable=2).
+- Re-freeze: partition=1
+- Investigate logs
+- Emergency rollback: revert configmap to 86400 and close PR #94
+
+---
+
+### 18. Decision: Issue #93 Roll Complete (Dallas, 2026-06-30)
+
+**Author:** Dallas | **Date:** 2026-06-30T12:35-04:00 | **Status:** COMPLETE
+
+#### Outcome
+
+The #93 pihole StatefulSet rolling update is fully complete. All three replicas now running `FTLCONF_webserver_session_timeout=300`.
+
+#### Evidence
+
+| Check | Result |
+|-------|--------|
+| STS pre-flight | updated=2, ready=3, partition=1 ✓ |
+| Patch partition 1→0 | Applied at ~12:30 EDT |
+| pihole-0 roll | Terminating → Running 0/1 → Running 1/1 in ~135s |
+| pihole-1/2 during roll | Stayed 1/1 throughout (PDB not triggered) |
+| session_timeout all pods | pihole-0=300, pihole-1=300, pihole-2=300 ✓ |
+| STS final state | updated=3, ready=3, partition=0, READY 3/3 ✓ |
+| DNS pihole-0 direct | github.com → 140.82.112.3, themartinez.cloud → 192.168.52.80 ✓ |
+| nebulasync-verify93 | COMPLETED 1/1, no HTTP 429, INF Sync completed ✓ |
+| Latest scheduled run | COMPLETED 1/1, no 429, no WRN ✓ |
+
+#### Known Residual
+
+nebulasync-verify93 emitted one WRN: "Failed to invalidate session for target: http://pihole-1.pihole.pihole.svc.cluster.local". This is the known nebulasync v0.11.2 / Pi-hole v6 session-invalidation incompatibility from issue #91. Non-fatal: with TTL=300s, even un-invalidated sessions expire within 5 minutes, preventing table saturation. Sync completed successfully; no 429 observed.
+
+#### Recommended Next Actions
+
+1. Merge PR #94 → ArgoCD sync (will be no-op; same configmap hash already live)
+2. File issue for nebulasync v0.11.2 session invalidation WRN (track until upstream fixes Pi-hole v6 session API support)
+3. VIP intermittency: investigate dnsdist load-distribution separately (pre-existing, not introduced by this change)
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
