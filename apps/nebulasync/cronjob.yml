@@ -1,0 +1,66 @@
+# Nebula-Sync runs in one-shot mode (no CRON env var) so it syncs once and exits.
+# The Kubernetes CronJob owns the schedule. This replaces the previous Deployment
+# which got stuck in CrashLoopBackOff when nebulasync v0.11.2 changed from ERR
+# (non-fatal) to FTL (fatal/exit-1) on sync failure — specifically when Pi-hole v6
+# returns 429 from session exhaustion (GitHub issue lovelaze/nebula-sync#226).
+#
+# concurrencyPolicy: Forbid — ensures a slow/stuck run cannot overlap the next
+# cycle, preventing double session creation and double sync conflicts.
+#
+# activeDeadlineSeconds: 300 — kills a hung job within 5 min, safely before the
+# next 10-min cycle starts. Prevents orphaned pods from accumulating.
+#
+# Session leak: v0.11.2 still fails to invalidate sessions on all three Pi-hole
+# targets (WRN "Failed to invalidate session"). With the Deployment gone, the
+# crash-loop is eliminated. Leak is bounded to at most 6 sessions per cycle
+# (2 attempts × 3 Pi-holes) under 16 max_sessions — but only if
+# webserver.session.timeout is reduced to ≤300s (see separate gated Pi-hole
+# config change). Apply that change to keep the slot table from refilling.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nebulasync
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # Retry once before marking this cycle Failed (1 retry limits session-leak amplification; see #226).
+      backoffLimit: 1
+      # Kill the job if it runs longer than 5 min (before next 10-min cycle).
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: OnFailure
+          # Allow scheduling on the control-plane node to better utilize cluster
+          # resources — nebulasync is a lightweight, short-lived sync job.
+          tolerations:
+            - key: node-role.kubernetes.io/master
+              operator: Exists
+              effect: NoSchedule
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+          containers:
+            - name: nebulasync
+              # v0.11.2 — frozen by digest per repo convention.
+              # Digest: sha256:951576b448c08df16cc6b46f90cc3b40c44e10dfb56e431dfd0f1ead7d435724
+              # Session invalidation against Pi-hole v6 is still broken in this
+              # release (upstream issue #226). No later release with a confirmed
+              # fix as of 2026-06-30. Pin held; rely on CronJob + Forbid +
+              # reduced session TTL to bound leakage.
+              image: ghcr.io/lovelaze/nebula-sync@sha256:951576b448c08df16cc6b46f90cc3b40c44e10dfb56e431dfd0f1ead7d435724
+              envFrom:
+                - configMapRef:
+                    name: nebulasync-configmap
+                - secretRef:
+                    name: nebulasync-secret
+              resources:
+                limits:
+                  memory: "32Mi"
+                  cpu: "25m"
+                requests:
+                  memory: "16Mi"
+                  cpu: "5m"
