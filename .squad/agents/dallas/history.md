@@ -54,3 +54,28 @@ Cross-agent handoff recorded by Scribe for Brandon Martinez. Dallas fixed kubele
 - Read-only verification only (gh-issue-API); no working-tree mutations
 - Coordination: 5-agent parallel triage; backup-verification gate (decision #10) now standing rule
 2026-06-29T11:05:06-04:00 Promoted changedetection to gate-3 explicit Application (stateful, auto-sync, prune/selfHeal OFF) in apps-appset.yml for #46.
+
+---
+
+## Session: Issue #91 — nebulasync CrashLoopBackOff + Pi-hole HTTP 429 (2026-06-30)
+
+**Mode:** Sync (investigator) → Sync (lightweight) → Sync (deploy+verify, BLOCKED)  
+**Status:** Decision #1 approved + PR #92 merged; live deploy blocked by network outage
+
+**Phase 1 — Investigation (investigator):**
+- Root-cause confirmed: nebulasync v0.11.2 cannot invalidate Pi-hole v6 sessions (WRN "Failed to invalidate" on all cycles)
+- Session leak math: 10-min interval × 3 Pi-holes × 2+ attempts × 24h TTL → fills 16-slot session table in ~50 min
+- CrashLoopBackOff: v0.11.2 exits on sync failure (FTL log level) → Deployment restart loop
+- Orphan discovery: 470-day-old nebulasync Deployment in `pihole` namespace amplifying leak
+- Decision: Deployment → CronJob (batch-job model, no restart loops); hold v0.11.2 digest pending upstream fix
+
+**Phase 2 — Lightweight (apply changes):**
+- Applied Ripley's required change: backoffLimit 2→1 (reduces leak from 9 to 6 sessions/cycle)
+- Corrected leak-math comments; validate.sh PASS
+
+**Phase 3 — Deploy+Verify (BLOCKED):**
+- Network outage: workstation lost route to cluster LAN (~09:00 UTC)
+- Cluster safely paused (nebulasync Deployments scaled to 0)
+- Deferred: ArgoCD sync, first CronJob run verification, Pi-hole 429 confirmation, orphan cleanup (imperative `kubectl delete deploy/nebulasync -n pihole`)
+
+**Gated follow-up:** Issue #93 (Pi-hole session TTL 86400 → 300s) filed; coordinate with Ripley post-deploy-verify.

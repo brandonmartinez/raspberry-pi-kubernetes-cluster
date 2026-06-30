@@ -67,3 +67,22 @@ Reviewed Ash's comprehensive observability stack assessment and recommendations:
 - **Follow-up #46.1 (PRIORITY):** Promote changedetection + unbound to gate-3 auto-sync. This completes #46 verification.
 - Coordination: 5-agent read-only triage; 9 issues closed with concrete evidence; decision #10 (backup-verification gate) now standing rule
 - All orchestration logs written; decisions.md merged from inbox (3 entries); mutable state not committed per pattern
+
+---
+
+## Session: Issue #91 Reviewer Gate — nebulasync CrashLoopBackOff + Pi-hole HTTP 429 (2026-06-30)
+
+**Mode:** Sync (reviewer gate)  
+**Status:** PR #92 APPROVED WITH CHANGES; Dallas applied, Coordinator merged
+
+**Review Outcome:**
+- **Structure:** ✅ CronJob model correct for batch workload (consistent with pihole gravity-sync CronJob decision #2)
+- **Required change:** backoffLimit 2→1 (aligns session-leak math: 3 Pi-holes × 2 attempts = 6 leaked sessions/cycle vs 9)
+- **Post-sync cleanup flagged:** Two stale Deployments require imperative deletion (prune is off):
+  1. `kubectl delete deploy/nebulasync -n pihole` (orphan, 470 days old)
+  2. Old crash-looping RS `nebulasync-7cc9d44848` if not cleaned by ArgoCD sync
+- **Gated follow-up approved:** Issue #93 (Pi-hole session TTL 86400 → 300s) separate PR, requires DNS health verification post-CronJob deploy
+
+**Coordination:** Dallas → applied backoffLimit correction → validate.sh PASS → Coordinator merged PR #92.
+
+**Continuity:** Awaiting network reconnect for deploy+verify. Will coordinate post-CronJob verification for issue #93 timing (TTL reduction requires clean sync first).

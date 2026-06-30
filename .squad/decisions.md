@@ -2,7 +2,151 @@
 
 ## Active Decisions
 
-### 1. Security: Rotate two credentials exposed in git history (P1)
+### 1. Decision: Convert nebulasync Deployment → CronJob (Issue #91)
+
+**Author:** Dallas | **Date:** 2026-06-30T08:57:47.650-04:00 | **Status:** Approved (Ripley APPROVED WITH CHANGES: backoffLimit 2→1, post-delete orphans)
+
+---
+
+## Context
+
+Issue #91 surfaced two compounding failures in `apps/nebulasync/`:
+
+1. **Session leak → HTTP 429:** nebulasync v0.11.2 cannot invalidate its Pi-hole v6
+   API sessions at the end of every sync run (WRN "Failed to invalidate session for
+   target" on all three Pi-holes). Each 10-minute run leaks 3 sessions (one per
+   Pi-hole replica). With Pi-hole's `webserver.session.timeout = 86400` (24h, changed
+   from the default 1800s via `FTLCONF_webserver_session_timeout` in the pihole
+   configmap), leaked sessions persist for 24 hours. The 16 session slots fill within
+   5 sync cycles (~50 min of a fresh Pi-hole start), after which every subsequent auth
+   attempt returns HTTP 429. This is a known upstream compat issue between nebulasync
+   v0.11.x and Pi-hole v6 (lovelaze/nebula-sync GitHub issue #226).
+
+2. **CrashLoopBackOff rollout stuck:** nebulasync v0.11.2 changed its failure log
+   level from ERR (non-fatal, daemon continues) to FTL (fatal, process exits 1). In a
+   Deployment, exit-1 triggers an immediate Kubernetes restart loop. The new digest-
+   pinned RS (nebulasync-7cc9d44848) was permanently stuck at 38+ restarts, and the
+   old `:latest` RS (nebulasync-76db546db4) remained running — two active RSes with
+   both desired=1, both hitting Pi-hole every 10 minutes.
+
+**Additional discovery (break-glass investigation):** A third nebulasync Deployment
+was still alive in the `pihole` namespace — a 470-day-old orphan from before nebulasync
+was migrated to its own namespace. This contributed a third concurrent sync pod,
+amplifying session leak. The pihole-namespace Deployment is NOT in any current GitOps
+manifest and must be cleaned up post-commit (see Verification Plan).
+
+---
+
+## Decision: CronJob replaces Deployment
+
+**Choice:** Convert `apps/nebulasync/` from a `Deployment` to a `batch/v1 CronJob`.
+
+**Rationale:**
+
+- nebulasync is fundamentally a **run-to-completion batch tool**, not a daemon.
+  Its built-in `CRON` env var daemon mode is at odds with Kubernetes' Deployment
+  restart semantics. When the process exits non-zero (as v0.11.2 now does on any
+  sync failure), a Deployment CrashLoopBackOffs and gets stuck in a rollout.
+- A CronJob maps perfectly to the actual intent: run sync, exit, repeat on schedule.
+  A failed Job is simply "Failed" and the next scheduled run fires normally — no
+  stuck rollout, no CrashLoopBackOff, no perpetual RS churn.
+- This direction is **consistent with earlier team thinking** (.squad/decisions.md §2:
+  "Add Orbital Sync CronJob targeting pihole-0 as primary" — same CronJob model).
+- `concurrencyPolicy: Forbid` prevents overlapping runs that would otherwise double
+  the session leak rate during transient slowdowns.
+
+**Key CronJob settings:**
+- `schedule: "*/10 * * * *"` — unchanged from the previous `CRON` env var.
+- `concurrencyPolicy: Forbid` — no overlapping runs.
+- `backoffLimit: 1` — 2 total attempts per cycle before marking Failed (reduced from 2 per Ripley review).
+- `activeDeadlineSeconds: 300` — kills a hung job within 5 min, before the next
+  10-min cycle. Prevents orphaned pods accumulating under a Forbid policy.
+- `successfulJobsHistoryLimit: 3 / failedJobsHistoryLimit: 3` — bounded history.
+- `restartPolicy: OnFailure` — consistent with gravity-sync CronJob pattern.
+- CRON env var removed from `.env` — nebulasync one-shot mode (exits 0/1 per run).
+- PDB removed — no long-lived pod to protect.
+- Probes removed — run-to-completion batch jobs do not use readiness/liveness probes.
+
+---
+
+## Version-pin decision: hold at current digest
+
+Current image: `ghcr.io/lovelaze/nebula-sync@sha256:951576b448c08df16cc6b46f90cc3b40c44e10dfb56e431dfd0f1ead7d435724`
+(v0.11.2 — confirmed in logs: `INF Starting nebula-sync v0.11.2`)
+
+**Evidence gathered (2026-06-30):**
+- No later release of lovelaze/nebula-sync confirms a fix for Pi-hole v6 session
+  invalidation. The most recently indexed GitHub release is v0.11.1 (Sept 2025);
+  the SHA above corresponds to v0.11.2 (current `:latest` on ghcr.io at time of
+  issue). Upstream issue #226 ("Failing to invalidate sessions again") remains open.
+- A web search returned an AI-generated claim that v0.11.2 "addresses session
+  handling" — this is contradicted by live logs confirming v0.11.2 still WRNs on
+  every invalidation attempt. This claim should NOT be trusted.
+
+**Decision:** Hold the digest at v0.11.2. Do NOT chase an unverified claim of a fix.
+When a confirmed upstream release with evidence of working session invalidation
+on Pi-hole v6 becomes available, update the digest and document the PR testing result.
+
+---
+
+## Separate gated recommendation: reduce Pi-hole session TTL
+
+This is **NOT** part of the nebulasync CronJob change. It requires a separate,
+reviewed ArgoCD sync of the `pihole` app and a full DNS health verification. Filed as issue #93.
+
+**Problem:** `FTLCONF_webserver_session_timeout = 86400` (24h) was set in the pihole
+configmap (changed from the default 1800s). With the session invalidation bug in
+nebulasync, leaked sessions persist for 24 hours. Even with the CronJob fix, if
+invalidation continues to fail, each 10-min cycle leaks 3 sessions × up to 2
+attempts = 6 sessions. With max_sessions=16 and 24h TTL, the session table may refill
+within ~2.7h of intensive sync cycles after Pi-hole restart.
+
+**Recommendation:** Change `FTLCONF_webserver_session_timeout` from `86400` to `300`
+(5 minutes) in `apps/pihole/.env`. With a 5-min TTL and 10-min CronJob interval,
+leaked sessions from run N expire well before run N+1 starts — the session table
+never exceeds ~6 slots (3 Pi-holes × backoffLimit 2 attempts). This eliminates the
+session exhaustion vector without requiring a working upstream fix.
+
+**UX trade-off:** The Pi-hole admin web UI session will time out after 5 minutes of
+inactivity (vs 24 hours currently). The web UI continuously refreshes sessions while
+open, so only truly idle tabs are affected. Acceptable for a home lab.
+
+**Gate:** Coordinate with Ripley. Apply only after:
+1. This CronJob change is committed and deployed successfully (first clean sync confirmed).
+2. No open Longhorn or StatefulSet maintenance on pihole at the time.
+3. DNS health verified before and after the pihole sync.
+
+---
+
+## Files changed (nebulasync)
+
+| Action | File |
+|--------|------|
+| Created | `apps/nebulasync/cronjob.yml` |
+| Deleted | `apps/nebulasync/deployment.yml` |
+| Deleted | `apps/nebulasync/pdb.yml` |
+| Modified | `apps/nebulasync/.env` (removed `CRON=*/10 * * * *`) |
+| Modified | `apps/nebulasync/kustomization.yml` (replaced deployment.yml+pdb.yml with cronjob.yml) |
+
+---
+
+## Post-deploy cleanup required
+
+The 470-day-old nebulasync Deployment in the `pihole` namespace
+(`deployment.apps/nebulasync` in namespace `pihole`) is an orphan — not in any
+current GitOps manifest. It was scaled to 0 in the break-glass action but NOT
+deleted. It must be imperatively deleted post-sync:
+
+```sh
+kubectl delete deploy/nebulasync -n pihole
+```
+
+This is a stateless Deployment with no PVCs. It poses zero DNS/data risk to delete.
+It was not in any GitOps manifest so no ArgoCD sync is needed.
+
+---
+
+### 2. Security: Rotate two credentials exposed in git history (P1)
 
 **Author:** Bishop | **Date:** 2026-06-26 | **Status:** Action Required
 
@@ -17,7 +161,7 @@ Two real credential values were found in this public repo's git history (both al
 
 ---
 
-### 2. DNS/Storage/Networking Stack Findings (P1–P3)
+### 3. DNS/Storage/Networking Stack Findings (P1–P3)
 
 **Author:** Dallas | **Date:** 2026-06-26 | **Status:** Review Complete
 
@@ -40,7 +184,7 @@ Two real credential values were found in this public repo's git history (both al
 
 ---
 
-### 3. Ansible Storage Role Must Align with Live Longhorn Mount Path (P1)
+### 4. Ansible Storage Role Must Align with Live Longhorn Mount Path (P1)
 
 **Author:** Parker | **Date:** 2026-06-26 | **Status:** Proposed (Brandon confirmation needed)
 
@@ -58,7 +202,7 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 
 ---
 
-### 4. Post-Refactor Repo Structure and GitOps Pipeline (P1–P2)
+### 5. Post-Refactor Repo Structure and GitOps Pipeline (P1–P2)
 
 **Author:** Ripley | **Date:** 2026-06-26 | **Status:** Proposed — team action needed
 
@@ -85,7 +229,7 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 
 ---
 
-### 5. Review Documentation Completed (Lambert, 2026-06-26)
+### 6. Review Documentation Completed (Lambert, 2026-06-26)
 
 **Status:** Delivered + security-redacted
 
@@ -97,7 +241,7 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 
 ---
 
-### 6. Existing Open-Issue Triage Results (#3, #7, #10–#11, #13–#20)
+### 7. Existing Open-Issue Triage Results (#3, #7, #10–#11, #13–#20)
 
 **Author:** Ripley | **Date:** 2026-06-26 | **Status:** Recommended action (pending coordinator execution)
 
@@ -123,7 +267,7 @@ Triaged 12 pre-existing open issues against current repo state and 31 new issues
 
 ---
 
-### 7. Hardware Inventory Live-Fill & Thermal/Mount Findings (Parker, 2026-06-26)
+### 8. Hardware Inventory Live-Fill & Thermal/Mount Findings (Parker, 2026-06-26)
 
 **Author:** Parker | **Date:** 2026-06-26 | **Status:** Completed + Action Items Identified
 
@@ -157,7 +301,7 @@ All Bullseye (not Bookworm), kernel 6.1.21-v8+, SanDisk SR32G 32GB SD cards.
 
 ---
 
-### 8. Capacity Diet #83 — 6 Validated PRs (P1)
+### 9. Capacity Diet #83 — 6 Validated PRs (P1)
 
 **Author:** Ash | **Date:** 2026-06-28 | **Status:** Ready for manual sync
 
@@ -187,7 +331,7 @@ Delivered 6 validated, reversible PRs targeting footprint reduction and control-
 
 ---
 
-### 9. Issue #23 Closed — Both Leaked Credentials Rotated (P1)
+### 10. Issue #23 Closed — Both Leaked Credentials Rotated (P1)
 
 **Author:** Coordinator | **Date:** 2026-06-28 | **Status:** Complete
 
@@ -206,7 +350,7 @@ Security-sweep issue #23 is closed. Both historically-leaked credentials were co
 
 ---
 
-### 10. Mandatory Backup-Verification Gate — Any Operation Touching Persisted Data (P1 Standing Rule)
+### 11. Mandatory Backup-Verification Gate — Any Operation Touching Persisted Data (P1 Standing Rule)
 
 **Author:** squad-coordinator | **Date:** 2026-06-27 | **Status:** Standing Rule (Codified)
 
@@ -239,7 +383,7 @@ Before ANY operation that touches or could affect persisted data (PVCs, Stateful
 
 ---
 
-### 11. Observability Stack Assessment & ServiceMonitor Gaps (P2–P3)
+### 12. Observability Stack Assessment & ServiceMonitor Gaps (P2–P3)
 
 **Author:** Ash | **Date:** 2026-06-28 | **Status:** Review-only recommendations staged for prioritization
 
@@ -285,7 +429,7 @@ Currently deployed:
 
 ---
 
-### 12. Observability Implementation: Dashboards + ServiceMonitors Live (2026-06-29T01-15-08)
+### 13. Observability Implementation: Dashboards + ServiceMonitors Live (2026-06-29T01-15-08)
 
 **Author:** Ash | **Date:** 2026-06-29 | **Status:** Edit-only pending sync
 
@@ -310,7 +454,7 @@ Executed observability stack implementation (Task 1–5 from decision #11 review
 
 ---
 
-### 13. Triage Verdicts for 27 Open Issues — Recommended Closures & Sprint Plan (2026-06-29T05-18-45)
+### 14. Triage Verdicts for 27 Open Issues — Recommended Closures & Sprint Plan (2026-06-29T05-18-45)
 
 **Author:** Ripley & team | **Date:** 2026-06-29 | **Status:** Read-only triage; pending Brandon closure execution
 
@@ -343,7 +487,7 @@ Full triage of 27 open issues by Ripley (lead), Dallas (GitOps/K8s), Parker (Inf
 
 ---
 
-### 14. Promote changedetection to GitOps gate-3 (auto-sync); keep unbound on manual sync (#46)
+### 15. Promote changedetection to GitOps gate-3 (auto-sync); keep unbound on manual sync (#46)
 
 **Author:** Brandon Martinez (decision) — implemented by Dallas, reviewed/approved by Ripley | **Date:** 2026-06-29 | **Status:** Shipped via branch + PR; #46 closed
 
