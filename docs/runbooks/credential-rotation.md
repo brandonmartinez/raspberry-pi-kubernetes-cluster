@@ -32,6 +32,42 @@ Assume any value that reached a public repo was already harvested. Rotation is t
 5. Verify the old UI credential no longer works and the new value from 1Password does work.
 6. Verify cameras, plugins, and automations still connect after the change.
 
+## Rotate the 1Password service-account token (optional non-interactive sync)
+
+This applies only if the operator configured the optional read-only service
+account for non-interactive `scripts/sync-secrets.sh` (see
+`docs/secrets.md` → "Optional: Non-interactive sync via a 1Password service
+account"). The token lives **only** on the workstation Keychain (item
+`op-service-token-homelab`) and never enters the cluster, so rotating it has no
+effect on running workloads — pushed Secrets persist in etcd regardless.
+
+Rotate the token if it may have been exposed, on a periodic hygiene schedule, or
+when offboarding the workstation:
+
+1. In 1Password, open the **service account** scoped read-only to the `homelab`
+   vault and **rotate (or revoke + recreate)** its token. Revoking immediately
+   invalidates the old token everywhere.
+2. Update the Keychain item with the new token (copy the full `ops_…` token to
+   the clipboard first, then store from the clipboard so a very long token is
+   captured intact). Record only the item name in notes, never the token value:
+   ```sh
+   security add-generic-password -a "$USER" -s "op-service-token-homelab" -w - -U
+   ```
+   (`-w -` reads the secret from stdin/clipboard-paste instead of the argv, so it
+   never lands in shell history.)
+3. Confirm the new token works non-interactively with a read-only check (no
+   biometric prompt should appear):
+   ```sh
+   scripts/sync-secrets.sh --verify <target>
+   ```
+4. Verify the **old** token is dead: a fresh shell with the previous token set in
+   `OP_SERVICE_ACCOUNT_TOKEN` should fail `op whoami`.
+
+If you instead want to stop using the service account entirely, delete the
+Keychain item (`security delete-generic-password -s "op-service-token-homelab"`)
+and revoke it in 1Password; `sync-secrets.sh` falls back to the interactive `op`
+session automatically.
+
 ## Re-push and reconcile pushed Secrets
 
 After any namespace recreation, app migration, or Secret-consuming service change:
@@ -88,5 +124,6 @@ Decision framing:
 - The old Uptime Kuma and Scrypted values fail.
 - The relevant 1Password `homelab` items contain the new values.
 - `scripts/sync-secrets.sh --verify <target>` reports all expected pushed Secrets present for any Kubernetes-backed target.
+- If the optional service-account token was rotated: the new token works non-interactively (`--verify` runs with no biometric prompt) and the old token fails `op whoami`.
 - Service health checks, monitors, cameras, and automations remain healthy.
 - If a history scrub is chosen, all collaborators have acknowledged the force-push plan before it happens.
