@@ -99,3 +99,34 @@ Dallas deployed merged PR #92 (CronJob) via break-glass kustomize apply; deleted
 **#91 recommendation:** CLOSE. Deployment → CronJob conversion deployed and verified.
 
 **#93 (Pi-hole session-TTL 86400→300):** GATED, awaiting Brandon's explicit approval. When approved, Ripley to coordinate one-pod-at-a-time pihole StatefulSet rollout with DNS health verification before and after.
+
+---
+
+## Session: Issue #93 Reviewer Gate — Pi-hole Session TTL Roll (2026-06-30T12:26:15-04:00)
+
+**Mode:** Reviewer gate (read-only spot-check + verdict)
+**Status:** APPROVED — no blockers, proceed with partition=0 release
+
+**Inputs reviewed:** Dallas's gate-verification report (dallas-93-roll-plan.md), Dallas history.md, live cluster SSH spot-checks.
+
+**Live spot-checks performed (SSH pi@192.168.52.110):**
+- StatefulSet: partition=1, updatedReplicas=2, currentReplicas=1, readyReplicas=3 — confirmed 2/3 roll complete
+- Session timeouts: pihole-0=86400 (frozen), pihole-1=300 ✓, pihole-2=300 ✓
+- DNS: github.com resolving on all 3 pod IPs + VIP 192.168.52.53 (140.82.114.4) ✓
+- Configmap pihole-configmap-bc58mbhchm: `FTLCONF_webserver_session_timeout=300` ✓
+- StatefulSet envFrom: references bc58mbhchm ✓
+- ArgoCD syncPolicy: syncOptions only (CreateNamespace, ServerSideApply, RespectIgnoreDifferences) — no `automated`, no `selfHeal`, no `prune` ✓
+- PDB: currentHealthy=3/desiredHealthy=2, disruptionsAllowed=1 ✓
+- ArgoCD sync state: OutOfSync/Healthy (expected) ✓
+
+**Gate 1 (data safety): PASS** — executionCount=271, lastBackup=2026-06-30T07:01–07:03Z
+**Gate 2 (health): PASS** — 3/3 Running+Ready, distinct nodes, DNS fully operational
+**ArgoCD auto-revert risk: NONE** — no automated/selfHeal/prune confirmed live
+
+**Critical guardrail confirmed:** Do NOT ArgoCD-sync before PR #94 merges to main. Pre-merge sync re-generates configmap from old .env (86400) → different hash → rolls all 3 pods back. Post-merge sync is a no-op (same hash bc58mbhchm).
+
+**Verdict:** APPROVE. Partition=0 is correct and safe. Break-glass-applied + partition-gated pattern was appropriate. OutOfSync/Healthy is a valid in-flight state.
+
+**#93 close condition:** After nebulasync verify Job confirms Completed + no 429. PR merge + ArgoCD sync are hygiene steps, not acceptance criteria.
+
+**Decision written to:** `.squad/decisions/inbox/ripley-93-gate.md`
