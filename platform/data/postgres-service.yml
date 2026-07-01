@@ -8,7 +8,11 @@ spec:
   type: ClusterIP
   clusterIP: 10.43.100.50
   selector:
-    app: pgbouncer  # Route traffic through PgBouncer connection pooler
+    # Select ONLY PgBouncer via a differentiating role label.
+    # The kustomization label transformer (app: data, includeSelectors: true)
+    # adds `app: data` on top of this key but leaves it intact. Using a bare
+    # `app: data` selector here would ALSO match postgres-0. Routes pooled traffic.
+    role: pgbouncer
   ports:
     - name: 5432-tcp
       port: 5432
@@ -45,7 +49,11 @@ metadata:
     app: pgbouncer
 spec:
   selector:
-    app: pgbouncer  # External access also goes through PgBouncer
+    # Select ONLY PgBouncer via a differentiating role label.
+    # The kustomization label transformer (app: data, includeSelectors: true)
+    # adds `app: data` on top of this key but leaves it intact. Using a bare
+    # `app: data` selector here would ALSO match postgres-0. External access is pooled.
+    role: pgbouncer
   ports:
     - name: postgres-tcp
       port: 5432
