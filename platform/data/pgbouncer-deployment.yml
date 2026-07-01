@@ -18,6 +18,10 @@ spec:
     metadata:
       labels:
         app: pgbouncer
+        # Differentiator so postgres-svc/postgres-tcp select ONLY pooler pods.
+        # The kustomization transformer (app: data, includeSelectors: true) layers
+        # `app: data` on top of this key; `role` survives untouched. See issue #102.
+        role: pgbouncer
     spec:
       # Anti-affinity to avoid scheduling on same node as PostgreSQL (if possible)
       affinity:
