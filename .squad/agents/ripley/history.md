@@ -130,3 +130,9 @@ Dallas deployed merged PR #92 (CronJob) via break-glass kustomize apply; deleted
 **#93 close condition:** After nebulasync verify Job confirms Completed + no 429. PR merge + ArgoCD sync are hygiene steps, not acceptance criteria.
 
 **Decision written to:** `.squad/decisions/inbox/ripley-93-gate.md`
+
+---
+
+## Session: Issue #102 — PR #103 awaiting review/merge (2026-07-01T12:32:28-04:00)
+
+Dallas opened PR #103 for #102. The change is git-only: `postgres-svc` / `postgres-tcp` now target PgBouncer pods via `{app: data, role: pgbouncer}`; no cluster apply occurred. Because the data app is manual-sync, operator review/merge and a manual ArgoCD sync are still required.

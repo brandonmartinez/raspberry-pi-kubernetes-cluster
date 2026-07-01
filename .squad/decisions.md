@@ -646,6 +646,26 @@ nebulasync-verify93 emitted one WRN: "Failed to invalidate session for target: h
 
 ---
 
+### 19. Platform data selector fan-out uses `role: pgbouncer` for pooler-only Services (#102)
+
+**Author:** Dallas (implemented) / Scribe (recorded) | **Date:** 2026-07-01 | **Status:** PR #103 open; git-only, awaiting review/merge
+
+Issue #102 found that Kustomize label fan-out made platform/data Services too broad: `app: data` is shared by both PostgreSQL and PgBouncer resources. Dallas fixed this on branch `fix/102-pgbouncer-selector-fanout` (commit `090288249ae88565aef42074542a972965c8d08f`) by adding `role: pgbouncer` to the PgBouncer pod template only and changing `postgres-svc` / `postgres-tcp` selectors to `{app: data, role: pgbouncer}`.
+
+**Selector pattern:** use a narrow pod-template-only differentiator label for pooler-only Services, while leaving immutable workload selectors unchanged. This mirrors #101's `postgres-direct` approach of selecting the exact PostgreSQL endpoint instead of depending on broad app labels.
+
+**Verified render:**
+- `postgres-svc` and `postgres-tcp`: `{app: data, role: pgbouncer}`
+- PgBouncer Deployment `matchLabels`: unchanged (`app: data`)
+- PostgreSQL StatefulSet selector: unchanged (`app: data`)
+- `postgres-direct`: unchanged pod-name selector
+
+**Operational status:** no cluster apply. `platform/data` is manual-sync; after PR #103 merges, operator review and manual ArgoCD sync are required.
+
+**Tooling gap discovered:** non-interactive shells did not have `/opt/homebrew/bin` on `PATH`, and `kustomize` / `kubectl` / `kubeconform` were initially unavailable. Dallas installed kustomize 5.8.1 and Homebrew bash 5.3.15 as local prerequisites; `scripts/validate.sh` passed with expected warnings for absent kubectl/kubeconform.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

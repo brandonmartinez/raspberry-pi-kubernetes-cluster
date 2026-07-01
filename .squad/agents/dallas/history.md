@@ -170,3 +170,11 @@ Cross-agent handoff recorded by Scribe for Brandon Martinez. Dallas fixed kubele
 **Roll plan:** Only one action remains — `kubectl -n pihole patch sts pihole --type=merge -p '{"spec":{"updateStrategy":{"rollingUpdate":{"partition":0}}}}'`. No new apply needed. After pihole-0 rolls and DNS verifies clean: merge PR #94 → ArgoCD sync (no-op, same hash).
 
 **Decision inbox:** `.squad/decisions/inbox/dallas-93-roll-plan.md`
+
+---
+
+## Session: Issue #102 — platform/data selector fan-out (2026-07-01T12:32:28-04:00)
+
+Fixed GitHub issue #102 on branch `fix/102-pgbouncer-selector-fanout`, commit `090288249ae88565aef42074542a972965c8d08f`, PR #103 open. Added `role: pgbouncer` to the PgBouncer pod template only and changed `postgres-svc` / `postgres-tcp` selectors to `{app: data, role: pgbouncer}`. Kept PgBouncer Deployment `matchLabels`, PostgreSQL StatefulSet selector, and `postgres-direct` unchanged.
+
+Validation: `scripts/validate.sh` passed with expected kubectl/kubeconform-missing warnings. Tooling gap: non-interactive PATH missed Homebrew tools under `/opt/homebrew/bin`; `kustomize`, `kubectl`, and `kubeconform` were initially absent. kustomize 5.8.1 and Homebrew bash 5.3.15 were installed locally as prerequisites.
