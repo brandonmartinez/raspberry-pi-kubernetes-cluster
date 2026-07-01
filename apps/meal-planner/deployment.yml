@@ -21,7 +21,7 @@ spec:
       containers:
         - name: meal-planner
           # v1.0.119
-          image: ghcr.io/brandonmartinez/meal-planner@sha256:56c62a7bdc68f12c7e13ce050b4a159f43137103587653ea75757715e444ba84
+          image: ghcr.io/brandonmartinez/meal-planner@1.0.124
           envFrom:
             - configMapRef:
                 name: meal-planner-configmap
