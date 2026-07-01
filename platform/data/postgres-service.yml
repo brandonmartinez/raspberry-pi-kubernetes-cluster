@@ -24,7 +24,13 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: data  # Direct connection to PostgreSQL (bypasses PgBouncer)
+    # Select ONLY postgres-0 via its stable StatefulSet pod-name label.
+    # The kustomization label transformer (app: data, includeSelectors: true)
+    # adds `app: data` on top of this key but leaves it intact. Using a bare
+    # `app: data` selector here would ALSO match the pgbouncer pods, letting
+    # `prisma migrate deploy` land on the transaction pooler and permanently
+    # leak its session advisory lock (P1002 deadlock). Bypasses PgBouncer.
+    statefulset.kubernetes.io/pod-name: postgres-0
   ports:
     - name: postgres
       port: 5432
