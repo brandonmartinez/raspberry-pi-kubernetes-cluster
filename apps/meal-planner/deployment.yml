@@ -11,6 +11,10 @@ spec:
     metadata:
       labels: {}
     spec:
+      securityContext:
+        # node image runs as uid/gid 1000; fsGroup makes the RWX volume
+        # group-writable so image uploads (fs.mkdir) don't fail EACCES.
+        fsGroup: 1000
       topologySpreadConstraints:
         - labelSelector:
             matchLabels:
@@ -29,6 +33,9 @@ spec:
           ports:
             - name: http
               containerPort: 3001
+          volumeMounts:
+            - name: images
+              mountPath: /data/images
           resources:
             requests:
               memory: "64Mi"
@@ -58,3 +65,7 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 5
+      volumes:
+        - name: images
+          persistentVolumeClaim:
+            claimName: meal-planner-images
