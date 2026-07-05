@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: meal-planner-images
+spec:
+  accessModes:
+    - ReadWriteMany  # shared across the HPA-managed (2-3) replicas
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
