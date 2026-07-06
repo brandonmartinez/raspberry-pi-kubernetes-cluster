@@ -171,6 +171,8 @@ It was not in any GitOps manifest so no ArgoCD sync is needed.
 
 ---
 
+---
+
 ### 2. Security: Rotate two credentials exposed in git history (P1)
 
 **Author:** Bishop | **Date:** 2026-06-26 | **Status:** Action Required
@@ -183,6 +185,8 @@ Two real credential values were found in this public repo's git history (both al
 3. Fix `scripts/validate.sh` false positives (add `.copilot/` and `.squad/` to path-skip, P2, S) — issue #32
 
 **Model verdict:** 1Password push-sync architecture is sound. All working-tree secrets clean.
+
+---
 
 ---
 
@@ -209,6 +213,8 @@ Two real credential values were found in this public repo's git history (both al
 
 ---
 
+---
+
 ### 4. Ansible Storage Role Must Align with Live Longhorn Mount Path (P1)
 
 **Author:** Parker | **Date:** 2026-06-26 | **Status:** Proposed (Brandon confirmation needed)
@@ -224,6 +230,8 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 4. Longhorn is healthy (all volumes 3/3 replicas)
 
 **Rationale:** Current path mismatch would create new fstab entry shadowing live Longhorn volumes.
+
+---
 
 ---
 
@@ -254,6 +262,8 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 
 ---
 
+---
+
 ### 6. Review Documentation Completed (Lambert, 2026-06-26)
 
 **Status:** Delivered + security-redacted
@@ -263,6 +273,8 @@ Gap: Live USB mounts on rpi002/003/004 are manual, not Ansible-managed.
 - Both documents: no specific credential names, SHAs, or public IPs; RFC1918 LAN addresses retained as appropriate for public homelab repo
 
 **Follow-up count:** P1: 10, P2: 21, P3: 14 (Total: 45)
+
+---
 
 ---
 
@@ -289,6 +301,8 @@ Triaged 12 pre-existing open issues against current repo state and 31 new issues
 - #20 (system-upgrade-controller) — ripley, P3
 
 **Recommended backlog action:** Create Feature Backlog milestone + `feature-backlog` label; move 9 enriched issues into it. No overlaps with sprint issues #22–#53.
+
+---
 
 ---
 
@@ -326,6 +340,8 @@ All Bullseye (not Bookworm), kernel 6.1.21-v8+, SanDisk SR32G 32GB SD cards.
 
 ---
 
+---
+
 ### 9. Capacity Diet #83 — 6 Validated PRs (P1)
 
 **Author:** Ash | **Date:** 2026-06-28 | **Status:** Ready for manual sync
@@ -356,6 +372,8 @@ Delivered 6 validated, reversible PRs targeting footprint reduction and control-
 
 ---
 
+---
+
 ### 10. Issue #23 Closed — Both Leaked Credentials Rotated (P1)
 
 **Author:** Coordinator | **Date:** 2026-06-28 | **Status:** Complete
@@ -372,6 +390,8 @@ Security-sweep issue #23 is closed. Both historically-leaked credentials were co
 
 **Follow-ups remaining (from Bishop sweep):**
 - Issue #32: Fix `scripts/validate.sh` secret-scanner false positives (`.copilot/` and `.squad/` path-skip)
+
+---
 
 ---
 
@@ -405,6 +425,8 @@ Before ANY operation that touches or could affect persisted data (PVCs, Stateful
 - Every agent (Ash, Dallas, Parker, Ripley, Lambert, Bishop, Rai)
 - Every change touching: PVCs, StatefulSets, databases (PostgreSQL, Redis, etc.), Longhorn volumes, USB mounts, fstab, storage drivers
 - Every infrastructure change that could cause a cascade deletion or data loss
+
+---
 
 ---
 
@@ -454,6 +476,8 @@ Currently deployed:
 
 ---
 
+---
+
 ### 13. Observability Implementation: Dashboards + ServiceMonitors Live (2026-06-29T01-15-08)
 
 **Author:** Ash | **Date:** 2026-06-29 | **Status:** Edit-only pending sync
@@ -476,6 +500,8 @@ Executed observability stack implementation (Task 1–5 from decision #11 review
 - Node Exporter Full (1860) concern: 124 panels vs. "avoid 100+ panel" guideline. Task explicitly named this ID; RPi thermal/memory visibility ROI justifies risk. Recommend Brandon post-sync evaluation; fallback to ID 13978 (26 panels) if render performance unacceptable
 
 **Status:** Kustomization.yml + JSONs + ServiceMonitors committed (7 files); Dallas independently enabled MetalLB ServiceMonitor; edit-only (no git mutation by Scribe); pending Brandon manual sync.
+
+---
 
 ---
 
@@ -512,6 +538,8 @@ Full triage of 27 open issues by Ripley (lead), Dallas (GitOps/K8s), Parker (Inf
 
 ---
 
+---
+
 ### 15. Promote changedetection to GitOps gate-3 (auto-sync); keep unbound on manual sync (#46)
 
 **Author:** Brandon Martinez (decision) — implemented by Dallas, reviewed/approved by Ripley | **Date:** 2026-06-29 | **Status:** Shipped via branch + PR; #46 closed
@@ -523,6 +551,8 @@ unbound was intentionally NOT promoted. It remains generator-managed/manual per 
 **Data safety:** changedetection is stateful (Longhorn PVC `changedetection-pvc`, reclaim `Retain`) with fresh backup `2026-06-29T07:00:07Z`. `preserveResourcesOnDeletion: true` ensures the generated → explicit handoff does NOT prune the PVC. `scripts/validate.sh` passed, including prune/selfHeal guard and ApplicationSet deletion-safety guard.
 
 **Outcome:** shipped via branch `feat/changedetection-autosync` + PR; issue #46 closed.
+
+---
 
 ---
 
@@ -572,6 +602,8 @@ All safety gates pass. The plan is technically sound. Proceed with partition=0 r
 
 ---
 
+---
+
 ### 17. Decision: Issue #93 — Pi-hole Session TTL Roll Plan (Dallas, 2026-06-30)
 
 **Author:** Dallas | **Date:** 2026-06-30T12:30:00-04:00 | **Status:** Proposed — awaiting coordinator merge
@@ -612,6 +644,8 @@ This releases pihole-0. K8s rolls it one pod. Readiness probe gates promotion.
 
 ---
 
+---
+
 ### 18. Decision: Issue #93 Roll Complete (Dallas, 2026-06-30)
 
 **Author:** Dallas | **Date:** 2026-06-30T12:35-04:00 | **Status:** COMPLETE
@@ -646,6 +680,8 @@ nebulasync-verify93 emitted one WRN: "Failed to invalidate session for target: h
 
 ---
 
+---
+
 ### 19. Platform data selector fan-out uses `role: pgbouncer` for pooler-only Services (#102)
 
 **Author:** Dallas (implemented) / Scribe (recorded) | **Date:** 2026-07-01 | **Status:** PR #103 open; git-only, awaiting review/merge
@@ -665,6 +701,44 @@ Issue #102 found that Kustomize label fan-out made platform/data Services too br
 **Tooling gap discovered:** non-interactive shells did not have `/opt/homebrew/bin` on `PATH`, and `kustomize` / `kubectl` / `kubeconform` were initially unavailable. Dallas installed kustomize 5.8.1 and Homebrew bash 5.3.15 as local prerequisites; `scripts/validate.sh` passed with expected warnings for absent kubectl/kubeconform.
 
 ---
+
+---
+
+### 2026-07-06: Capacity review shows memory is the upgrade driver
+**By:** Ash
+**What:** Prometheus' 10-day retention window and live node checks show CPU is not chronically constrained, but memory headroom on the 4GB worker nodes is thin and has produced MemoryPressure samples on rpi003/rpi004 plus a memcg OOM kill on rpi003. rpi001 is already an 8GB Pi 4B; rpi002-rpi004 are 4GB boards.
+**Why:** Over the 10-day window, node CPU averaged ~20-26% with pod CPU p95 <=21% of allocatable, while memory reached 94% of allocatable pod working set on rpi004, kubelet MemoryPressure appeared on rpi003/rpi004, and pihole-2 was killed by memcg OOM on rpi003. Hardware planning should treat added RAM as the first-order capacity gain; Pi 5 is justified primarily if thermal/I/O/CPU burst margin is desired beyond RAM relief.
+
+---
+
+### 2026-07-06T16:23:03-04:00: Hardware upgrade path — standardize on Raspberry Pi 4B 8GB
+**By:** Ripley
+**What:** Recommend completing the fleet as **4× Raspberry Pi 4B 8GB** rather than jumping to Raspberry Pi 5 for this upgrade cycle. The winner is **Pi 4B 8GB** because Ash's data says RAM is the wall and CPU is not: replacing rpi002/rpi003/rpi004 with 8GB 4Bs directly adds the missing capacity while preserving the existing architecture and matching rpi001.
+
+**Why:**
+
+Ash's 10-day capacity review is decisive: the three 4GB nodes are already running at ~87–102% of allocatable memory, with peak allocatable headroom as low as 367Mi on rpi002, 326Mi on rpi003, and 158Mi on rpi004. rpi003 and rpi004 repeatedly hit MemoryPressure, the node journal showed a real memcg OOM killing pihole-FTL on rpi003, and pihole-2 has exit-137 restarts. By contrast, CPU averaged only ~20–26% with p95 ~26–44% and CPU requests around ~23% of allocatable. A faster SoC therefore buys headroom the cluster is not currently short on; more RAM buys exactly the headroom it is short on.
+
+Replacing the three 4GB boards with 4B 8GB boards adds roughly **3506Mi allocatable per node**, or about **10.3Gi usable cluster memory** total. That is the dominant capacity improvement available without changing the operating model.
+
+Fleet parity matters here. rpi001 is already a Pi 4B 8GB and is likely the k3s server/control-plane node. Upgrading rpi002/rpi003/rpi004 to Pi 4B 8GB creates a uniform 4-node 4B-8GB cluster: same board generation, same provisioning assumptions, same scheduling profile, same power/cooling envelope, and no mixed-generation quirks. Moving to Pi 5 introduces a new board generation into a live production fleet, and the cluster would still be capped at 8GB per board unless choosing the newer 16GB variant for a more deliberate platform refresh.
+
+There is a fair case for Pi 5, but it is not the best answer to the observed bottleneck. Pi 5 brings a faster SoC, better I/O options including PCIe/NVMe, stronger generational runway, and better sustained performance with active cooling; the 16GB model could also create a larger memory ceiling. Those matter if the future plan is NVMe-first storage, heavier Longhorn I/O, local build runners, media transcoding, CI workloads, AI/ML inference, or CPU/IO-intensive databases. This cluster's current pressure pattern is different: Longhorn, Pi-hole/dnsdist, monitoring, PostgreSQL/PgBouncer, and the candidate Forgejo workload are memory-headroom problems first, not sustained CPU problems.
+
+Cost and effort also favor 4B 8GB. Three Pi 4B 8GB boards are a board-only, lowest-change replacement path if existing cases, power, cooling, SD/USB boot media, and Ansible assumptions remain usable. A Pi 5 route is a bigger refresh: 3–4 boards, active cooling as a baseline expectation, likely 5V/5A USB-C PD power supplies, and NVMe HATs/SSDs if taking advantage of the platform's real I/O benefit. Without the NVMe path, much of the Pi 5 value is left unused; with it, the project becomes a storage/platform migration, not just a capacity fix.
+
+Recommended migration path is additive and one node at a time:
+
+1. Acquire three Pi 4B 8GB boards for rpi002/rpi003/rpi004-class workers.
+2. Prefer fresh-board staging over drain-in-place SD swaps when possible: provision each replacement with existing Ansible, validate it can join cleanly, then retire/swap the corresponding 4GB node. This gives a faster rollback path than reusing the only board in-place.
+3. Cordon and drain only one target node at a time. Keep DNS safe: do not take down enough Pi-hole/dnsdist capacity to jeopardize the MetalLB DNS VIP `192.168.52.53`; verify Pi-hole replicas before and after each node event.
+4. Re-image/swap/rejoin the node, wait for Ready, verify Longhorn replica health and workload placement, then proceed to the next node.
+5. Treat rpi001 specially: it is already 8GB and likely the k3s server, so do not include it in this hardware swap unless a separate control-plane maintenance plan exists.
+6. Before any action that can touch persisted data, keep the standing backup-verification gate: verify backups are configured and at least one recent backup completed for affected Longhorn-backed data. No verified backup means stop.
+
+This does unblock the Forgejo direction that Ash previously blocked on memory. Forgejo as a single-replica service with a Longhorn PVC is a reasonable post-upgrade candidate because the 8GB completion adds roughly 10.3Gi usable cluster memory and relieves the nodes that were already at MemoryPressure/OOM risk. It should still be landed conservatively: single replica, explicit requests/limits, probes, PDB if applicable, Longhorn backup verification before PVC work, and manual ArgoCD sync/observation.
+
+Bottom line: buy **three Raspberry Pi 4B 8GB boards** first, standardize the existing fleet to 4× 4B-8GB, then revisit Pi 5 only as a future storage/IO platform refresh. The one-line justification is simple: **the cluster is memory-bound, not CPU-bound, and Pi 4B 8GB fixes the real bottleneck with the least production risk.**
 
 ## Governance
 

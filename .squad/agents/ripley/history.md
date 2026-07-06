@@ -136,3 +136,7 @@ Dallas deployed merged PR #92 (CronJob) via break-glass kustomize apply; deleted
 ## Session: Issue #102 — PR #103 awaiting review/merge (2026-07-01T12:32:28-04:00)
 
 Dallas opened PR #103 for #102. The change is git-only: `postgres-svc` / `postgres-tcp` now target PgBouncer pods via `{app: data, role: pgbouncer}`; no cluster apply occurred. Because the data app is manual-sync, operator review/merge and a manual ArgoCD sync are still required.
+
+## 2026-07-06T16:23:03-04:00 — Hardware upgrade recommendation
+
+Scribe recorded Ripley's advisory/read-only recommendation based on Ash's capacity review: standardize the fleet on 4× Raspberry Pi 4B 8GB by buying three 8GB boards for rpi002–rpi004, rather than moving to Pi 5 this cycle. The recommendation adds roughly 10.3Gi usable memory, matches existing rpi001, defers Pi 5 to a future NVMe/IO refresh, and unblocks Forgejo feasibility after the RAM upgrade. Decision merged into `.squad/decisions.md`; no repo or cluster changes were made.

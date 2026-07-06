@@ -53,3 +53,7 @@ Comprehensive review of `platform/monitoring/` kube-prometheus-stack health and 
 ## 2026-06-28T21:10:50-04:00 — Observability implementation
 
 Cross-agent handoff recorded by Scribe for Brandon Martinez. Ash removed 6 dead Grafana dashboards and entries, added lean dashboards for node-exporter 13978, cluster 15757, CoreDNS 5926, Longhorn 13032, and cert-manager 20842 using datasource `${DS_PROMETHEUS}`. Ash also added Longhorn and cert-manager ServiceMonitors (`release: monitoring`) and wired kustomization. Dallas fixed kubelet Endpoints to node IPs `192.168.52.110-113` in `apps+platform/kube-system/metrics-service.yml` and enabled the MetalLB ServiceMonitor. Ripley is reviewing. Edit-only; Brandon owns commits and `scripts/validate.sh`.
+
+## 2026-07-06T16:23:03-04:00 — Cluster capacity review
+
+Scribe recorded Ash's advisory/read-only capacity review for Brandon Martinez. Ash used Prometheus' 10-day retention plus node journals and found RAM is the binding constraint: rpi002–rpi004 are 4GB nodes with thin memory headroom, rpi003/rpi004 showed MemoryPressure, and pihole-FTL was OOM-killed on rpi003. CPU and thermals were not the limiting factors. Decision merged into `.squad/decisions.md`; no repo or cluster changes were made.
