@@ -273,6 +273,31 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: redis
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/brandonmartinez/raspberry-pi-kubernetes-cluster.git
+    targetRevision: main
+    path: platform/redis
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: redis
+  # Shared, EPHEMERAL Redis (socket.io backplane + shlink cache/locks). No
+  # persistence and no PVC, so there is nothing to back up and no data-safety
+  # gate. Manual sync (no automated/prune/selfHeal), consistent with every other
+  # platform Application.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: descheduler
   namespace: argocd
   annotations:

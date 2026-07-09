@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  # Single instance. This Redis is a SHARED, EPHEMERAL backplane/cache only:
+  #   - meal-planner: socket.io pub/sub adapter (cross-pod realtime fan-out)
+  #   - shlink:       distributed cache + locks across its replicas
+  # No data here is authoritative — a restart just re-warms the cache and
+  # re-establishes pub/sub; clients reconnect. Therefore: NO persistence, NO
+  # Longhorn PVC, NO backups (nothing to back up). Do not add stateful workloads
+  # to this instance without revisiting persistence + the data-safety gate.
+  replicas: 1
+  # Recreate (not RollingUpdate): never run two Redis pods for the same in-memory
+  # dataset. A brief blip on restart is acceptable for a throwaway cache/backplane.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999          # redis user in the official image
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: redis
+          # Redis 7.4 is arm64 multi-arch (Raspberry Pi 4B compatible). If the
+          # Redis source-available license is ever a concern, valkey/valkey is a
+          # drop-in, protocol-compatible BSD alternative for both consumers.
+          image: redis:7.4.2-alpine
+          command:
+            - redis-server
+          args:
+            - "--save"                 # disable RDB snapshots
+            - ""
+            - "--appendonly"           # disable AOF
+            - "no"
+            - "--maxmemory"            # cap below the container memory limit
+            - "200mb"
+            - "--maxmemory-policy"     # evict least-recently-used cache keys under pressure
+            - "allkeys-lru"
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 10m
+            limits:
+              memory: 256Mi
+              cpu: 200m
+          startupProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 3
+            failureThreshold: 10
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        # Redis working dir. Ephemeral by design — Memory-backed emptyDir so
+        # nothing ever touches disk (no persistence).
+        - name: data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi

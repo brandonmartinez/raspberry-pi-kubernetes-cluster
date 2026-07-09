@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Shared, EPHEMERAL Redis: socket.io backplane (meal-planner) + cache/locks
+# (shlink). No persistence, no PVC, no backups — see deployment.yml for the
+# data-safety rationale. Consumers connect via:
+#   redis://redis.redis.svc.cluster.local:6379
+namespace: redis
+
+labels:
+  - pairs:
+      app: redis
+    includeSelectors: true
+
+resources:
+  - namespace.yml
+  - deployment.yml
+  - service.yml
+  - pdb.yml

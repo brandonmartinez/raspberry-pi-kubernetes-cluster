@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+spec:
+  # Single-instance service: guard against voluntary eviction (node drains,
+  # descheduler) so the shared cache/backplane isn't bounced needlessly.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis
