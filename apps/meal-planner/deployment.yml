@@ -24,7 +24,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
       containers:
         - name: meal-planner
-          image: ghcr.io/brandonmartinez/meal-planner:v1.0.296
+          image: ghcr.io/brandonmartinez/meal-planner:v1.0.312
           envFrom:
             - configMapRef:
                 name: meal-planner-configmap
