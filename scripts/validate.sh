@@ -13,6 +13,21 @@ fail() { echo "FAIL: $*" >&2; FAILURES=$((FAILURES + 1)); }
 warn() { echo "WARN: $*" >&2; WARNINGS=$((WARNINGS + 1)); }
 pass() { log "PASS: $*"; }
 
+# Route Python-script result lines (prefixed PASS:/FAIL:/WARN:) through the
+# standard fail/warn/pass helpers so FAILURES and WARNINGS are updated.
+emit_py_results() {
+  local _line
+  while IFS= read -r _line; do
+    [[ -z "${_line}" ]] && continue
+    case "${_line}" in
+      PASS:*) pass "${_line#PASS: }" ;;
+      FAIL:*) fail "${_line#FAIL: }" ;;
+      WARN:*) warn "${_line#WARN: }" ;;
+      *)      log  "${_line}" ;;
+    esac
+  done <<<"$1"
+}
+
 need_command() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -111,7 +126,7 @@ check_helm() {
     helm repo update "$repo_name" >/dev/null 2>&1 || warn "Could not update Helm repo ${repo_name}; using cached index if available."
     version_args=()
     [[ -n "$version" && "$version" != 0.0.0-* ]] && version_args=(--version "$version")
-    if ! helm template "$component" "$chart" --namespace "$namespace" -f "$values" "${version_args[@]}" >/dev/null; then
+    if ! helm template "$component" "$chart" --namespace "$namespace" -f "$values" ${version_args[@]+"${version_args[@]}"} >/dev/null; then
       warn "helm template skipped/failed for ${component}; chart may be unavailable offline or version may need freezing."
     fi
   done
@@ -200,7 +215,7 @@ for dirpath, dirnames, filenames in os.walk(root):
             key = m.group('key').lower().replace('-', '_').replace('.', '_').replace('/', '_')
             if key.endswith(allowed_key_suffixes):
                 continue
-            value = m.group('value').strip().strip('"\'')
+            value = m.group('value').strip().strip(chr(34)).strip(chr(39))
             raw_value = m.group('value').strip()
             if raw_value.startswith(('""', "''")):
                 continue
@@ -296,7 +311,7 @@ except ImportError:
     yaml = None
 
 def scalar_true(value):
-    return value.split('#', 1)[0].strip().strip('"\'').lower() == 'true'
+    return value.split('#', 1)[0].strip().strip(chr(34)).strip(chr(39)).lower() == 'true'
 
 def stripped_docs(raw):
     import re
@@ -321,7 +336,7 @@ def fallback_spec_sync_policy_preserve(doc):
             continue
         indent = len(raw_line) - len(raw_line.lstrip(' '))
         key, value = raw_line.strip().split(':', 1)
-        key = key.strip().strip('"\'')
+        key = key.strip().strip(chr(34)).strip(chr(39))
         while stack and indent <= stack[-1][0]:
             stack.pop()
         stack.append((indent, key))
@@ -401,12 +416,329 @@ PY
   fi
 }
 
+check_dns_policy() {
+  section "DNS policy invariants"
+
+  local conf="${REPO_ROOT}/apps/dnsdist/dnsdist.conf"
+  if [[ ! -f "${conf}" ]]; then
+    fail "apps/dnsdist/dnsdist.conf not found"
+    return
+  fi
+
+  # --- 1. Static dnsdist.conf assertions (exact Lua-table parsing; no kustomize) ---
+  local _out _rc
+  set +e
+  _out=$(python3 - "${conf}" <<'PY'
+import re, sys
+
+try:
+    conf = open(sys.argv[1], encoding='utf-8').read()
+except OSError as e:
+    print(f'FAIL: cannot read dnsdist.conf: {e}')
+    sys.exit(1)
+
+results = []
+
+# Parse every newServer({...}) block and its byte offset in the file.
+server_entries = []
+for m in re.finditer(r'newServer\(\{([^}]+)\}\)', conf, re.DOTALL):
+    block, pos = m.group(1), m.start()
+
+    def _str(key, b=block):
+        mm = re.search(r'\b' + re.escape(key) + r'\s*=\s*"([^"]+)"', b)
+        return mm.group(1) if mm else None
+
+    def _val(key, b=block):
+        # Captures bare Lua identifiers/booleans (not double-quoted strings).
+        mm = re.search(r'\b' + re.escape(key) + r'\s*=\s*([^\s,\n"]+)', b)
+        return mm.group(1) if mm else None
+
+    server_entries.append({
+        'pos': pos, 'address': _str('address'), 'pool': _str('pool'),
+        'name': _str('name'), 'checkClass': _val('checkClass'),
+        'mustResolve': _val('mustResolve'),
+    })
+
+pihole_servers = [s for s in server_entries if s.get('pool') == 'pihole']
+backup_servers = [s for s in server_entries if s.get('pool') == 'backup']
+
+# Exactly 3 distinct per-ordinal pihole backends.
+results.append(
+    'PASS: exactly 3 pihole pool newServer entries' if len(pihole_servers) == 3
+    else f'FAIL: expected 3 pihole pool newServer entries, found {len(pihole_servers)}')
+
+# 10.43.100.30 must not appear anywhere in the file.
+results.append(
+    'FAIL: 10.43.100.30 (shared ClusterIP) referenced in dnsdist.conf'
+    if '10.43.100.30' in conf else
+    'PASS: 10.43.100.30 not referenced in dnsdist.conf')
+
+# Per-ordinal server assertions: exact address, name, and FTL health-check fields.
+for i, (exp_addr, exp_name) in enumerate([
+        ('10.43.100.31:53', 'pihole-0'),
+        ('10.43.100.32:53', 'pihole-1'),
+        ('10.43.100.33:53', 'pihole-2')]):
+    matched = [s for s in pihole_servers
+               if s.get('address') == exp_addr and s.get('name') == exp_name]
+    if not matched:
+        results.append(f'FAIL: pihole-{i} newServer address={exp_addr} name={exp_name} not found')
+        continue
+    s = matched[0]
+    results.append(f'PASS: pihole-{i} newServer address={exp_addr} name={exp_name}')
+    cc = s.get('checkClass') or '(missing)'
+    mr = s.get('mustResolve') or '(missing)'
+    results.append(
+        f'PASS: pihole-{i} checkClass=DNSClass.CHAOS' if cc == 'DNSClass.CHAOS'
+        else f'FAIL: pihole-{i} checkClass={cc}, expected DNSClass.CHAOS')
+    results.append(
+        f'PASS: pihole-{i} mustResolve=true' if mr == 'true'
+        else f'FAIL: pihole-{i} mustResolve={mr}, expected true')
+
+# Backup pool: >=2 servers, all after the last pihole newServer in file order
+# (preserves the any-up-loop-then-fallback semantics).
+results.append(
+    f'PASS: {len(backup_servers)} backup pool newServer entries present'
+    if len(backup_servers) >= 2 else
+    f'FAIL: expected >=2 backup pool newServer entries, found {len(backup_servers)}')
+
+if pihole_servers and backup_servers:
+    last_pihole = max(s['pos'] for s in pihole_servers)
+    first_backup = min(s['pos'] for s in backup_servers)
+    results.append(
+        'PASS: backup pool entries follow pihole pool entries (any-up loop before fallback)'
+        if first_backup > last_pihole else
+        'FAIL: backup pool entries must follow pihole pool in file (any-up loop before fallback)')
+
+# Routing addAction: pihole pool inside the loop, backup as after-loop fallback.
+pihole_act = conf.find('return DNSAction.Pool, "pihole"')
+backup_act = conf.find('return DNSAction.Pool, "backup"')
+results.append(
+    'PASS: pihole pool routing action present' if pihole_act >= 0
+    else 'FAIL: pihole pool routing action (return DNSAction.Pool, "pihole") missing')
+results.append(
+    'PASS: backup pool fallback action present' if backup_act >= 0
+    else 'FAIL: backup pool fallback action (return DNSAction.Pool, "backup") missing')
+if pihole_act >= 0 and backup_act >= 0:
+    results.append(
+        'PASS: backup fallback follows pihole routing in addAction (correct loop structure)'
+        if backup_act > pihole_act else
+        'FAIL: backup fallback must appear after pihole routing in addAction')
+
+for r in results:
+    print(r)
+sys.exit(1 if any(r.startswith('FAIL:') for r in results) else 0)
+PY
+)
+  _rc=$?
+  set -e
+  emit_py_results "${_out}"
+  [[ ${_rc} -eq 0 ]] || grep -q '^FAIL:' <<<"${_out}" || fail "dnsdist.conf static check: unexpected non-zero exit"
+
+  # --- 2. Rendered pihole Service assertions (object-correlated by document) ---
+  if ! need_command kustomize; then
+    warn "kustomize missing; skipped rendered DNS service selector checks."
+    return
+  fi
+
+  set +e
+  _out=$(python3 - "${REPO_ROOT}" <<'PY'
+import re, subprocess, sys
+
+repo_root = sys.argv[1]
+results = []
+
+try:
+    proc = subprocess.run(
+        ['kustomize', 'build', f'{repo_root}/apps/pihole'],
+        capture_output=True, text=True, timeout=60)
+except FileNotFoundError:
+    print('FAIL: kustomize not found in PATH')
+    sys.exit(1)
+if proc.returncode != 0:
+    print(f'FAIL: kustomize build apps/pihole: {proc.stderr[:200].strip()}')
+    sys.exit(1)
+
+docs = [d for d in re.split(r'(?m)^---[ \t]*$', proc.stdout) if d.strip()]
+
+def parse_dns_service(doc):
+    """Extract DNS-service invariants from a single YAML document."""
+    kind_m = re.search(r'(?m)^kind:\s*(\S+)', doc)
+    if not kind_m or kind_m.group(1) != 'Service':
+        return None
+    name_m = re.search(r'(?m)^  name:\s*(\S+)', doc)
+    if not name_m:
+        return None
+    name = name_m.group(1).strip(chr(34)).strip(chr(39))
+    if not (re.match(r'^pihole-[012]-dns-svc$', name) or name == 'pihole-dns-svc'):
+        return None
+    cip_m  = re.search(r'(?m)^\s+clusterIP:\s*(\S+)', doc)
+    pod_m  = re.search(r'(?m)statefulset\.kubernetes\.io/pod-name["\x27]* *:\s*(\S+)', doc)
+    # Check port 53 presence via the 'port:' key (not targetPort/containerPort).
+    has_p53 = bool(re.search(r'(?m)^\s+port:\s*53\s*$', doc))
+    return {
+        'name':      name,
+        'clusterIP': cip_m.group(1).strip(chr(34)).strip(chr(39)) if cip_m else None,
+        'podName':   pod_m.group(1).strip(chr(34)).strip(chr(39)) if pod_m else None,
+        'hasTCP53':  has_p53 and bool(re.search(r'(?m)protocol:\s*TCP', doc)),
+        'hasUDP53':  has_p53 and bool(re.search(r'(?m)protocol:\s*UDP', doc)),
+    }
+
+services = {}
+for doc in docs:
+    svc = parse_dns_service(doc)
+    if svc:
+        services[svc['name']] = svc
+
+# Shared backwards-compat service (10.43.100.30).
+sh = services.get('pihole-dns-svc')
+if sh and sh['clusterIP'] == '10.43.100.30':
+    results.append('PASS: pihole-dns-svc renders with clusterIP 10.43.100.30 (backwards compat)')
+elif sh:
+    results.append(f"FAIL: pihole-dns-svc clusterIP={sh['clusterIP']}, expected 10.43.100.30")
+else:
+    results.append('FAIL: pihole-dns-svc not found in rendered output')
+
+# Per-ordinal: correlate Service name → ClusterIP → selector.pod-name → TCP+UDP 53.
+for ordinal in range(3):
+    svc_name = f'pihole-{ordinal}-dns-svc'
+    exp_ip   = f'10.43.100.{31 + ordinal}'
+    exp_pod  = f'pihole-{ordinal}'
+    svc = services.get(svc_name)
+    if not svc:
+        results.append(f'FAIL: {svc_name} not found in rendered output')
+        continue
+    results.append(
+        f'PASS: {svc_name} clusterIP={exp_ip}' if svc['clusterIP'] == exp_ip
+        else f"FAIL: {svc_name} clusterIP={svc['clusterIP']}, expected {exp_ip}")
+    results.append(
+        f'PASS: {svc_name} selector.pod-name={exp_pod}' if svc['podName'] == exp_pod
+        else f"FAIL: {svc_name} selector.pod-name={svc['podName']}, expected {exp_pod}")
+    results.append(
+        f'PASS: {svc_name} port 53/TCP' if svc['hasTCP53']
+        else f'FAIL: {svc_name} missing port 53/TCP')
+    results.append(
+        f'PASS: {svc_name} port 53/UDP' if svc['hasUDP53']
+        else f'FAIL: {svc_name} missing port 53/UDP')
+
+for r in results:
+    print(r)
+sys.exit(1 if any(r.startswith('FAIL:') for r in results) else 0)
+PY
+)
+  _rc=$?
+  set -e
+  emit_py_results "${_out}"
+  [[ ${_rc} -eq 0 ]] || grep -q '^FAIL:' <<<"${_out}" || fail "pihole service render check: unexpected non-zero exit"
+
+  # --- 3. Rendered dnsdist Deployment probe assertions ---
+  set +e
+  _out=$(python3 - "${REPO_ROOT}" <<'PY'
+import re, subprocess, sys
+
+repo_root = sys.argv[1]
+results = []
+
+try:
+    proc = subprocess.run(
+        ['kustomize', 'build', f'{repo_root}/apps/dnsdist'],
+        capture_output=True, text=True, timeout=60)
+except FileNotFoundError:
+    print('FAIL: kustomize not found in PATH')
+    sys.exit(1)
+if proc.returncode != 0:
+    print(f'FAIL: kustomize build apps/dnsdist: {proc.stderr[:200].strip()}')
+    sys.exit(1)
+
+docs = [d for d in re.split(r'(?m)^---[ \t]*$', proc.stdout) if d.strip()]
+
+depl_doc = cfgmap_doc = None
+for doc in docs:
+    kind_m = re.search(r'(?m)^kind:\s*(\S+)', doc)
+    name_m = re.search(r'(?m)^  name:\s*(\S+)', doc)
+    if not (kind_m and name_m):
+        continue
+    k = kind_m.group(1)
+    n = name_m.group(1).strip(chr(34)).strip(chr(39))
+    if k == 'Deployment' and n == 'dnsdist':
+        depl_doc = doc
+    elif k == 'ConfigMap' and n.startswith('dnsdist-config'):
+        cfgmap_doc = doc
+
+if not depl_doc:
+    results.append('FAIL: dnsdist Deployment not found in kustomize output')
+else:
+    # readinessProbe: use a local UDP DNS exchange, but do not couple readiness
+    # to an upstream-success RCODE that could withdraw the VIP during WAN loss.
+    has_py3      = bool(re.search(r'python3', depl_doc))
+    has_dgram    = bool(re.search(r'SOCK_DGRAM', depl_doc))
+    has_version  = bool(re.search(r'version', depl_doc, re.IGNORECASE))
+    checks_reply = bool(re.search(r'0x8000', depl_doc))
+    checks_rcode = bool(re.search(r'\brcode\b', depl_doc, re.IGNORECASE))
+    results.append(
+        'PASS: readinessProbe uses python3 UDP SOCK_DGRAM DNS check'
+        if has_py3 and has_dgram else
+        'FAIL: readinessProbe must use python3 with SOCK_DGRAM (proven UDP DNS-response check)')
+    results.append(
+        'PASS: readinessProbe validates a version.bind DNS response without requiring upstream success'
+        if has_version and checks_reply and not checks_rcode else
+        'FAIL: readinessProbe must validate a version.bind DNS response without checking RCODE')
+    # startupProbe + livenessProbe: /dev/tcp TCP listener check (offline-safe).
+    n_tcp = len(re.findall(r'/dev/tcp/127\.0\.0\.1/53', depl_doc))
+    results.append(
+        'PASS: startupProbe and livenessProbe use /dev/tcp/127.0.0.1/53'
+        if n_tcp >= 2 else
+        f'FAIL: expected >=2 /dev/tcp/127.0.0.1/53 probes (startup+liveness), found {n_tcp}')
+
+# ConfigMap must not contain 10.43.100.30 (must not reference the shared ClusterIP).
+if cfgmap_doc is not None:
+    results.append(
+        'PASS: 10.43.100.30 not in rendered dnsdist ConfigMap'
+        if '10.43.100.30' not in cfgmap_doc else
+        'FAIL: 10.43.100.30 found in rendered dnsdist ConfigMap (must not be a backend)')
+else:
+    results.append('WARN: dnsdist-config ConfigMap not found in kustomize output')
+
+for r in results:
+    print(r)
+sys.exit(1 if any(r.startswith('FAIL:') for r in results) else 0)
+PY
+)
+  _rc=$?
+  set -e
+  emit_py_results "${_out}"
+  [[ ${_rc} -eq 0 ]] || grep -q '^FAIL:' <<<"${_out}" || fail "dnsdist deployment render check: unexpected non-zero exit"
+}
+
+check_script_syntax() {
+  section "Shell script syntax"
+  local major="${BASH_VERSION%%.*}"
+  local script
+  while IFS= read -r script; do
+    local rel
+    rel="${script#"${REPO_ROOT}/"}"
+    local _err
+    _err=$(bash -n "${script}" 2>&1) && { pass "syntax ok: ${rel}"; continue; }
+    # bash 3.x misreports heredocs inside $() as "unexpected EOF"; treat as a warning
+    # rather than a hard failure so the count isn't polluted on macOS system bash.
+    if [[ "${major}" -lt 4 && ( "${_err}" == *"unexpected EOF"* || "${_err}" == *"syntax error: unexpected end"* ) ]]; then
+      warn "bash ${BASH_VERSION} heredoc-in-\$() false-positive on ${rel} (see Homebrew bash note below)"
+    else
+      fail "syntax error: ${rel}"
+    fi
+  done < <(find "${REPO_ROOT}/scripts" "${REPO_ROOT}/_shared" -name '*.sh' -type f | sort)
+  if [[ "${major}" -lt 4 ]]; then
+    warn "System bash is ${BASH_VERSION} (< 4.0) — Homebrew bash 5.x syntax validation is a coordinator blocker before merge."
+  fi
+}
+
 check_kustomize
 check_helm
 check_kubeconform
 check_secrets
 check_prune_policy
 check_appset_preserve_policy
+check_dns_policy
+check_script_syntax
 
 section "Validation summary"
 log "Warnings: ${WARNINGS}"

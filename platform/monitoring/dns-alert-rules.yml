@@ -1,0 +1,170 @@
+# DNS health alert rules — post-incident coverage for the DNS VIP outage pattern.
+#
+# Architecture recap:
+#   Clients → MetalLB VIP 192.168.52.53 (externalTrafficPolicy:Local)
+#   → dnsdist Deployment (namespace: dnsdist, 3 replicas, 1-per-node)
+#   → Pi-hole per-ordinal Services (10.43.100.31–33, one ClusterIP per pod)
+#   → Pi-hole StatefulSet (namespace: pihole, 3 replicas)
+#   → unbound / upstream
+#
+# dnsdist health-checks each Pi-hole pod independently via a per-ordinal
+# ClusterIP (pihole-0 → .31, pihole-1 → .32, pihole-2 → .33) using a
+# version.bind TXT CHAOS query (see apps/dnsdist/dnsdist.conf). The shared
+# ClusterIP 10.43.100.30 is retained for backward compatibility but is NOT
+# used by dnsdist as a health-check target.
+#
+# Fallback: when all three per-ordinal health checks fail, the LuaAction in
+# dnsdist.conf routes ALL queries to the backup pool (Cloudflare 1.1.1.1,
+# Google 8.8.8.8). Ad-blocking and local DNS overrides are silently lost.
+#
+# Metrics used — all confirmed available in the current stack:
+#   kube_deployment_status_replicas_available  — kube-state-metrics
+#                                                (job="kube-state-metrics";
+#                                                 evidenced: platform/monitoring/prometheus-rule.yml)
+#   kube_statefulset_status_replicas_ready     — kube-state-metrics (same)
+#
+# Alertmanager is disabled (#83). Rules fire in Prometheus UI and back Grafana
+# dashboards. Re-enabling Alertmanager restores routing automatically.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/name: kube-prometheus
+    app.kubernetes.io/part-of: kube-prometheus
+    prometheus: k8s
+    role: alert-rules
+    release: monitoring
+  name: dns-health-rules
+spec:
+  groups:
+    - name: homelab.dns-vip-readiness
+      rules:
+        # --- dnsdist Deployment readiness ---
+        # With externalTrafficPolicy:Local, MetalLB announces the VIP from nodes
+        # that have a ready dnsdist pod. Zero available pods → VIP is dark.
+
+        - alert: HomelabDnsdistUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{
+              job="kube-state-metrics",
+              namespace="dnsdist",
+              deployment="dnsdist"
+            } == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "All dnsdist pods unavailable — DNS VIP 192.168.52.53 is down"
+            description: >-
+              dnsdist Deployment in namespace dnsdist has 0 available replicas.
+              MetalLB externalTrafficPolicy:Local means the DNS VIP (192.168.52.53)
+              is NOT being announced from any node. Home DNS is completely broken.
+              Verify: kubectl -n dnsdist get pods; kubectl -n metallb-system get pods.
+
+        - alert: HomelabDnsdistCapacityLow
+          # 3 replicas spread one-per-node. Below 2 available means the VIP is
+          # reachable from only 1 node; a second node failure would fully kill DNS.
+          expr: |
+            kube_deployment_status_replicas_available{
+              job="kube-state-metrics",
+              namespace="dnsdist",
+              deployment="dnsdist"
+            } < 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "dnsdist below minimum redundant capacity (< 2 of 3 pods ready)"
+            description: >-
+              Only {{ $value }} dnsdist pod(s) available. Target is 3 replicas
+              spread one-per-node; fewer than 2 means one more node failure removes
+              DNS entirely. Prior incidents: node memory pressure (OOM on 4GB RPi)
+              evicted pods silently. Check: kubectl -n dnsdist get pods -o wide.
+
+        # --- Pi-hole StatefulSet backend health ---
+        # When ALL Pi-hole pods are unready, dnsdist's per-ordinal health checks
+        # against pihole-0/.31, pihole-1/.32, and pihole-2/.33 will all fail
+        # (FTL cannot serve DNS if the pod is not Ready). This is INFERRED from
+        # Kubernetes pod readiness — no direct dnsdist pool state metric is
+        # available without native webserver metrics enabled (see deferred note).
+
+        - alert: HomelabPiholeBackendAllDown
+          expr: |
+            kube_statefulset_status_replicas_ready{
+              job="kube-state-metrics",
+              namespace="pihole",
+              statefulset="pihole"
+            } == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "All Pi-hole backend pods not ready — dnsdist fallback mode likely active (inferred)"
+            description: >-
+              INFERRED: Zero Pi-hole pods Ready. When no pod is Ready, dnsdist's
+              per-ordinal health checks (pihole-0/10.43.100.31, pihole-1/10.43.100.32,
+              pihole-2/10.43.100.33) will all fail; the LuaAction likely routes ALL
+              queries to the backup pool (Cloudflare 1.1.1.1, Google 8.8.8.8).
+              Ad-blocking and local DNS overrides are likely INACTIVE. This is
+              Kubernetes-side inference, not a direct observation of dnsdist pool state.
+              Check: kubectl -n pihole get pods; kubectl -n pihole describe sts pihole.
+
+        - alert: HomelabPiholeBelowQuorum
+          # 3 replicas; PDB minAvailable=2 should prevent this but memory pressure
+          # can OOM-kill pods faster than PDB can block (rpi003/rpi004 history).
+          expr: |
+            kube_statefulset_status_replicas_ready{
+              job="kube-state-metrics",
+              namespace="pihole",
+              statefulset="pihole"
+            } < 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pi-hole backend below quorum (< 2 of 3 pods Ready)"
+            description: >-
+              Only {{ $value }} of 3 Pi-hole pods are Ready. Reduced capacity
+              increases failure risk. Past incident: pihole-FTL OOM-killed by
+              memcg on rpi003 (MemoryPressure). If node is under memory pressure
+              the remaining pods may also be at risk.
+              Check: kubectl -n pihole get pods; kubectl top nodes.
+
+        # --- Composite: infer fallback mode ---
+        # No native dnsdist Prometheus metric exists for "active pool" without
+        # enabling the dnsdist webserver/API (see deferred action below). This
+        # rule combines Deployment + StatefulSet readiness to INFER fallback.
+        # It does NOT directly observe dnsdist's internal pool routing state.
+
+        - alert: HomelabDnsFallbackModeInferred
+          expr: |
+            (
+              kube_deployment_status_replicas_available{
+                job="kube-state-metrics",
+                namespace="dnsdist",
+                deployment="dnsdist"
+              } > 0
+            )
+            and on()
+            (
+              kube_statefulset_status_replicas_ready{
+                job="kube-state-metrics",
+                namespace="pihole",
+                statefulset="pihole"
+              } == 0
+            )
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "DNS fallback mode likely active — inferred from Kubernetes readiness (not direct dnsdist state)"
+            description: >-
+              INFERRED: dnsdist pods are running but all Pi-hole pods are unready.
+              When no Pi-hole pod is Ready, dnsdist's per-ordinal health checks
+              (pihole-0/10.43.100.31, pihole-1/10.43.100.32, pihole-2/10.43.100.33)
+              will all fail; the LuaAction likely routes ALL DNS queries to the backup
+              pool (1.1.1.1, 8.8.8.8). This is inferred from Kubernetes pod readiness
+              — no direct dnsdist pool state metric is available without native webserver
+              metrics enabled (see deferred note). Ad-blocking and local DNS overrides
+              are likely inactive. Restore Pi-hole to resume normal DNS operation.
+              Check: kubectl -n pihole get pods; kubectl -n pihole describe sts pihole.

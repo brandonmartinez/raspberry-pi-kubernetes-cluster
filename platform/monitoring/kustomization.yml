@@ -4,13 +4,6 @@ kind: Kustomization
 namespace: monitoring
 
 configMapGenerator:
-  - name: grafana-uptime
-    files:
-      - grafana-dashboards/uptime.json
-    options:
-      disableNameSuffixHash: true
-      labels:
-        grafana_dashboard: "true"
   - name: grafana-node-exporter-full
     files:
       - grafana-dashboards/node-exporter-full-dashboard.json
@@ -52,5 +45,6 @@ resources:
   - ingress.yml
   - service-monitor.yml
   - prometheus-rule.yml
+  - dns-alert-rules.yml
   - longhorn-service-monitor.yml
   - certmanager-service-monitor.yml

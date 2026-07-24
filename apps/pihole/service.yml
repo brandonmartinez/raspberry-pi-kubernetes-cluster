@@ -45,6 +45,10 @@ spec:
   selector:
     "statefulset.kubernetes.io/pod-name": pihole-2
 ---
+# Shared Pi-hole DNS Service — retained for backwards compatibility and for any
+# consumer that needs a single ClusterIP across all three replicas. dnsdist no
+# longer uses this address as a backend; it routes to the per-ordinal services
+# below so each pod is health-checked independently.
 apiVersion: v1
 kind: Service
 metadata:
@@ -52,6 +56,69 @@ metadata:
 spec:
   type: ClusterIP
   clusterIP: 10.43.100.30
+  ports:
+    - name: 53-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: 53-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+---
+# Per-ordinal DNS Services — each ClusterIP routes to exactly one Pi-hole pod.
+# dnsdist health-checks each backend independently so a single corrupt or
+# wedged pod no longer impairs the shared VIP. Static ClusterIPs in the
+# 10.43.100.31–33 range follow the repo's named-static convention
+# (.20=unbound, .30=pihole-shared, .40=chrony, .50=postgres). Verify these
+# addresses are still unused immediately before the first manual sync.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-0-dns-svc
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.100.31
+  selector:
+    "statefulset.kubernetes.io/pod-name": pihole-0
+  ports:
+    - name: 53-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: 53-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-1-dns-svc
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.100.32
+  selector:
+    "statefulset.kubernetes.io/pod-name": pihole-1
+  ports:
+    - name: 53-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: 53-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-2-dns-svc
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.100.33
+  selector:
+    "statefulset.kubernetes.io/pod-name": pihole-2
   ports:
     - name: 53-tcp
       port: 53
